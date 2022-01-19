@@ -4,20 +4,14 @@ import "github.com/gofiber/fiber/v2"
 
 func systemRoutes(router *fiber.App) {
 	router.Get("/config", GetConfig)
-	router.Post("/config", func(c *fiber.Ctx) error {
-		// Convert request body to map[string]interface
-		var body map[string]interface{}
-		if err := c.BodyParser(&body); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(err)
-		}
+	router.Get("/health", GetHealth)
+}
 
-		// Update configuration
-		if err := ApiConfiguration.Update(body); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(err)
-		}
-
-		return c.Next()
-	}, GetConfig)
+func GetHealth(c *fiber.Ctx) error {
+	return c.Status(200).JSON(fiber.Map{
+		"status":     "ok",
+		"serverName": ApiConfiguration.ServerName.Get(),
+	})
 }
 
 func GetConfig(c *fiber.Ctx) error {
