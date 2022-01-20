@@ -82,6 +82,10 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
+func (u *User) CheckPassword(password string) bool {
+	return u.Password == password // TODO: Implement password hashing. This is a placeholder.
+}
+
 // APIUser is a data structure used for API responses as well as fetching relevant data from the database.
 type APIUser struct {
 	ID          string     `json:"id"`
