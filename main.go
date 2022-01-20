@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gtsatsis/harvester"
 	"github.com/tkanos/gonfig"
 	"gorm.io/driver/postgres"
@@ -27,8 +29,12 @@ func main() {
 	app := fiber.New(fiber.Config{
 		Prefork: false,
 	})
+	app.Use(recover.New())
+	app.Use(logger.New())
 
 	systemRoutes(app)
+	authRoutes(app)
+
 	log.Fatal(app.Listen(RuntimeConfig.Server.Address))
 }
 

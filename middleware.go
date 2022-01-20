@@ -16,12 +16,17 @@ func ApiKeyMiddleware(c *fiber.Ctx) error {
 	apiKey := c.Query("apiKey")
 	if apiKey == "" {
 		apiKey = c.Cookies("apiKey")
+		if apiKey == "" {
+			return c.Status(401).JSON(MissingCredentialsResponse)
+		}
 	}
 
 	if apiKey != ApiConfiguration.ApiKey.Get() {
-		return c.Status(401).JSON(MissingCredentialsResponse)
+		// TODO: Check if the API key is valid against the database if it is not the public key.
+		return c.Status(401).JSON(InvalidCredentialsResponse)
 	}
 
+	c.Locals("apiKey", apiKey)
 	return c.Next()
 }
 
@@ -53,9 +58,12 @@ func DoLoginMiddleware(c *fiber.Ctx) error {
 // If the user is logged in, the request is allowed to continue.
 // If the user is not logged in, the request is denied with a 401 MissingCredentialsResponse.
 func AuthMiddleware(c *fiber.Ctx) error {
-	if c.Cookies("auth") == "" {
+	authCookie := c.Cookies("auth")
+	if authCookie == "" {
 		return c.Status(401).JSON(MissingCredentialsResponse)
 	}
+
+	c.Locals("authCookie", authCookie)
 	return c.Next()
 }
 
