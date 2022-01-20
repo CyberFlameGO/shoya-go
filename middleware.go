@@ -1,6 +1,12 @@
 package main
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"encoding/base64"
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm/clause"
+	"net/url"
+	"strings"
+)
 
 // ApiKeyMiddleware ensures that the request has a valid API key attached.
 // The check order is: query > cookie
@@ -22,14 +28,23 @@ func ApiKeyMiddleware(c *fiber.Ctx) error {
 // DoLoginMiddleware logs the user in if the request contains a valid HTTP Basic Auth header.
 // If the credentials are valid, the request is allowed to continue.
 // If the credentials are invalid, the request is denied with a 401 InvalidCredentialsResponse.
+// If there is no HTTP Basic Auth header, the request is allowed to continue.
 func DoLoginMiddleware(c *fiber.Ctx) error {
 	authorizationHeader := c.Get("Authorization")
 
 	if authorizationHeader != "" {
-		// TODO: URL-decode the username and password (VRChat specifically encodes them)
-		//       and then use them to authenticate the user, attaching ana auth cookie to the request & response.
-		//       If the user is authenticated, the request is allowed to continue.
-		//       If the user is not authenticated, the request is denied with a 401 InvalidCredentialsResponse.
+		username, password, err := parseVrchatBasicAuth(authorizationHeader)
+		if err != nil {
+			return c.Status(401).JSON(InvalidCredentialsResponse)
+		}
+
+		u := User{Username: username}
+		DB.Preload(clause.Associations).First(&u)
+
+		if !u.CheckPassword(password) {
+			return c.Status(401).JSON(InvalidCredentialsResponse)
+		}
+		c.Locals("user", u)
 	}
 	return c.Next()
 }
@@ -45,19 +60,56 @@ func AuthMiddleware(c *fiber.Ctx) error {
 }
 
 // MfaMiddleware ensures that a user has completed MFA before proceeding.
-// If the user has completed MFA, the request is allowed to continue.
+// If the user has completed MFA (or the user does not have MFA enabled), the request is allowed to continue.
 // If the user has not completed MFA, the request is denied with a 401 TwoFactorAuthenticationRequiredResponse.
 func MfaMiddleware(c *fiber.Ctx) error {
 	if c.Locals("user") == nil {
 		// TODO: Throw error; user is not logged in, we should not be here.
 		return c.Status(401).JSON(MissingCredentialsResponse)
 	}
+
+	user := c.Locals("user").(*User)
+	if !user.MfaEnabled {
+		return c.Next()
+	}
 	if c.Cookies("twoFactorAuth") == "" {
 		return c.Status(401).JSON(TwoFactorAuthenticationRequiredResponse)
 	}
 
-	// TODO: Check if the user has enabled 2FA, if so, check if the cookie is valid.
+	// TODO: Check if the cookie is valid. If it is, the request is allowed to continue.
 	//       If the cookie is invalid, return a 401.
 
 	return c.Next()
+}
+
+func parseVrchatBasicAuth(authHeader string) (string, string, error) {
+	if authHeader == "" {
+		return "", "", nil
+	}
+
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 || parts[0] != "Basic" {
+		return "", "", nil
+	}
+
+	payload, err := base64.StdEncoding.DecodeString(parts[1])
+	if err != nil {
+		return "", "", err
+	}
+
+	pair := strings.SplitN(string(payload), ":", 2)
+	if len(pair) != 2 {
+		return "", "", nil
+	}
+
+	username, err := url.QueryUnescape(pair[0])
+	if err != nil {
+		return "", "", err
+	}
+	password, err := url.QueryUnescape(pair[1])
+	if err != nil {
+		return "", "", err
+	}
+
+	return username, password, nil
 }
