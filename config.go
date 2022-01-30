@@ -40,6 +40,9 @@ type ServerConfig struct {
 
 // ApiConfig holds the dynamic configuration for the API.
 type ApiConfig struct {
+	// Internal Configuration
+	JwtSecret hsync.Secret `json:"-" redis:"{config}:jwtSecret"`
+	// External Configuration (VRChat-specifics)
 	Address                       hsync.String           `seed:"" json:"address" redis:"{config}:address"`                                                  // Address is the physical address of the corporate entity.
 	Announcements                 ApiAnnouncementsList   `seed:"[]" json:"announcements" redis:"{config}:announcements"`                                    // Announcements is a list of announcements to be displayed to the user upon world load.
 	ApiKey                        hsync.String           `seed:"" json:"apiKey" redis:"{config}:apiKey"`                                                    // ApiKey is the API key used to authenticate requests.

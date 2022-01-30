@@ -44,7 +44,10 @@ func DoLoginMiddleware(c *fiber.Ctx) error {
 		}
 
 		u := User{Username: username}
-		DB.Preload(clause.Associations).First(&u)
+		err = DB.Preload(clause.Associations).First(&u).Error
+		if err != nil {
+			return c.Status(401).JSON(InvalidCredentialsResponse)
+		}
 
 		if !u.CheckPassword(password) {
 			return c.Status(401).JSON(InvalidCredentialsResponse)
@@ -63,7 +66,18 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		return c.Status(401).JSON(MissingCredentialsResponse)
 	}
 
-	c.Locals("authCookie", authCookie)
+	uid, err := ValidateAuthCookie(authCookie, c.IP(), false)
+	if err != nil {
+		return c.Status(401).JSON(InvalidCredentialsResponse)
+	}
+
+	u := User{BaseModel: BaseModel{ID: uid}}
+	err = DB.Preload(clause.Associations).First(&u).Error
+	if err != nil {
+		return c.Status(401).JSON(InvalidCredentialsResponse)
+	}
+
+	c.Locals("user", u)
 	return c.Next()
 }
 
