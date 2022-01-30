@@ -27,7 +27,7 @@ func main() {
 	vrcpsInit()
 
 	app := fiber.New(fiber.Config{
-		Prefork: false,
+		Prefork: true,
 	})
 	app.Use(recover.New())
 	app.Use(logger.New())
@@ -61,7 +61,6 @@ func initializeDB() {
 		RuntimeConfig.Database.Password,
 		RuntimeConfig.Database.Database,
 		RuntimeConfig.Database.Port)
-	fmt.Println(dsn)
 	DB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: gormLogger.Default.LogMode(gormLogger.Silent),
 	})
