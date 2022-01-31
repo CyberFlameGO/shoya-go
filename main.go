@@ -27,7 +27,7 @@ func main() {
 	vrcpsInit()
 
 	app := fiber.New(fiber.Config{
-		Prefork: true,
+		Prefork: false,
 	})
 	app.Use(recover.New())
 	app.Use(logger.New())
@@ -55,13 +55,14 @@ func initializeConfig() {
 
 // initializeDB initializes the database connection (and runs migrations)
 func initializeDB() {
+	var err error
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=Etc/GMT",
 		RuntimeConfig.Database.Host,
 		RuntimeConfig.Database.User,
 		RuntimeConfig.Database.Password,
 		RuntimeConfig.Database.Database,
 		RuntimeConfig.Database.Port)
-	DB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: gormLogger.Default.LogMode(gormLogger.Silent),
 	})
 	if err != nil {
