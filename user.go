@@ -62,7 +62,7 @@ type User struct {
 	HomeWorld                     World           `json:"-"`
 	Status                        UserStatus      `json:"status"`
 	StatusDescription             string          `json:"statusDescription"`
-	Tags                          []string        `json:"tags"`
+	Tags                          []string        `json:"tags" gorm:"type:text[]"`
 	UserFavorites                 []FavoriteGroup `json:"-"`
 	WorldFavorites                []FavoriteGroup `json:"-"`
 	AvatarFavorites               []FavoriteGroup `json:"-"`
@@ -70,7 +70,7 @@ type User struct {
 	LastPlatform                  string          `json:"lastPlatform"`
 	MfaEnabled                    bool            `json:"mfaEnabled"`
 	MfaSecret                     string          `json:"-"`
-	MfaRecoveryCodes              []string        `json:"-"`
+	MfaRecoveryCodes              []string        `json:"-" gorm:"type:text[]"`
 	Permissions                   []Permission    `json:"-"`
 	Moderations                   []Moderation    `json:"-"`
 }

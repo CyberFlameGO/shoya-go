@@ -10,6 +10,7 @@ type Avatar struct {
 	AuthorID    string
 	Name        string
 	Description string
+	ImageID     string
 	Image       File
 }
 

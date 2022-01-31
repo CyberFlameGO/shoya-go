@@ -7,7 +7,7 @@ import (
 
 type FavoriteGroup struct {
 	*BaseModel
-	UserId string         `gorm:"type:uuid;not null"`
+	UserID string
 	Name   string         `json:"name"`
 	Items  []FavoriteItem `json:"-"`
 }

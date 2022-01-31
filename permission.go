@@ -2,7 +2,8 @@ package main
 
 type Permission struct {
 	BaseModel
+	UserID    string
 	Name      string `json:"name"`
 	CreatedBy string
-	Params    map[string]interface{}
+	// TODO: Implement Gorm-compatible parameters.
 }
