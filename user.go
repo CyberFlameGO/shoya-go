@@ -53,12 +53,13 @@ type User struct {
 	Username                      string          `json:"username"`
 	DisplayName                   string          `json:"displayName"`
 	Email                         string          `json:"-"`
+	EmailVerified                 bool            `json:"emailVerified"`
 	Password                      string          `json:"-"`
-	CurrentAvatarId               string          `json:"currentAvatarId"`
+	CurrentAvatarID               string          `json:"currentAvatarId"`
 	CurrentAvatar                 Avatar          `json:"-"`
-	FallbackAvatarId              string          `json:"fallbackAvatarId"`
+	FallbackAvatarID              string          `json:"fallbackAvatarId"`
 	FallbackAvatar                Avatar          `json:"-"`
-	HomeWorldId                   string          `json:"homeLocation"`
+	HomeWorldID                   string          `json:"homeLocation"`
 	HomeWorld                     World           `json:"-"`
 	Status                        UserStatus      `json:"status"`
 	StatusDescription             string          `json:"statusDescription"`
@@ -73,6 +74,20 @@ type User struct {
 	MfaRecoveryCodes              []string        `json:"-" gorm:"type:text[]"`
 	Permissions                   []Permission    `json:"-"`
 	Moderations                   []Moderation    `json:"-"`
+}
+
+func NewUser(username, displayName, email, password string) *User {
+	return &User{
+		AcceptedTermsOfServiceVersion: int(ApiConfiguration.CurrentTOSVersion.Get()),
+		Username:                      username,
+		DisplayName:                   displayName,
+		Email:                         email,
+		Password:                      password, // TODO: Implement password hashing. This is a placeholder.
+		CurrentAvatarID:               ApiConfiguration.DefaultAvatar.Get(),
+		FallbackAvatarID:              ApiConfiguration.DefaultAvatar.Get(),
+		HomeWorldID:                   ApiConfiguration.HomeWorldId.Get(),
+		Status:                        UserStatusActive,
+	}
 }
 
 // BeforeCreate is a hook called before the database entry is created.
