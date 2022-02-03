@@ -130,8 +130,8 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 			DeletedAt: u.DeletedAt,
 		},
 		AcceptedTermsOfServiceVersion:  u.AcceptedTermsOfServiceVersion,
-		AccountDeletionDate:            nil, // TODO: Implement account deletion.
-		ActiveFriends:                  nil, // TODO: Implement friends.
+		AccountDeletionDate:            nil,        // TODO: Implement account deletion.
+		ActiveFriends:                  []string{}, // TODO: Implement friends.
 		AllowAvatarCopying:             u.AllowAvatarCopying,
 		Bio:                            u.Bio,
 		BioLinks:                       u.BioLinks,
@@ -145,8 +145,8 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 		EmailVerified:                  u.EmailVerified,
 		FallbackAvatarID:               u.FallbackAvatarID,
 		FriendKey:                      u.FriendKey,
-		Friends:                        nil,  // TODO: Implement friends.
-		HasBirthday:                    true, // Hardcoded to true. This data won't be collected.
+		Friends:                        []string{}, // TODO: Implement friends.
+		HasBirthday:                    true,       // Hardcoded to true. This data won't be collected.
 		HasEmail:                       u.Email != "" && u.EmailVerified,
 		HasLoggedInFromClient:          true, // Hardcoded to true. Likely unnecessary.
 		HomeLocationID:                 u.HomeWorldID,
@@ -155,8 +155,8 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 		LastPlatform:                   u.LastPlatform,
 		ObfuscatedEmail:                ObfuscateEmail(u.Email),
 		ObfuscatedPendingEmail:         ObfuscateEmail(u.PendingEmail),
-		OfflineFriends:                 nil, // TODO: Implement friends.
-		OnlineFriends:                  nil, // TODO: Implement friends.
+		OfflineFriends:                 []string{}, // TODO: Implement friends.
+		OnlineFriends:                  []string{}, // TODO: Implement friends.
 		PastDisplayNames:               u.GetPastDisplayNames(),
 		ProfilePicOverride:             u.ProfilePicOverride,
 		State:                          u.GetState(),
@@ -236,5 +236,9 @@ type DisplayNameChangeRecord struct {
 }
 
 func ObfuscateEmail(email string) string {
+	if len(email) == 0 {
+		return ""
+	}
+
 	return email[:strings.Index(email, "@")] + "****" + email[strings.Index(email, "@"):]
 }

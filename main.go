@@ -69,7 +69,7 @@ func initializeDB() {
 		panic(err)
 	}
 
-	_ = DB.AutoMigrate(&User{}, &Avatar{}, &File{})
+	_ = DB.AutoMigrate(&User{}, &Avatar{}, &File{}, &FavoriteGroup{}, &FavoriteItem{}, &Moderation{}, &Permission{})
 
 }
 

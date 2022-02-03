@@ -5,10 +5,10 @@ import (
 )
 
 type BaseModel struct {
-	ID        string `gorm:"primarykey"`
-	CreatedAt int64
-	UpdatedAt int64
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	ID        string         `gorm:"primarykey" json:"id"`
+	CreatedAt int64          `json:"-"`
+	UpdatedAt int64          `json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type RegisterRequest struct {

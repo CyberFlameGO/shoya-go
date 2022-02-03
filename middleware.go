@@ -52,7 +52,17 @@ func DoLoginMiddleware(c *fiber.Ctx) error {
 		if !u.CheckPassword(password) {
 			return c.Status(401).JSON(InvalidCredentialsResponse)
 		}
-		c.Locals("user", u)
+
+		t, err := CreateAuthCookie(&u, c.IP(), false)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": "Failed to create auth cookie"})
+		}
+
+		c.Locals("user", &u)
+		c.Cookie(&fiber.Cookie{
+			Name:  "auth",
+			Value: t,
+		})
 	}
 	return c.Next()
 }
@@ -77,7 +87,8 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		return c.Status(401).JSON(InvalidCredentialsResponse)
 	}
 
-	c.Locals("user", u)
+	c.Locals("authCookie", authCookie)
+	c.Locals("user", &u)
 	return c.Next()
 }
 

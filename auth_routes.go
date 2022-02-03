@@ -45,6 +45,8 @@ func getExists(c *fiber.Ctx) error {
 	})
 }
 
+// postRegister | /auth/register
+// Used to register a new user.
 func postRegister(c *fiber.Ctx) error {
 	var r RegisterRequest
 	var _u User
@@ -114,12 +116,16 @@ func postRegister(c *fiber.Ctx) error {
 	})
 }
 
+// getSelf | /auth/user
+// Returns the current user's information.
 func getSelf(c *fiber.Ctx) error {
 	u := c.Locals("user").(*User)
 
-	return c.Status(200).JSON(u)
+	return c.Status(200).JSON(u.GetAPICurrentUser())
 }
 
+// getNotifications | /auth/user/notifications
+// Returns the current user's notifications.
 func getNotifications(c *fiber.Ctx) error {
 	u := c.Locals("user").(*User)
 
