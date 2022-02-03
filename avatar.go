@@ -32,5 +32,17 @@ func NewAvatar() *Avatar {
 	return &Avatar{}
 }
 
+func (a *Avatar) GetAssetUrl() string {
+	return "" // TODO
+}
+
+func (a *Avatar) GetImageUrl() string {
+	return "" // TODO
+}
+
+func (a *Avatar) GetThumbnailImageUrl() string {
+	return "" // TODO
+}
+
 type APIAvatar struct{}
 type APIAvatarWithPackages struct{}
