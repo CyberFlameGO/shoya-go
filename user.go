@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"strings"
 	"time"
@@ -54,7 +55,7 @@ type User struct {
 	AcceptedTermsOfServiceVersion int             `json:"acceptedTOSVersion"`
 	AllowAvatarCopying            bool            `json:"allowAvatarCopying"`
 	Bio                           string          `json:"bio"`
-	BioLinks                      []string        `json:"bioLinks" gorm:"type:text[]"`
+	BioLinks                      pq.StringArray  `json:"bioLinks" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
 	Username                      string          `json:"username"`
 	DisplayName                   string          `json:"displayName"`
 	DeveloperType                 string          `json:"developerType"`
@@ -70,7 +71,7 @@ type User struct {
 	HomeWorld                     World           `json:"-"`
 	Status                        UserStatus      `json:"status"`
 	StatusDescription             string          `json:"statusDescription"`
-	Tags                          []string        `json:"tags" gorm:"type:text[]"`
+	Tags                          pq.StringArray  `json:"tags" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
 	UserFavorites                 []FavoriteGroup `json:"-"`
 	WorldFavorites                []FavoriteGroup `json:"-"`
 	AvatarFavorites               []FavoriteGroup `json:"-"`
@@ -78,7 +79,7 @@ type User struct {
 	LastPlatform                  string          `json:"lastPlatform"`
 	MfaEnabled                    bool            `json:"mfaEnabled"`
 	MfaSecret                     string          `json:"-"`
-	MfaRecoveryCodes              []string        `json:"-" gorm:"type:text[]"`
+	MfaRecoveryCodes              pq.StringArray  `json:"-" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
 	Permissions                   []Permission    `json:"-"`
 	Moderations                   []Moderation    `json:"-"`
 	FriendKey                     string          `json:"-"`
@@ -169,6 +170,7 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 		Unsubscribe:                    u.Unsubscribe,
 		UserIcon:                       u.UserIcon,
 		Username:                       u.Username,
+		FriendGroupNames:               []string{},
 	}
 }
 
@@ -220,8 +222,8 @@ type APICurrentUser struct {
 	StatusDescription              string                    `json:"statusDescription"`
 	StatusFirstTime                bool                      `json:"statusFirstTime"`
 	StatusHistory                  []string                  `json:"statusHistory"`
-	SteamDetails                   interface{}               `json:"steamDetails"`
-	SteamID                        string                    `json:"steamId"`
+	SteamDetails                   interface{}               `json:"steamDetails,omitempty"`
+	SteamID                        string                    `json:"steamId,omitempty"`
 	Tags                           []string                  `json:"tags"`
 	TwoFactorAuthEnabled           bool                      `json:"twoFactorAuthEnabled"`
 	Unsubscribe                    bool                      `json:"unsubscribe"`
@@ -240,5 +242,10 @@ func ObfuscateEmail(email string) string {
 		return ""
 	}
 
-	return email[:strings.Index(email, "@")] + "****" + email[strings.Index(email, "@"):]
+	atIndex := strings.Index(email, "@")
+	if atIndex == -1 {
+		return ""
+	}
+
+	return email[0:1] + strings.Repeat("*", atIndex-1) + email[atIndex:]
 }

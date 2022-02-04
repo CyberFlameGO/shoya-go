@@ -59,6 +59,7 @@ func DoLoginMiddleware(c *fiber.Ctx) error {
 		}
 
 		c.Locals("user", &u)
+		c.Locals("authCookie", t)
 		c.Cookie(&fiber.Cookie{
 			Name:  "auth",
 			Value: t,
@@ -73,7 +74,11 @@ func DoLoginMiddleware(c *fiber.Ctx) error {
 func AuthMiddleware(c *fiber.Ctx) error {
 	authCookie := c.Cookies("auth")
 	if authCookie == "" {
-		return c.Status(401).JSON(MissingCredentialsResponse)
+		authCookie_, ok := c.Locals("authCookie").(string)
+		if !ok || authCookie_ == "" {
+			return c.Status(401).JSON(MissingCredentialsResponse)
+		}
+		authCookie = authCookie_ // TODO: Look into less hacky solution -- Currently the variable is locally assigned in the if.
 	}
 
 	uid, err := ValidateAuthCookie(authCookie, c.IP(), false)

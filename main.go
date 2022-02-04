@@ -34,6 +34,7 @@ func main() {
 
 	systemRoutes(app)
 	authRoutes(app)
+	UsersRoutes(app)
 
 	log.Fatal(app.Listen(RuntimeConfig.Server.Address))
 }
@@ -63,7 +64,7 @@ func initializeDB() {
 		RuntimeConfig.Database.Database,
 		RuntimeConfig.Database.Port)
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: gormLogger.Default.LogMode(gormLogger.Silent),
+		Logger: gormLogger.Default.LogMode(gormLogger.Error),
 	})
 	if err != nil {
 		panic(err)
