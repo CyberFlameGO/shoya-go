@@ -35,6 +35,7 @@ func main() {
 	systemRoutes(app)
 	authRoutes(app)
 	UsersRoutes(app)
+	worldsRoutes(app)
 
 	log.Fatal(app.Listen(RuntimeConfig.Server.Address))
 }

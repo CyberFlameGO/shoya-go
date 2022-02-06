@@ -1,16 +1,6 @@
 package main
 
-import (
-	"gorm.io/gorm"
-)
-
-type BaseModel struct {
-	ID        string         `gorm:"primarykey" json:"id"`
-	CreatedAt int64          `json:"-"`
-	UpdatedAt int64          `json:"-"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-}
-
+// RegisterRequest is the model for requests sent to /auth/register.
 type RegisterRequest struct {
 	AcceptedTOSVersion int    `json:"acceptedTOSVersion"`
 	Username           string `json:"username"`

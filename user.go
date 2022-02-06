@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
@@ -58,7 +59,7 @@ type User struct {
 	BioLinks                      pq.StringArray  `json:"bioLinks" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
 	Username                      string          `json:"username"`
 	DisplayName                   string          `json:"displayName"`
-	DeveloperType                 string          `json:"developerType"`
+	DeveloperType                 string          `json:"developerType" gorm:"default: 'none'"`
 	Email                         string          `json:"-"`
 	PendingEmail                  string          `json:"pendingEmail"`
 	EmailVerified                 bool            `json:"emailVerified"`
@@ -89,12 +90,17 @@ type User struct {
 }
 
 func NewUser(username, displayName, email, password string) *User {
+	pw, err := argon2id.CreateHash(password, argon2id.DefaultParams)
+	if err != nil {
+		panic(err) // TODO: handle this better
+	}
+
 	return &User{
 		AcceptedTermsOfServiceVersion: int(ApiConfiguration.CurrentTOSVersion.Get()),
 		Username:                      username,
 		DisplayName:                   displayName,
 		Email:                         email,
-		Password:                      password, // TODO: Implement password hashing. This is a placeholder.
+		Password:                      pw,
 		CurrentAvatarID:               ApiConfiguration.DefaultAvatar.Get(),
 		FallbackAvatarID:              ApiConfiguration.DefaultAvatar.Get(),
 		HomeWorldID:                   ApiConfiguration.HomeWorldId.Get(),
@@ -109,8 +115,13 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-func (u *User) CheckPassword(password string) bool {
-	return u.Password == password // TODO: Implement password hashing. This is a placeholder.
+func (u *User) CheckPassword(password string) (bool, error) {
+	m, err := argon2id.ComparePasswordAndHash(password, u.Password)
+	if err != nil {
+		return false, err
+	}
+
+	return m, nil
 }
 
 // GetState returns the state of the user from the presence service.
