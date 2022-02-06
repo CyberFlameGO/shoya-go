@@ -37,6 +37,7 @@ func main() {
 	UsersRoutes(app)
 	worldsRoutes(app)
 	PhotonRoutes(app)
+	InstanceRoutes(app)
 
 	log.Fatal(app.Listen(RuntimeConfig.Server.Address))
 }
