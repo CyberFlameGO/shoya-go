@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/base64"
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm/clause"
 	"net/url"
@@ -91,9 +90,7 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		authCookie = authCookie_ // TODO: Look into less hacky solution -- Currently the variable is locally assigned in the if.
 	}
 
-	fmt.Println(authCookie)
-
-	uid, err := ValidateAuthCookie(authCookie, c.IP(), false)
+	uid, err := ValidateAuthCookie(authCookie, c.IP(), false, false)
 	if err != nil {
 		return c.Status(401).JSON(ErrInvalidCredentialsResponse)
 	}

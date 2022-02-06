@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func worldsRoutes(app *fiber.App) {
@@ -11,8 +12,8 @@ func worldsRoutes(app *fiber.App) {
 }
 
 func getWorld(c *fiber.Ctx) error {
-	w := World{BaseModel: BaseModel{ID: c.Params("id")}}
-	tx := DB.Find(&w)
+	var w World
+	tx := DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&World{}).Where("id = ?", c.Params("id")).First(&w)
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
 			return c.Status(404).JSON(ErrWorldNotFoundResponse)

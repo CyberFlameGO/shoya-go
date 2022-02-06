@@ -32,7 +32,7 @@ func CreateAuthCookie(u *User, ip string, isClientToken bool) (string, error) {
 }
 
 // ValidateAuthCookie validates the given JWT and returns the user ID if it is valid
-func ValidateAuthCookie(token string, ip string, isClientRequest bool) (string, error) {
+func ValidateAuthCookie(token string, ip string, isClientRequest bool, isPhotonRequest bool) (string, error) {
 	claims := AuthCookieClaims{}
 	tkn, err := jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(ApiConfiguration.JwtSecret.Get()), nil
@@ -46,11 +46,11 @@ func ValidateAuthCookie(token string, ip string, isClientRequest bool) (string, 
 		return "", ErrInvalidAuthCookie
 	}
 
-	if claims.IpAddress != ip {
+	if !isPhotonRequest && claims.IpAddress != ip {
 		return "", ErrInvalidAuthCookie
 	}
 
-	if claims.ClientToken != isClientRequest {
+	if !isPhotonRequest && claims.ClientToken != isClientRequest {
 		return "", ErrInvalidAuthCookie
 	}
 

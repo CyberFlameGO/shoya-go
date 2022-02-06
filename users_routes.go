@@ -6,6 +6,7 @@ func UsersRoutes(router *fiber.App) {
 	users := router.Group("/users")
 	users.Get("/", GetUsers)
 	users.Get("/:id", ApiKeyMiddleware, AuthMiddleware, GetUser)
+	users.Get("/:id/feedback", ApiKeyMiddleware, AuthMiddleware, GetUserFeedback)
 	users.Post("/", PostUser)
 	users.Put("/:id", PutUser)
 	users.Delete("/:id", DeleteUser)
@@ -41,4 +42,8 @@ func PutUser(c *fiber.Ctx) error {
 
 func DeleteUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(User{})
+}
+
+func GetUserFeedback(c *fiber.Ctx) error {
+	return c.JSON([]interface{}{})
 }

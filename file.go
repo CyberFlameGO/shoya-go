@@ -7,6 +7,7 @@ import (
 
 type File struct {
 	BaseModel
+	Url string
 }
 
 func (f *File) BeforeCreate(tx *gorm.DB) (err error) {

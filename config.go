@@ -41,7 +41,8 @@ type ServerConfig struct {
 // ApiConfig holds the dynamic configuration for the API.
 type ApiConfig struct {
 	// Internal Configuration
-	JwtSecret hsync.Secret `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:jwtSecret"`
+	JwtSecret    hsync.Secret `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:jwtSecret"`
+	PhotonSecret hsync.Secret `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:photonSecret"`
 	// External Configuration (VRChat-specifics)
 	Address                       hsync.String           `seed:"" json:"address" redis:"{config}:address"`                                                  // Address is the physical address of the corporate entity.
 	Announcements                 ApiAnnouncementsList   `seed:"[]" json:"announcements" redis:"{config}:announcements"`                                    // Announcements is a list of announcements to be displayed to the user upon world load.
@@ -119,7 +120,7 @@ type ApiConfig struct {
 	UserVerificationRetry                     hsync.Int64             `seed:"30" json:"userVerificationRetry" redis:"{config}:userVerificationRetry"`                                           // UserVerificationRetry ???
 	UserVerificationTimeout                   hsync.Int64             `seed:"60" json:"userVerificationTimeout" redis:"{config}:userVerificationTimeout"`                                       // UserVerificationTimeout ???
 	ViveWindowsUrl                            hsync.String            `seed:"" json:"viveWindowsUrl"`                                                                                           // ViveWindowsUrl is the url of the Vive Windows Client.
-	WhitelistedAssetUrls                      WhitelistedAssetUrlList `seed:"[]" json:"whiteListedAssetUrls" redis:"{config}:whiteListedAssetUrl"`                                              // WhitelistedAssetUrls is a whitelist of URLs that the client can retrieve assets from.
+	WhitelistedAssetUrls                      WhitelistedAssetUrlList `seed:"[]" json:"whiteListedAssetUrls" redis:"{config}:whiteListedAssetUrls"`                                             // WhitelistedAssetUrls is a whitelist of URLs that the client can retrieve assets from.
 	WorldUpdatePeriod                         hsync.Int64             `seed:"60" json:"worldUpdatePeriod" redis:"{config}:worldUpdatePeriod"`                                                   // WorldUpdatePeriod ???
 	YoutubeDLHash                             hsync.String            `seed:"" json:"youtubedl-hash" redis:"{config}:youtubedl-hash"`                                                           // YoutubeDLHash is the hash of the youtube-dl binary.
 	YoutubeDLVersion                          hsync.String            `seed:"" json:"youtubedl-version" redis:"{config}:youtubedl-version"`                                                     // YoutubeDLVersion is the version of youtube-dl.
@@ -508,5 +509,7 @@ func NewApiConfigResponse(config *ApiConfig) *ApiConfigResponse {
 		UserVerificationTimeout:        config.UserVerificationTimeout.Get(),
 		YoutubeDLHash:                  config.YoutubeDLHash.Get(),
 		YoutubeDLVersion:               config.YoutubeDLVersion.Get(),
+		WhitelistedAssetUrls:           config.WhitelistedAssetUrls.Get(),
+		WorldUpdatePeriod:              config.WorldUpdatePeriod.Get(),
 	}
 }

@@ -9,13 +9,14 @@ import (
 
 type World struct {
 	BaseModel
-	AuthorID      string         `json:"authorId"`
-	Name          string         `json:"name"`
-	Description   string         `json:"description"`
-	Capacity      int            `json:"capacity"`
-	ReleaseStatus ReleaseStatus  `json:"releaseStatus" gorm:"default:'private'"`
-	Tags          pq.StringArray `json:"tags" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
-	Version       int            `json:"version" gorm:"default:0"` // TODO: set to type not null
+	AuthorID      string              `json:"authorId"`
+	Name          string              `json:"name"`
+	Description   string              `json:"description"`
+	Capacity      int                 `json:"capacity"`
+	ReleaseStatus ReleaseStatus       `json:"releaseStatus" gorm:"default:'private'"`
+	Tags          pq.StringArray      `json:"tags" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
+	Version       int                 `json:"version" gorm:"default:0"` // TODO: set to type not null
+	UnityPackages []WorldUnityPackage `json:"unityPackages" gorm:"foreignKey:BelongsToAssetID"`
 }
 
 func (w *World) BeforeCreate(tx *gorm.DB) (err error) {
@@ -44,11 +45,24 @@ func (w *World) GetThumbnailImageUrl() string {
 }
 
 func (w *World) GetLatestAssetUrl() string {
-	return "" // TODO
+	var assetUrl string
+	maxVersion := 0
+	for _, pkg := range w.UnityPackages {
+		if pkg.Version >= maxVersion {
+			assetUrl = pkg.File.Url
+		}
+	}
+
+	return assetUrl
 }
 
-func (w *World) GetUnityPackages() []UnityPackage {
-	return []UnityPackage{} // TODO
+func (w *World) GetUnityPackages() []APIUnityPackage {
+	var pkgs []APIUnityPackage
+	for _, pkg := range w.UnityPackages {
+		pkgs = append(pkgs, *pkg.GetAPIUnityPackage())
+	}
+
+	return pkgs
 }
 
 func (w *World) GetAPIWorld() (*APIWorld, error) {
@@ -124,8 +138,8 @@ type APIWorld struct {
 
 type APIWorldWithPackages struct {
 	APIWorld
-	AssetUrl              string         `json:"assetUrl"`
-	AssetUrlObject        interface{}    `json:"assetUrlObject"` // Always an empty object.
-	UnityPackages         []UnityPackage `json:"unityPackages"`
-	UnityPackageUrlObject interface{}    `json:"unityPackageUrlObject"` // Always an empty object.
+	AssetUrl              string            `json:"assetUrl"`
+	AssetUrlObject        interface{}       `json:"assetUrlObject"` // Always an empty object.
+	UnityPackages         []APIUnityPackage `json:"unityPackages"`
+	UnityPackageUrlObject interface{}       `json:"unityPackageUrlObject"` // Always an empty object.
 }

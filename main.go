@@ -36,6 +36,7 @@ func main() {
 	authRoutes(app)
 	UsersRoutes(app)
 	worldsRoutes(app)
+	PhotonRoutes(app)
 
 	log.Fatal(app.Listen(RuntimeConfig.Server.Address))
 }
@@ -71,7 +72,8 @@ func initializeDB() {
 		panic(err)
 	}
 
-	_ = DB.AutoMigrate(&User{}, &Avatar{}, &File{}, &FavoriteGroup{}, &FavoriteItem{}, &Moderation{}, &Permission{})
+	_ = DB.AutoMigrate(&User{}, &Avatar{}, &File{}, &FavoriteGroup{}, &FavoriteItem{}, &Moderation{}, &Permission{},
+		&WorldUnityPackage{}, &AvatarUnityPackage{})
 
 }
 

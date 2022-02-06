@@ -11,6 +11,10 @@ func authRoutes(router *fiber.App) {
 	router.Get("/auth/exists", ApiKeyMiddleware, getExists)
 	router.Post("/auth/register", ApiKeyMiddleware, postRegister)
 	router.Get("/auth/user", ApiKeyMiddleware, DoLoginMiddleware, AuthMiddleware, getSelf)
+	router.Get("/auth/user/subscription", ApiKeyMiddleware, AuthMiddleware, getSubscription)
+	router.Get("/auth/user/moderations", ApiKeyMiddleware, AuthMiddleware, getModerations)
+	router.Get("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, getPlayerModerations)
+	router.Get("/auth/permissions", ApiKeyMiddleware, AuthMiddleware, getPermissions)
 	router.Get("/auth/user/notifications", ApiKeyMiddleware, AuthMiddleware, getNotifications)
 }
 
@@ -132,4 +136,20 @@ func getNotifications(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{
 		"user": u,
 	}) // TODO: implement
+}
+
+func getSubscription(c *fiber.Ctx) error {
+	return c.JSON([]interface{}{})
+}
+
+func getPermissions(c *fiber.Ctx) error {
+	return c.JSON([]interface{}{})
+}
+
+func getModerations(c *fiber.Ctx) error {
+	return c.JSON([]interface{}{})
+}
+
+func getPlayerModerations(c *fiber.Ctx) error {
+	return c.JSON([]interface{}{})
 }

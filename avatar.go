@@ -7,11 +7,12 @@ import (
 
 type Avatar struct {
 	BaseModel
-	AuthorID    string
-	Name        string
-	Description string
-	ImageID     string
-	Image       File
+	AuthorID      string
+	Name          string
+	Description   string
+	ImageID       string
+	Image         File
+	UnityPackages []AvatarUnityPackage `gorm:"foreignKey:BelongsToAssetID"`
 }
 
 func (a *Avatar) BeforeCreate(tx *gorm.DB) (err error) {
