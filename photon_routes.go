@@ -2,11 +2,13 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm/clause"
 )
 
 func PhotonRoutes(router *fiber.App) {
 	photon := router.Group("/photon")
 	photon.Get("/ns", photonSecret, doNsAuth)
+	photon.Get("/validateJoin", photonSecret, doJoinTokenValidation)
 }
 
 var PhotonInvalidParametersResponse = fiber.Map{"ResultCode": 3}
@@ -33,4 +35,35 @@ func doNsAuth(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(PhotonCustomAuthSuccessResponse)
+}
+
+func doJoinTokenValidation(c *fiber.Ctx) error {
+	t := c.Query("jwt")
+	l := c.Query("roomId")
+	if t == "" || l == "" {
+		return c.JSON(PhotonValidateJoinJWTResponse{Valid: false})
+	}
+
+	claims, err := ValidateJoinToken(t)
+	if err != nil {
+		return c.JSON(PhotonValidateJoinJWTResponse{Valid: false})
+	}
+
+	if claims.Location != l {
+		return c.JSON(PhotonValidateJoinJWTResponse{Valid: false})
+	}
+
+	var u User
+	tx := DB.Model(&User{}).Preload(clause.Associations).Preload("CurrentAvatar.UnityPackages.File").Preload("FallbackAvatar.UnityPackages.File").
+		Where("id = ?", claims.UserId).First(&u)
+	if tx.Error != nil {
+		return c.JSON(PhotonValidateJoinJWTResponse{Valid: false})
+	}
+
+	r := PhotonValidateJoinJWTResponse{
+		Valid: true,
+		IP:    claims.IP,
+	}
+	r.FillFromUser(&u)
+	return c.JSON(r)
 }

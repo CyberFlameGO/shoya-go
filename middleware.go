@@ -49,8 +49,8 @@ func DoLoginMiddleware(c *fiber.Ctx) error {
 			return c.Status(401).JSON(ErrInvalidCredentialsResponse)
 		}
 
-		u := User{Username: username}
-		err = DB.Preload(clause.Associations).First(&u).Error
+		u := User{}
+		err = DB.Preload(clause.Associations).Where("username = ?", username).First(&u).Error
 		if err != nil {
 			return c.Status(401).JSON(ErrInvalidCredentialsResponse)
 		}
@@ -95,8 +95,8 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		return c.Status(401).JSON(ErrInvalidCredentialsResponse)
 	}
 
-	u := User{BaseModel: BaseModel{ID: uid}}
-	err = DB.Preload(clause.Associations).First(&u).Error
+	u := User{}
+	err = DB.Preload(clause.Associations).Where("id = ?", uid).First(&u).Error
 	if err != nil {
 		return c.Status(401).JSON(ErrInvalidCredentialsResponse)
 	}

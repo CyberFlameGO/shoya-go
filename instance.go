@@ -1,10 +1,13 @@
 package main
 
 import (
+	"errors"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"time"
 )
+
+var ErrInvalidJoinJWT = errors.New("invalid join token")
 
 type InstanceJoinJWTClaims struct {
 	JoinId          string   `json:"joinId"`
@@ -41,4 +44,21 @@ func CreateJoinToken(u *User, w *World, ip string, location string) (string, err
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(ApiConfiguration.JwtSecret.Get()))
+}
+
+func ValidateJoinToken(token string) (*InstanceJoinJWTClaims, error) {
+	claims := InstanceJoinJWTClaims{}
+	tkn, err := jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(ApiConfiguration.JwtSecret.Get()), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !tkn.Valid {
+		return nil, ErrInvalidJoinJWT
+	}
+
+	return &claims, nil
 }

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"strings"
 	"time"
 )
 
@@ -32,14 +34,16 @@ func GetConfig(c *fiber.Ctx) error {
 
 func Logout(c *fiber.Ctx) error {
 	c.Cookie(&fiber.Cookie{
-		Name:    "auth",
-		Value:   "",
-		Expires: time.Now().Add(time.Hour * -1),
+		Name:     "auth",
+		Value:    "",
+		Expires:  time.Now().Add(time.Hour * -1),
+		SameSite: "disabled",
 	})
 	c.Cookie(&fiber.Cookie{
-		Name:    "twoFactorAuth",
-		Value:   "",
-		Expires: time.Now().Add(time.Hour * -1),
+		Name:     "twoFactorAuth",
+		Value:    "",
+		Expires:  time.Now().Add(time.Hour * -1),
+		SameSite: "disabled",
 	})
 	return c.Status(200).JSON(fiber.Map{
 		"status": "ok",
@@ -51,5 +55,40 @@ func GetTime(c *fiber.Ctx) error {
 }
 
 func GetInfoPush(c *fiber.Ctx) error {
-	return c.JSON([]interface{}{})
+	var toPush []ApiInfoPush
+	requiredTags := strings.Split(c.Query("require"), ",")
+	fmt.Println(requiredTags)
+	includedTags := strings.Split(c.Query("include"), ",")
+	fmt.Println(includedTags)
+
+	for _, push := range ApiConfiguration.InfoPushes.Get() {
+		fmt.Println("new push")
+		for _, pushed := range toPush {
+			if push.Id == pushed.Id {
+				break
+			}
+		}
+
+	nextPush:
+		for _, tag := range requiredTags {
+			for _, pushTag := range push.Tags {
+				if tag == pushTag {
+					toPush = append(toPush, push)
+					break nextPush
+				}
+			}
+		}
+
+	nextPush2:
+		for _, tag := range includedTags {
+			for _, pushTag := range push.Tags {
+				if tag == pushTag {
+					toPush = append(toPush, push)
+					break nextPush2
+				}
+			}
+		}
+	}
+
+	return c.JSON(toPush)
 }

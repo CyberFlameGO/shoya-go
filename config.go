@@ -41,8 +41,9 @@ type ServerConfig struct {
 // ApiConfig holds the dynamic configuration for the API.
 type ApiConfig struct {
 	// Internal Configuration
-	JwtSecret    hsync.Secret `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:jwtSecret"`
-	PhotonSecret hsync.Secret `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:photonSecret"`
+	InfoPushes   ApiInfoPushesList `seed:"[]" json:"infoPushes" redis:"{config}:infoPushes"`
+	JwtSecret    hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:jwtSecret"`
+	PhotonSecret hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:photonSecret"`
 	// External Configuration (VRChat-specifics)
 	Address                       hsync.String           `seed:"" json:"address" redis:"{config}:address"`                                                  // Address is the physical address of the corporate entity.
 	Announcements                 ApiAnnouncementsList   `seed:"[]" json:"announcements" redis:"{config}:announcements"`                                    // Announcements is a list of announcements to be displayed to the user upon world load.
@@ -347,6 +348,42 @@ func (w *WhitelistedAssetUrlList) String() string {
 	defer w.m.RUnlock()
 	b, _ := json.Marshal(w)
 	return string(b)
+}
+
+type ApiInfoPushesList struct {
+	m    sync.RWMutex
+	List []ApiInfoPush
+}
+
+func (w *ApiInfoPushesList) SetString(s string) error {
+	w.m.Lock()
+	defer w.m.Unlock()
+	return json.Unmarshal([]byte(s), &w.List)
+}
+
+func (w *ApiInfoPushesList) Get() []ApiInfoPush {
+	w.m.RLock()
+	defer w.m.RUnlock()
+	return w.List
+}
+
+func (w *ApiInfoPushesList) String() string {
+	w.m.RLock()
+	defer w.m.RUnlock()
+	b, _ := json.Marshal(w)
+	return string(b)
+}
+
+type ApiInfoPush struct {
+	Id            string                 `json:"id"`
+	IsEnabled     bool                   `json:"isEnabled"`
+	ReleaseStatus string                 `json:"releaseStatus"`
+	Priority      int                    `json:"priority"`
+	Tags          []string               `json:"tags"`
+	Data          map[string]interface{} `json:"data"`
+	Hash          string                 `json:"hash"`
+	CreatedAt     string                 `json:"createdAt"`
+	UpdatedAt     string                 `json:"updatedAt"`
 }
 
 // ApiConfigResponse is the response from the /config endpoint. It contains public values from ApiConfig with native types.

@@ -26,9 +26,9 @@ func (w *World) BeforeCreate(tx *gorm.DB) (err error) {
 
 // GetAuthor returns the author of the world
 func (w *World) GetAuthor() (*User, error) {
-	u := User{BaseModel: BaseModel{ID: w.AuthorID}}
+	var u User
 
-	tx := DB.Find(&u)
+	tx := DB.Find(&u).Where("id = ?", w.AuthorID)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
@@ -82,7 +82,7 @@ func (w *World) GetAPIWorld() (*APIWorld, error) {
 		Heat:        0, // TODO: What the fuck is a "Heat"? Seems like an internal metric. Might always set to 0.
 		ImageUrl:    w.GetImageUrl(),
 		Instances: [][]string{
-			{"00000", "0"}, // TODO: Implement instances.
+			{"69420", "0"}, // TODO: Implement instances.
 		},
 		LabsPublicationDate: "", // TODO: Labs? Is that even something we care about in a PS?
 		Name:                w.Name,

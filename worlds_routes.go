@@ -9,6 +9,7 @@ import (
 func worldsRoutes(app *fiber.App) {
 	worlds := app.Group("/worlds")
 	worlds.Get("/:id", ApiKeyMiddleware, AuthMiddleware, getWorld)
+	worlds.Get("/:id/metadata", ApiKeyMiddleware, AuthMiddleware, getWorldMeta)
 }
 
 func getWorld(c *fiber.Ctx) error {
@@ -30,6 +31,12 @@ func getWorld(c *fiber.Ctx) error {
 			},
 		})
 	}
-
 	return c.JSON(aw)
+}
+
+func getWorldMeta(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{
+		"id":       c.Params("id"),
+		"metadata": fiber.Map{},
+	})
 }

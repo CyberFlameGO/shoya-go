@@ -2,7 +2,9 @@ package main
 
 import (
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
+	"time"
 )
 
 type Avatar struct {
@@ -12,6 +14,9 @@ type Avatar struct {
 	Description   string
 	ImageID       string
 	Image         File
+	ReleaseStatus ReleaseStatus
+	Tags          pq.StringArray       `json:"tags" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
+	Version       int                  `json:"version" gorm:"default:0"` // TODO: set to type not null
 	UnityPackages []AvatarUnityPackage `gorm:"foreignKey:BelongsToAssetID"`
 }
 
@@ -21,20 +26,36 @@ func (a *Avatar) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 // GetAuthor returns the author of the avatar
-func (a *Avatar) GetAuthor() User {
-	return User{
-		BaseModel: BaseModel{
-			ID: a.AuthorID,
-		},
-	}
-}
+func (a *Avatar) GetAuthor() (*User, error) {
+	var u User
 
-func NewAvatar() *Avatar {
-	return &Avatar{}
+	tx := DB.Where("id = ?", a.AuthorID).Find(&u)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+
+	return &u, nil
 }
 
 func (a *Avatar) GetAssetUrl() string {
-	return "" // TODO
+	var assetUrl string
+	maxVersion := 0
+	for _, pkg := range a.UnityPackages {
+		if pkg.Version >= maxVersion {
+			assetUrl = pkg.File.Url
+		}
+	}
+
+	return assetUrl
+}
+
+func (a *Avatar) GetUnityPackages() []APIUnityPackage {
+	var pkgs []APIUnityPackage
+	for _, pkg := range a.UnityPackages {
+		pkgs = append(pkgs, *pkg.GetAPIUnityPackage())
+	}
+
+	return pkgs
 }
 
 func (a *Avatar) GetImageUrl() string {
@@ -45,5 +66,57 @@ func (a *Avatar) GetThumbnailImageUrl() string {
 	return "" // TODO
 }
 
-type APIAvatar struct{}
-type APIAvatarWithPackages struct{}
+func (a *Avatar) GetAPIAvatar() (*APIAvatar, error) {
+	au, err := a.GetAuthor()
+	if err != nil {
+		return nil, err
+	}
+
+	return &APIAvatar{
+		ID:                a.ID,
+		AuthorID:          a.AuthorID,
+		AuthorName:        au.DisplayName,
+		CreatedAt:         time.Unix(a.CreatedAt, 0).Format("02-01-2006"), // TODO: Verify whether this is the correct format.
+		Description:       a.Description,
+		Featured:          false,
+		ImageUrl:          a.GetImageUrl(),
+		Name:              a.Name,
+		ReleaseStatus:     a.ReleaseStatus,
+		Tags:              a.Tags,
+		ThumbnailImageUrl: a.GetThumbnailImageUrl(),
+		Version:           a.Version,
+	}, nil
+}
+func (a *Avatar) GetAPIAvatarWithPackages() (*APIAvatarWithPackages, error) {
+	aa, err := a.GetAPIAvatar()
+	if err != nil {
+		return nil, err
+	}
+	return &APIAvatarWithPackages{
+		APIAvatar:     *aa,
+		AssetUrl:      a.GetAssetUrl(),
+		UnityPackages: a.GetUnityPackages(),
+	}, nil
+}
+
+type APIAvatar struct {
+	ID                string        `json:"id"`
+	AuthorID          string        `json:"authorId"`
+	AuthorName        string        `json:"authorName"`
+	CreatedAt         string        `json:"created_at"`
+	Description       string        `json:"description"`
+	Featured          bool          `json:"featured"`
+	ImageUrl          string        `json:"imageUrl"`
+	Name              string        `json:"name"`
+	ReleaseStatus     ReleaseStatus `json:"releaseStatus"`
+	Tags              []string      `json:"tags"`
+	ThumbnailImageUrl string        `json:"thumbnailImageUrl"`
+	Version           int           `json:"version"`
+}
+type APIAvatarWithPackages struct {
+	APIAvatar
+	AssetUrl              string            `json:"assetUrl"`
+	AssetUrlObject        interface{}       `json:"assetUrlObject"` // Always an empty object.
+	UnityPackages         []APIUnityPackage `json:"unityPackages"`
+	UnityPackageUrlObject interface{}       `json:"unityPackageUrlObject"` // Always an empty object.
+}
