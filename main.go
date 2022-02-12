@@ -31,6 +31,7 @@ func main() {
 	})
 	app.Use(recover.New())
 	app.Use(logger.New())
+	app.Use(IsGameRequestMiddleware)
 
 	systemRoutes(app)
 	authRoutes(app)

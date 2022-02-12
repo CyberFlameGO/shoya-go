@@ -8,8 +8,18 @@ import (
 
 func worldsRoutes(app *fiber.App) {
 	worlds := app.Group("/worlds")
+	worlds.Get("/", ApiKeyMiddleware, AuthMiddleware, getWorlds)
+	worlds.Get("/favorites", ApiKeyMiddleware, AuthMiddleware, getWorldFavorites)
 	worlds.Get("/:id", ApiKeyMiddleware, AuthMiddleware, getWorld)
 	worlds.Get("/:id/metadata", ApiKeyMiddleware, AuthMiddleware, getWorldMeta)
+}
+
+func getWorlds(c *fiber.Ctx) error {
+	return c.Status(501).JSON([]fiber.Map{})
+}
+
+func getWorldFavorites(c *fiber.Ctx) error {
+	return c.Status(501).JSON([]fiber.Map{})
 }
 
 func getWorld(c *fiber.Ctx) error {

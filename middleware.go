@@ -60,7 +60,8 @@ func DoLoginMiddleware(c *fiber.Ctx) error {
 			return c.Status(401).JSON(ErrInvalidCredentialsResponse)
 		}
 
-		t, err := CreateAuthCookie(&u, c.IP(), false)
+		isGameReq := c.Locals("isGameRequest").(bool)
+		t, err := CreateAuthCookie(&u, c.IP(), isGameReq)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "Failed to create auth cookie"})
 		}
@@ -90,7 +91,8 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		authCookie = authCookie_ // TODO: Look into less hacky solution -- Currently the variable is locally assigned in the if.
 	}
 
-	uid, err := ValidateAuthCookie(authCookie, c.IP(), false, false)
+	isGameReq := c.Locals("isGameRequest").(bool)
+	uid, err := ValidateAuthCookie(authCookie, c.IP(), isGameReq, false)
 	if err != nil {
 		return c.Status(401).JSON(ErrInvalidCredentialsResponse)
 	}
@@ -129,6 +131,50 @@ func MfaMiddleware(c *fiber.Ctx) error {
 	return c.Next()
 }
 
+// IsGameRequestMiddleware uses the `X-Requested-With`, `X-MacAddress`, `X-Client-Version`, `X-Platform`, and `User-Agent`
+// headers to identify whether a request is coming from the game client or not.
+//
+// More specifically; for the request to be marked as a game request:
+//  >X-Requested-With	must be present
+//  >X-MacAddress		must be present
+//  >X-Client-Version	must be present
+//  >X-Platform		must be present and one of ["standalonewindows", "android"]
+//  >User-Agent		must be present and one of ["VRC.Core.BestHTTP", "Transmtn-Pipeline"]
+func IsGameRequestMiddleware(c *fiber.Ctx) error {
+	headers := c.GetReqHeaders()
+	if shouldDoInDepthClientChecks(c.Path()) {
+		// When the client uses the Transmtn-Pipeline client, the below headers are not guaranteed to exist,
+		if _, ok := headers["X-Requested-With"]; !ok {
+			goto failedChecks
+		}
+
+		if _, ok := headers["X-Macaddress"]; !ok {
+			// FIXME(?): Fiber (or fasthttp?) seems to be editing the headers before we get them.
+			//			 resulting in X-MacAddress being turned to X-Macaddress.
+			goto failedChecks
+		}
+
+		if _, ok := headers["X-Client-Version"]; !ok {
+			goto failedChecks
+		}
+
+		if _, ok := headers["X-Platform"]; !ok || (headers["X-Platform"] != "standalonewindows" && headers["X-Platform"] != "android") {
+			goto failedChecks
+		}
+	}
+
+	if _, ok := headers["User-Agent"]; !ok || (headers["User-Agent"] != "VRC.Core.BestHTTP" && headers["User-Agent"] != "Transmtn-Pipeline") {
+		goto failedChecks
+	}
+
+	c.Locals("isGameRequest", true)
+	return c.Next()
+
+failedChecks:
+	c.Locals("isGameRequest", false)
+	return c.Next()
+}
+
 func parseVrchatBasicAuth(authHeader string) (string, string, error) {
 	if authHeader == "" {
 		return "", "", nil
@@ -159,4 +205,14 @@ func parseVrchatBasicAuth(authHeader string) (string, string, error) {
 	}
 
 	return username, password, nil
+}
+
+func shouldDoInDepthClientChecks(path string) bool {
+	if path == "/auth" ||
+		path == "/config" ||
+		path == "/time" ||
+		path == "/auth/user/notifications" {
+		return false
+	}
+	return true
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
@@ -106,7 +105,6 @@ func postRegister(c *fiber.Ctx) error {
 	u := NewUser(r.Username, r.Username, r.Email, r.Password)
 	tx = DB.Create(&u)
 	if tx.Error != nil {
-		fmt.Println(tx.Error)
 		return c.Status(500).JSON(fiber.Map{
 			"ok": false,
 			"error": fiber.Map{

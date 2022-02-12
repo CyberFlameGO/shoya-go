@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -77,7 +78,7 @@ type User struct {
 	WorldFavorites                []FavoriteGroup `json:"-"`
 	AvatarFavorites               []FavoriteGroup `json:"-"`
 	LastLogin                     int64           `json:"lastLogin"`
-	LastPlatform                  string          `json:"lastPlatform"`
+	LastPlatform                  string          `json:"last_platform"`
 	MfaEnabled                    bool            `json:"mfaEnabled"`
 	MfaSecret                     string          `json:"-"`
 	MfaRecoveryCodes              pq.StringArray  `json:"-" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
@@ -131,6 +132,107 @@ func (u *User) GetState() UserState {
 
 func (u *User) GetPastDisplayNames() []DisplayNameChangeRecord {
 	return []DisplayNameChangeRecord{} // TODO: Implement display name history.
+}
+
+func (u *User) GetPresence() *UserPresence {
+	return &UserPresence{
+		ShouldDisclose: false,
+	}
+}
+
+func (u *User) GetAPIUser(isFriend bool, shouldGetLocation bool) *APIUser {
+	var friendKey = ""
+	var worldId = "offline"
+	var location = "offline"
+	var instanceId = "offline"
+
+	if isFriend {
+		friendKey = u.FriendKey
+	}
+
+	if shouldGetLocation {
+		userPresence := u.GetPresence()
+		if userPresence.ShouldDisclose {
+			worldId = userPresence.WorldId
+			location = userPresence.Location
+			instanceId = userPresence.Location
+		} else {
+			worldId = "private"
+			location = "private"
+			instanceId = "private"
+		}
+	}
+
+	return &APIUser{
+		BaseModel: BaseModel{
+			ID:        u.ID,
+			CreatedAt: u.CreatedAt,
+			UpdatedAt: u.UpdatedAt,
+			DeletedAt: u.DeletedAt,
+		},
+		AllowAvatarCopying:             u.AllowAvatarCopying,
+		Bio:                            u.Bio,
+		BioLinks:                       u.BioLinks,
+		CurrentAvatarImageUrl:          u.CurrentAvatar.GetImageUrl(),
+		CurrentAvatarThumbnailImageUrl: u.CurrentAvatar.GetThumbnailImageUrl(),
+		DateJoined:                     time.Unix(u.CreatedAt, 0).Format("02-01-2006"),
+		DeveloperType:                  u.DeveloperType,
+		DisplayName:                    u.DisplayName,
+		FriendKey:                      friendKey,
+		InstanceId:                     instanceId,
+		IsFriend:                       isFriend,
+		LastLogin:                      strconv.FormatInt(u.LastLogin, 10), // FIXME (george): Proper dates.
+		LastPlatform:                   Platform(u.LastPlatform),
+		Location:                       location,
+		ProfilePictureOverride:         u.ProfilePicOverride,
+		State:                          u.GetState(),
+		Status:                         u.Status,
+		StatusDescription:              u.StatusDescription,
+		Tags:                           u.Tags,
+		UserIcon:                       u.UserIcon,
+		Username:                       u.Username,
+		WorldId:                        worldId,
+	}
+}
+
+func (u *User) GetAPILimitedUser(isFriend bool, shouldGetLocation bool) *APILimitedUser {
+	var friendKey = ""
+	var location = "offline"
+
+	if isFriend {
+		friendKey = u.FriendKey
+	}
+
+	if shouldGetLocation {
+		userPresence := u.GetPresence()
+		if userPresence.ShouldDisclose {
+			location = userPresence.Location
+		} else {
+			location = "private"
+		}
+	}
+
+	return &APILimitedUser{
+		BaseModel: BaseModel{
+			ID:        u.ID,
+			CreatedAt: u.CreatedAt,
+			UpdatedAt: u.UpdatedAt,
+			DeletedAt: u.DeletedAt,
+		},
+		CurrentAvatarImageUrl:          u.CurrentAvatar.GetImageUrl(),
+		CurrentAvatarThumbnailImageUrl: u.CurrentAvatar.GetThumbnailImageUrl(),
+		DeveloperType:                  u.DeveloperType,
+		DisplayName:                    u.DisplayName,
+		FallbackAvatarId:               u.FallbackAvatarID,
+		IsFriend:                       isFriend,
+		LastPlatform:                   Platform(u.LastPlatform),
+		ProfilePictureOverride:         u.ProfilePicOverride,
+		Status:                         u.Status,
+		StatusDescription:              u.StatusDescription,
+		Tags:                           u.Tags,
+		Location:                       &location,
+		FriendKey:                      &friendKey,
+	}
 }
 
 func (u *User) GetAPICurrentUser() *APICurrentUser {
@@ -187,13 +289,48 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 
 // APIUser is a data structure used for API responses as well as fetching relevant data from the database.
 type APIUser struct {
-	ID          string     `json:"id"`
-	Username    string     `json:"username"`
-	DisplayName string     `json:"displayName"`
-	State       UserState  `gorm:"-" json:"state"`
-	Status      UserStatus `json:"status"`
+	BaseModel
+	AllowAvatarCopying             bool       `json:"allowAvatarCopying"`
+	Bio                            string     `json:"bio"`
+	BioLinks                       []string   `json:"bioLinks"`
+	CurrentAvatarImageUrl          string     `json:"currentAvatarImageUrl"`
+	CurrentAvatarThumbnailImageUrl string     `json:"currentAvatarThumbnailImageUrl"`
+	DateJoined                     string     `json:"date_joined"`
+	DeveloperType                  string     `json:"developerType"`
+	DisplayName                    string     `json:"displayName"`
+	FriendKey                      string     `json:"friendKey,omitempty"`
+	InstanceId                     string     `json:"instanceId"`
+	IsFriend                       bool       `json:"isFriend"`
+	LastLogin                      string     `json:"last_login"`
+	LastPlatform                   Platform   `json:"last_platform"`
+	Location                       string     `json:"location"`
+	ProfilePictureOverride         string     `json:"profilePicOverride"`
+	State                          UserState  `json:"state"`
+	Status                         UserStatus `json:"status"`
+	StatusDescription              string     `json:"statusDescription"`
+	Tags                           []string   `json:"tags"`
+	UserIcon                       string     `json:"userIcon"`
+	Username                       string     `json:"username"`
+	WorldId                        string     `json:"worldId"`
 }
-type APILimitedUser struct{}
+type APILimitedUser struct {
+	BaseModel
+	CurrentAvatarImageUrl          string     `json:"currentAvatarImageUrl"`
+	CurrentAvatarThumbnailImageUrl string     `json:"currentAvatarThumbnailImageUrl"`
+	DeveloperType                  string     `json:"developerType"`
+	DisplayName                    string     `json:"displayName"`
+	FallbackAvatarId               string     `json:"fallbackAvatar"`
+	IsFriend                       bool       `json:"isFriend"`
+	LastPlatform                   Platform   `json:"last_platform"`
+	ProfilePictureOverride         string     `json:"profilePicOverride"`
+	Status                         UserStatus `json:"status"`
+	StatusDescription              string     `json:"statusDescription"`
+	Tags                           []string   `json:"tags"`
+	UserIcon                       string     `json:"userIcon"`
+	Username                       string     `json:"username"`
+	Location                       *string    `json:"location,omitempty"`
+	FriendKey                      *string    `json:"friendKey,omitempty"`
+}
 type APICurrentUser struct {
 	BaseModel
 	AcceptedTermsOfServiceVersion  int                       `json:"acceptedTOSVersion"`
@@ -220,7 +357,7 @@ type APICurrentUser struct {
 	HomeLocationID                 string                    `json:"homeLocation"`
 	IsFriend                       bool                      `json:"isFriend"`
 	LastLogin                      int64                     `json:"lastLogin"`
-	LastPlatform                   string                    `json:"lastPlatform"`
+	LastPlatform                   string                    `json:"last_platform"`
 	ObfuscatedEmail                string                    `json:"obfuscatedEmail"`
 	ObfuscatedPendingEmail         string                    `json:"obfuscatedPendingEmail"`
 	OculusID                       string                    `json:"oculusId"`
@@ -246,6 +383,12 @@ type DisplayNameChangeRecord struct {
 	DisplayName string `json:"displayName"`
 	Timestamp   int64  `json:"updated_at"`
 	Reverted    bool   `json:"reverted,omitempty"`
+}
+
+type UserPresence struct {
+	ShouldDisclose bool
+	WorldId        string
+	Location       string
 }
 
 func ObfuscateEmail(email string) string {

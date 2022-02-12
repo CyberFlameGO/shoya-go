@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"strings"
 	"time"
@@ -57,12 +56,9 @@ func GetTime(c *fiber.Ctx) error {
 func GetInfoPush(c *fiber.Ctx) error {
 	var toPush []ApiInfoPush
 	requiredTags := strings.Split(c.Query("require"), ",")
-	fmt.Println(requiredTags)
 	includedTags := strings.Split(c.Query("include"), ",")
-	fmt.Println(includedTags)
 
 	for _, push := range ApiConfiguration.InfoPushes.Get() {
-		fmt.Println("new push")
 		for _, pushed := range toPush {
 			if push.Id == pushed.Id {
 				break

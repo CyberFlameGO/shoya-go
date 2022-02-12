@@ -1,6 +1,10 @@
 package main
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"fmt"
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+)
 
 func UsersRoutes(router *fiber.App) {
 	users := router.Group("/users")
@@ -29,7 +33,21 @@ func GetUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(cu.GetAPICurrentUser())
 	}
 
-	return c.Status(fiber.StatusOK).JSON(User{})
+	ru := &User{}
+	tx := DB.Where("id = ?", uid).Find(&ru)
+
+	if tx.Error != nil {
+		if tx.Error == gorm.ErrRecordNotFound {
+			return c.Status(404).JSON(fiber.Map{
+				"error": fiber.Map{
+					"message":     fmt.Sprintf("User %s not found", uid),
+					"status_code": 404,
+				},
+			})
+		}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(ru.GetAPIUser(false, false)) // TODO: Implement friendship system. Check friendship.
 }
 
 func PostUser(c *fiber.Ctx) error {

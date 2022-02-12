@@ -23,6 +23,7 @@ func (p *PhotonValidateJoinJWTResponse) FillFromUser(u *User) {
 		StatusDescription:              u.StatusDescription,
 		Bio:                            u.Bio,
 		Tags:                           u.Tags,
+		AllowAvatarCopying:             u.AllowAvatarCopying,
 	}
 	currAvAuthor, err := u.CurrentAvatar.GetAuthor()
 	if err != nil {
@@ -77,6 +78,7 @@ type PhotonPropUser struct {
 	Bio                            string            `json:"bio"`
 	Tags                           []string          `json:"tags"`
 	UnityPackages                  []APIUnityPackage `json:"unityPackages"`
+	AllowAvatarCopying             bool              `json:"allowAvatarCopying"`
 }
 
 type PhotonPropAvatarDict struct {

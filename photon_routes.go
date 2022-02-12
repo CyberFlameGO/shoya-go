@@ -9,6 +9,7 @@ func PhotonRoutes(router *fiber.App) {
 	photon := router.Group("/photon")
 	photon.Get("/ns", photonSecret, doNsAuth)
 	photon.Get("/validateJoin", photonSecret, doJoinTokenValidation)
+	photon.Get("/user", photonSecret, doPropertyUpdate)
 }
 
 var PhotonInvalidParametersResponse = fiber.Map{"ResultCode": 3}
@@ -63,6 +64,23 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 	r := PhotonValidateJoinJWTResponse{
 		Valid: true,
 		IP:    claims.IP,
+	}
+	r.FillFromUser(&u)
+	return c.JSON(r)
+}
+
+func doPropertyUpdate(c *fiber.Ctx) error {
+	var uid = c.Query("userId")
+	var u User
+	tx := DB.Model(&User{}).Preload(clause.Associations).Preload("CurrentAvatar.UnityPackages.File").Preload("FallbackAvatar.UnityPackages.File").
+		Where("id = ?", uid).First(&u)
+	if tx.Error != nil {
+		return c.JSON(PhotonValidateJoinJWTResponse{Valid: false})
+	}
+
+	r := PhotonValidateJoinJWTResponse{
+		Valid: true,
+		IP:    "notset",
 	}
 	r.FillFromUser(&u)
 	return c.JSON(r)
