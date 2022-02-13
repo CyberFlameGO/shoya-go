@@ -20,9 +20,9 @@ func worldsRoutes(app *fiber.App) {
 // getWorlds | /worlds
 //
 // This route retrieves a list of worlds based on various parameters (e.g.: search, offset, number).
-// FIXME: This route is extremely unoptimized.
+// FIXME: This route is extremely unoptimized. Several tons of refactoring and fixing are required.
+// TODO: Implement &tag, as well as &notag searching. No clue how to do this in SQL.
 func getWorlds(c *fiber.Ctx) error {
-	// Variable initialization
 	var isGameRequest = c.Locals("isGameRequest").(bool)
 	var worlds []World
 	var apiWorlds []*APIWorld
@@ -38,9 +38,7 @@ func getWorlds(c *fiber.Ctx) error {
 	// Query preparation
 	var tx = DB.Model(&World{}).
 		Preload("Image").
-		Preload("UnityPackages.File").
-		Limit(numberOfWorldsToSearch).
-		Offset(worldsOffset)
+		Preload("UnityPackages.File")
 
 	// Query parameter setup
 	if c.Query("n") != "" {
@@ -101,8 +99,11 @@ func getWorlds(c *fiber.Ctx) error {
 		}
 	}
 
+	// Additional query prep based on parameters
 	if searchTerm != "" {
-		tx = tx.Where("") // TODO: FTS on world name
+		// TODO: full-text search on world name instead of this jank.
+		searchTerm = "%" + searchTerm + "%"
+		tx = tx.Where("name ILIKE ?", searchTerm)
 	}
 
 	if searchSelf {
@@ -124,6 +125,8 @@ func getWorlds(c *fiber.Ctx) error {
 		}
 	}
 	tx.Where("release_status = ?", searchReleaseStatus)
+	tx.Limit(numberOfWorldsToSearch).Offset(worldsOffset)
+
 	tx.Find(&worlds)
 
 	if isGameRequest {
