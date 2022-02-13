@@ -11,12 +11,20 @@ type PhotonValidateJoinJWTResponse struct {
 }
 
 func (p *PhotonValidateJoinJWTResponse) FillFromUser(u *User) {
+	avatarImageUrl := u.CurrentAvatar.GetImageUrl()
+	avatarImageThumbnailUrl := u.CurrentAvatar.GetThumbnailImageUrl()
+	profilePicOverride := u.ProfilePicOverride
+
+	if profilePicOverride != "" {
+		avatarImageUrl = profilePicOverride
+		avatarImageThumbnailUrl = profilePicOverride
+	}
 	p.User = PhotonPropUser{
 		ID:                             u.ID,
 		DisplayName:                    u.DisplayName,
 		DeveloperType:                  u.DeveloperType,
-		CurrentAvatarImageUrl:          u.CurrentAvatar.GetImageUrl(),
-		CurrentAvatarThumbnailImageUrl: u.CurrentAvatar.GetThumbnailImageUrl(),
+		CurrentAvatarImageUrl:          avatarImageUrl,
+		CurrentAvatarThumbnailImageUrl: avatarImageThumbnailUrl,
 		UserIcon:                       u.UserIcon,
 		LastPlatform:                   u.LastPlatform,
 		Status:                         string(u.Status),

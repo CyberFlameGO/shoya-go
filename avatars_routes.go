@@ -15,7 +15,7 @@ func avatarsRoutes(router *fiber.App) {
 }
 
 func getAvatars(c *fiber.Ctx) error {
-	return c.Status(501).JSON([]fiber.Map{})
+	return c.Status(200).JSON([]fiber.Map{})
 }
 
 func getAvatarFavorites(c *fiber.Ctx) error {

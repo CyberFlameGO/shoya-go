@@ -164,6 +164,15 @@ func (u *User) GetAPIUser(isFriend bool, shouldGetLocation bool) *APIUser {
 		}
 	}
 
+	avatarImageUrl := u.CurrentAvatar.GetImageUrl()
+	avatarImageThumbnailUrl := u.CurrentAvatar.GetThumbnailImageUrl()
+	profilePicOverride := u.ProfilePicOverride
+
+	if profilePicOverride != "" {
+		avatarImageUrl = profilePicOverride
+		avatarImageThumbnailUrl = profilePicOverride
+	}
+
 	return &APIUser{
 		BaseModel: BaseModel{
 			ID:        u.ID,
@@ -174,8 +183,8 @@ func (u *User) GetAPIUser(isFriend bool, shouldGetLocation bool) *APIUser {
 		AllowAvatarCopying:             u.AllowAvatarCopying,
 		Bio:                            u.Bio,
 		BioLinks:                       u.BioLinks,
-		CurrentAvatarImageUrl:          u.CurrentAvatar.GetImageUrl(),
-		CurrentAvatarThumbnailImageUrl: u.CurrentAvatar.GetThumbnailImageUrl(),
+		CurrentAvatarImageUrl:          avatarImageUrl,
+		CurrentAvatarThumbnailImageUrl: avatarImageThumbnailUrl,
 		DateJoined:                     time.Unix(u.CreatedAt, 0).Format("02-01-2006"),
 		DeveloperType:                  u.DeveloperType,
 		DisplayName:                    u.DisplayName,
@@ -185,7 +194,7 @@ func (u *User) GetAPIUser(isFriend bool, shouldGetLocation bool) *APIUser {
 		LastLogin:                      strconv.FormatInt(u.LastLogin, 10), // FIXME (george): Proper dates.
 		LastPlatform:                   Platform(u.LastPlatform),
 		Location:                       location,
-		ProfilePictureOverride:         u.ProfilePicOverride,
+		ProfilePictureOverride:         profilePicOverride,
 		State:                          u.GetState(),
 		Status:                         u.Status,
 		StatusDescription:              u.StatusDescription,
@@ -213,6 +222,15 @@ func (u *User) GetAPILimitedUser(isFriend bool, shouldGetLocation bool) *APILimi
 		}
 	}
 
+	avatarImageUrl := u.CurrentAvatar.GetImageUrl()
+	avatarImageThumbnailUrl := u.CurrentAvatar.GetThumbnailImageUrl()
+	profilePicOverride := u.ProfilePicOverride
+
+	if profilePicOverride != "" {
+		avatarImageUrl = profilePicOverride
+		avatarImageThumbnailUrl = profilePicOverride
+	}
+
 	return &APILimitedUser{
 		BaseModel: BaseModel{
 			ID:        u.ID,
@@ -220,14 +238,14 @@ func (u *User) GetAPILimitedUser(isFriend bool, shouldGetLocation bool) *APILimi
 			UpdatedAt: u.UpdatedAt,
 			DeletedAt: u.DeletedAt,
 		},
-		CurrentAvatarImageUrl:          u.CurrentAvatar.GetImageUrl(),
-		CurrentAvatarThumbnailImageUrl: u.CurrentAvatar.GetThumbnailImageUrl(),
+		CurrentAvatarImageUrl:          avatarImageUrl,
+		CurrentAvatarThumbnailImageUrl: avatarImageThumbnailUrl,
 		DeveloperType:                  u.DeveloperType,
 		DisplayName:                    u.DisplayName,
 		FallbackAvatarId:               u.FallbackAvatarID,
 		IsFriend:                       isFriend,
 		LastPlatform:                   Platform(u.LastPlatform),
-		ProfilePictureOverride:         u.ProfilePicOverride,
+		ProfilePictureOverride:         profilePicOverride,
 		Status:                         u.Status,
 		StatusDescription:              u.StatusDescription,
 		Tags:                           u.Tags,
@@ -237,6 +255,15 @@ func (u *User) GetAPILimitedUser(isFriend bool, shouldGetLocation bool) *APILimi
 }
 
 func (u *User) GetAPICurrentUser() *APICurrentUser {
+	avatarImageUrl := u.CurrentAvatar.GetImageUrl()
+	avatarImageThumbnailUrl := u.CurrentAvatar.GetThumbnailImageUrl()
+	profilePicOverride := u.ProfilePicOverride
+
+	if profilePicOverride != "" {
+		avatarImageUrl = profilePicOverride
+		avatarImageThumbnailUrl = profilePicOverride
+	}
+
 	return &APICurrentUser{
 		BaseModel: BaseModel{
 			ID:        u.ID,
@@ -252,8 +279,8 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 		BioLinks:                       u.BioLinks,
 		CurrentAvatarID:                u.CurrentAvatarID,
 		CurrentAvatarAssetUrl:          u.CurrentAvatar.GetAssetUrl(),
-		CurrentAvatarImageUrl:          u.CurrentAvatar.GetImageUrl(),
-		CurrentAvatarThumbnailImageUrl: u.CurrentAvatar.GetThumbnailImageUrl(),
+		CurrentAvatarImageUrl:          avatarImageUrl,
+		CurrentAvatarThumbnailImageUrl: avatarImageThumbnailUrl,
 		DateJoined:                     time.Unix(u.CreatedAt, 0).Format("02-01-2006"),
 		DeveloperType:                  u.DeveloperType,
 		DisplayName:                    u.DisplayName,
@@ -273,7 +300,7 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 		OfflineFriends:                 []string{}, // TODO: Implement friends.
 		OnlineFriends:                  []string{}, // TODO: Implement friends.
 		PastDisplayNames:               u.GetPastDisplayNames(),
-		ProfilePicOverride:             u.ProfilePicOverride,
+		ProfilePicOverride:             profilePicOverride,
 		State:                          u.GetState(),
 		Status:                         u.Status,
 		StatusDescription:              u.StatusDescription,
