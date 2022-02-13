@@ -11,6 +11,8 @@ func worldsRoutes(app *fiber.App) {
 	worlds := app.Group("/worlds")
 	worlds.Get("/", ApiKeyMiddleware, AuthMiddleware, getWorlds)
 	worlds.Get("/favorites", ApiKeyMiddleware, AuthMiddleware, getWorldFavorites)
+	worlds.Get("/active", ApiKeyMiddleware, AuthMiddleware, getWorldsActive)
+	worlds.Get("/recent", ApiKeyMiddleware, AuthMiddleware, getWorldsRecent)
 	worlds.Get("/:id", ApiKeyMiddleware, AuthMiddleware, getWorld)
 	worlds.Get("/:id/metadata", ApiKeyMiddleware, AuthMiddleware, getWorldMeta)
 }
@@ -155,6 +157,14 @@ badRequest:
 }
 
 func getWorldFavorites(c *fiber.Ctx) error {
+	return c.Status(501).JSON([]fiber.Map{})
+}
+
+func getWorldsActive(c *fiber.Ctx) error {
+	return c.Status(501).JSON([]fiber.Map{})
+}
+
+func getWorldsRecent(c *fiber.Ctx) error {
 	return c.Status(501).JSON([]fiber.Map{})
 }
 
