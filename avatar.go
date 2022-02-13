@@ -59,11 +59,11 @@ func (a *Avatar) GetUnityPackages() []APIUnityPackage {
 }
 
 func (a *Avatar) GetImageUrl() string {
-	return "" // TODO
+	return a.Image.Url
 }
 
 func (a *Avatar) GetThumbnailImageUrl() string {
-	return "" // TODO
+	return a.Image.Url // TODO: Thumbnail service?
 }
 
 func (a *Avatar) GetAPIAvatar() (*APIAvatar, error) {

@@ -34,7 +34,10 @@ func GetUser(c *fiber.Ctx) error {
 	}
 
 	ru := &User{}
-	tx := DB.Where("id = ?", uid).Find(&ru)
+	tx := DB.Where("id = ?", uid).
+		Preload("CurrentAvatar.Image").
+		Preload("FallbackAvatar").
+		Find(&ru)
 
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {

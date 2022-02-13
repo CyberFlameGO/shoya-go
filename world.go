@@ -9,13 +9,15 @@ import (
 
 type World struct {
 	BaseModel
-	AuthorID      string              `json:"authorId"`
-	Name          string              `json:"name"`
-	Description   string              `json:"description"`
-	Capacity      int                 `json:"capacity"`
+	AuthorID      string `json:"authorId"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	Capacity      int    `json:"capacity"`
+	ImageID       string
+	Image         File
 	ReleaseStatus ReleaseStatus       `json:"releaseStatus" gorm:"default:'private'"`
 	Tags          pq.StringArray      `json:"tags" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
-	Version       int                 `json:"version" gorm:"default:0"` // TODO: set to type not null
+	Version       int                 `json:"version" gorm:"type:integer NOT NULL;default:0"`
 	UnityPackages []WorldUnityPackage `json:"unityPackages" gorm:"foreignKey:BelongsToAssetID"`
 }
 
@@ -37,11 +39,11 @@ func (w *World) GetAuthor() (*User, error) {
 }
 
 func (w *World) GetImageUrl() string {
-	return "" // TODO
+	return w.Image.Url
 }
 
 func (w *World) GetThumbnailImageUrl() string {
-	return "" // TODO
+	return w.Image.Url // TODO: Thumbnail service?
 }
 
 func (w *World) GetLatestAssetUrl() string {

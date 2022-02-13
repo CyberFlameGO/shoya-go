@@ -93,14 +93,15 @@ type User struct {
 func NewUser(username, displayName, email, password string) *User {
 	pw, err := argon2id.CreateHash(password, argon2id.DefaultParams)
 	if err != nil {
-		panic(err) // TODO: handle this better
+		panic(err) // panic when crypto fails; sounds good to me tbh.
 	}
 
 	return &User{
 		AcceptedTermsOfServiceVersion: int(ApiConfiguration.CurrentTOSVersion.Get()),
-		Username:                      username,
+		Username:                      strings.ToLower(username),
 		DisplayName:                   displayName,
 		Email:                         email,
+		EmailVerified:                 true,
 		Password:                      pw,
 		CurrentAvatarID:               ApiConfiguration.DefaultAvatar.Get(),
 		FallbackAvatarID:              ApiConfiguration.DefaultAvatar.Get(),

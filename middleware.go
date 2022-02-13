@@ -98,7 +98,10 @@ func AuthMiddleware(c *fiber.Ctx) error {
 	}
 
 	u := User{}
-	err = DB.Preload(clause.Associations).Where("id = ?", uid).First(&u).Error
+	err = DB.Preload(clause.Associations).
+		Preload("CurrentAvatar.Image").
+		Preload("FallbackAvatar").
+		Where("id = ?", uid).First(&u).Error
 	if err != nil {
 		return c.Status(401).JSON(ErrInvalidCredentialsResponse)
 	}
@@ -204,11 +207,12 @@ func parseVrchatBasicAuth(authHeader string) (string, string, error) {
 		return "", "", err
 	}
 
-	return username, password, nil
+	return strings.ToLower(username), password, nil
 }
 
 func shouldDoInDepthClientChecks(path string) bool {
 	if path == "/auth" ||
+		path == "/auth/user" ||
 		path == "/config" ||
 		path == "/time" ||
 		path == "/auth/user/notifications" {

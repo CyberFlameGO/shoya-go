@@ -27,6 +27,7 @@ func getLicensedAvatars(c *fiber.Ctx) error {
 }
 
 func getAvatar(c *fiber.Ctx) error {
+	var isGameRequest = c.Locals("isGameRequest").(bool)
 	var a Avatar
 	tx := DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&Avatar{}).Where("id = ?", c.Params("id")).First(&a)
 	if tx.Error != nil {
@@ -35,8 +36,15 @@ func getAvatar(c *fiber.Ctx) error {
 		}
 	}
 
-	// aa, err := w.GetAPIAvatar()
-	aa, err := a.GetAPIAvatarWithPackages() // TODO: Flip based on request context. currently like this for testing.
+	var aa *APIAvatar
+	var aap *APIAvatarWithPackages
+	var err error
+
+	if isGameRequest {
+		aap, err = a.GetAPIAvatarWithPackages()
+	} else {
+		aa, err = a.GetAPIAvatar()
+	}
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
@@ -46,5 +54,9 @@ func getAvatar(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(aa)
+	if isGameRequest {
+		return c.JSON(aa)
+	} else {
+		return c.JSON(aap)
+	}
 }

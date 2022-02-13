@@ -55,7 +55,11 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 	}
 
 	var u User
-	tx := DB.Model(&User{}).Preload(clause.Associations).Preload("CurrentAvatar.UnityPackages.File").Preload("FallbackAvatar.UnityPackages.File").
+	tx := DB.Model(&User{}).Preload(clause.Associations).
+		Preload("CurrentAvatar.Image").
+		Preload("FallbackAvatar.Image").
+		Preload("CurrentAvatar.UnityPackages.File").
+		Preload("FallbackAvatar.UnityPackages.File").
 		Where("id = ?", claims.UserId).First(&u)
 	if tx.Error != nil {
 		return c.JSON(PhotonValidateJoinJWTResponse{Valid: false})
@@ -72,7 +76,11 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 func doPropertyUpdate(c *fiber.Ctx) error {
 	var uid = c.Query("userId")
 	var u User
-	tx := DB.Model(&User{}).Preload(clause.Associations).Preload("CurrentAvatar.UnityPackages.File").Preload("FallbackAvatar.UnityPackages.File").
+	tx := DB.Model(&User{}).Preload(clause.Associations).
+		Preload("CurrentAvatar.Image").
+		Preload("FallbackAvatar.Image").
+		Preload("CurrentAvatar.UnityPackages.File").
+		Preload("FallbackAvatar.UnityPackages.File").
 		Where("id = ?", uid).First(&u)
 	if tx.Error != nil {
 		return c.JSON(PhotonValidateJoinJWTResponse{Valid: false})

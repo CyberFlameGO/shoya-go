@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"strconv"
 )
 
 func worldsRoutes(app *fiber.App) {
@@ -14,8 +15,143 @@ func worldsRoutes(app *fiber.App) {
 	worlds.Get("/:id/metadata", ApiKeyMiddleware, AuthMiddleware, getWorldMeta)
 }
 
+// getWorlds | /worlds
+//
+// This route retrieves a list of worlds based on various parameters (e.g.: search, offset, number).
+// FIXME: This route is extremely unoptimized.
 func getWorlds(c *fiber.Ctx) error {
-	return c.Status(501).JSON([]fiber.Map{})
+	// Variable initialization
+	var isGameRequest = c.Locals("isGameRequest").(bool)
+	var worlds []World
+	var apiWorlds []*APIWorld
+	var apiWorldsPackages []*APIWorldWithPackages
+	var u = c.Locals("user").(*User)
+	var numberOfWorldsToSearch = 60
+	var worldsOffset = 0
+	var searchTerm = ""
+	var searchSelf = false
+	var searchUser = ""
+	var searchReleaseStatus = ReleaseStatusPublic
+
+	// Query preparation
+	var tx = DB.Model(&World{}).
+		Preload("Image").
+		Preload("UnityPackages.File").
+		Limit(numberOfWorldsToSearch).
+		Offset(worldsOffset)
+
+	// Query parameter setup
+	if c.Query("n") != "" {
+		atoi, err := strconv.Atoi(c.Query("n"))
+		if err != nil {
+			goto badRequest
+		}
+
+		if atoi < 1 || atoi > 100 {
+			goto badRequest
+		}
+
+		numberOfWorldsToSearch = atoi
+	}
+
+	if c.Query("offset") != "" {
+		atoi, err := strconv.Atoi(c.Query("offset"))
+		if err != nil {
+			goto badRequest
+		}
+
+		if atoi < 0 {
+			goto badRequest
+		}
+
+		worldsOffset = atoi
+	}
+
+	if c.Query("search") != "" {
+		searchTerm = c.Query("search")
+	}
+
+	if c.Query("user") == "me" {
+		searchSelf = true
+	}
+
+	if c.Query("userId") != "" {
+		searchUser = c.Query("userId")
+	}
+
+	if c.Query("releaseStatus") != "" {
+		switch c.Query("releaseStatus") {
+		case string(ReleaseStatusPublic):
+			searchReleaseStatus = ReleaseStatusPublic
+			break
+		case string(ReleaseStatusPrivate):
+			searchReleaseStatus = ReleaseStatusPrivate
+			if searchSelf == false {
+				searchSelf = true
+			}
+			if searchUser == "" {
+				searchUser = u.ID
+			}
+			break
+		case string(ReleaseStatusHidden):
+			searchReleaseStatus = ReleaseStatusHidden
+			break
+		}
+	}
+
+	if searchTerm != "" {
+		tx = tx.Where("") // TODO: FTS on world name
+	}
+
+	if searchSelf {
+		tx = tx.Where("author_id = ?", u.ID)
+	}
+
+	if searchUser != "" {
+		tx = tx.Where("author_id = ?", searchUser)
+	}
+
+	if searchReleaseStatus != ReleaseStatusPublic {
+		if searchReleaseStatus == ReleaseStatusHidden && u.DeveloperType != "internal" {
+			goto badRequest
+		}
+
+		if searchReleaseStatus == ReleaseStatusPrivate &&
+			(searchUser != u.ID || searchSelf == false) && u.DeveloperType != "internal" {
+			goto badRequest
+		}
+	}
+	tx.Where("release_status = ?", searchReleaseStatus)
+	tx.Find(&worlds)
+
+	if isGameRequest {
+		for _, world := range worlds {
+			wp, err := world.GetAPIWorldWithPackages()
+			if err != nil {
+				return err
+			}
+			apiWorldsPackages = append(apiWorldsPackages, wp)
+		}
+		return c.JSON(apiWorldsPackages)
+	} else {
+		for _, world := range worlds {
+			w, err := world.GetAPIWorld()
+			if err != nil {
+				return err
+			}
+			apiWorlds = append(apiWorlds, w)
+		}
+
+		return c.JSON(apiWorlds)
+	}
+
+badRequest:
+	return c.Status(400).JSON(fiber.Map{
+		"error": fiber.Map{
+			"message":     "Bad request",
+			"status_code": 400,
+		},
+	})
 }
 
 func getWorldFavorites(c *fiber.Ctx) error {
@@ -23,7 +159,12 @@ func getWorldFavorites(c *fiber.Ctx) error {
 }
 
 func getWorld(c *fiber.Ctx) error {
+	var isGameRequest = c.Locals("isGameRequest").(bool)
 	var w World
+	var aw *APIWorld
+	var awp *APIWorldWithPackages
+	var err error
+
 	tx := DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&World{}).Where("id = ?", c.Params("id")).First(&w)
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
@@ -31,8 +172,11 @@ func getWorld(c *fiber.Ctx) error {
 		}
 	}
 
-	// aw, err := w.GetAPIWorld()
-	aw, err := w.GetAPIWorldWithPackages() // TODO: Flip based on request context. currently like this for testing.
+	if isGameRequest {
+		awp, err = w.GetAPIWorldWithPackages()
+	} else {
+		aw, err = w.GetAPIWorld()
+	}
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
@@ -41,7 +185,12 @@ func getWorld(c *fiber.Ctx) error {
 			},
 		})
 	}
-	return c.JSON(aw)
+
+	if isGameRequest {
+		return c.JSON(awp)
+	} else {
+		return c.JSON(aw)
+	}
 }
 
 func getWorldMeta(c *fiber.Ctx) error {
