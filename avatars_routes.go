@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func AvatarsRoutes(router *fiber.App) {
+func avatarsRoutes(router *fiber.App) {
 	avatars := router.Group("/avatars")
 	avatars.Get("/", ApiKeyMiddleware, AuthMiddleware, getAvatars)
 	avatars.Get("/favorites", ApiKeyMiddleware, AuthMiddleware, getAvatarFavorites)

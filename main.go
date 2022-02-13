@@ -35,11 +35,11 @@ func main() {
 
 	systemRoutes(app)
 	authRoutes(app)
-	UsersRoutes(app)
+	usersRoutes(app)
 	worldsRoutes(app)
-	PhotonRoutes(app)
-	InstanceRoutes(app)
-	AvatarsRoutes(app)
+	photonRoutes(app)
+	instanceRoutes(app)
+	avatarsRoutes(app)
 
 	log.Fatal(app.Listen(RuntimeConfig.Server.Address))
 }

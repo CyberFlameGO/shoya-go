@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func PhotonRoutes(router *fiber.App) {
+func photonRoutes(router *fiber.App) {
 	photon := router.Group("/photon")
 	photon.Get("/ns", photonSecret, doNsAuth)
 	photon.Get("/validateJoin", photonSecret, doJoinTokenValidation)

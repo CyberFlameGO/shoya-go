@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func UsersRoutes(router *fiber.App) {
+func usersRoutes(router *fiber.App) {
 	users := router.Group("/users")
 	users.Get("/", GetUsers)
 	users.Get("/:id", ApiKeyMiddleware, AuthMiddleware, GetUser)

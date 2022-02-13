@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func InstanceRoutes(router *fiber.App) {
+func instanceRoutes(router *fiber.App) {
 	instances := router.Group("/instances")
 	instances.Get("/:instanceId", ApiKeyMiddleware, AuthMiddleware, getInstance)
 	instances.Get("/:instanceId/join", ApiKeyMiddleware, AuthMiddleware, joinInstance)
