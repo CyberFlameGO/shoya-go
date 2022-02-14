@@ -63,7 +63,7 @@ func (u *WorldUnityPackage) GetAPIUnityPackage(withAssetUrl bool) *APIUnityPacka
 	}
 	return &APIUnityPackage{
 		ID:              u.ID,
-		CreatedAt:       time.Unix(u.CreatedAt, 0).Format("02-01-2006"),
+		CreatedAt:       time.Unix(u.CreatedAt, 0).UTC().Format(time.RFC3339Nano),
 		AssetUrl:        assetUrl,
 		Platform:        u.Platform,
 		UnityVersion:    u.UnityVersion,
@@ -90,7 +90,7 @@ func (u *AvatarUnityPackage) BeforeCreate(tx *gorm.DB) (err error) {
 func (u *AvatarUnityPackage) GetAPIUnityPackage() *APIUnityPackage {
 	return &APIUnityPackage{
 		ID:              u.ID,
-		CreatedAt:       time.Unix(u.CreatedAt, 0).Format("02-01-2006"),
+		CreatedAt:       time.Unix(u.CreatedAt, 0).UTC().Format(time.RFC3339Nano),
 		AssetUrl:        u.File.Url,
 		Platform:        u.Platform,
 		UnityVersion:    u.UnityVersion,

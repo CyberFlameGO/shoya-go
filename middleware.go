@@ -152,8 +152,6 @@ func IsGameRequestMiddleware(c *fiber.Ctx) error {
 		}
 
 		if _, ok := headers["X-Macaddress"]; !ok {
-			// FIXME(?): Fiber (or fasthttp?) seems to be editing the headers before we get them.
-			//			 resulting in X-MacAddress being turned to X-Macaddress.
 			goto failedChecks
 		}
 

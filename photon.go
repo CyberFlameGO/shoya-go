@@ -46,7 +46,7 @@ func (p *PhotonValidateJoinJWTResponse) FillFromUser(u *User) {
 		AssetUrl:          u.CurrentAvatar.GetAssetUrl(),
 		AuthorId:          u.CurrentAvatar.AuthorID,
 		AuthorName:        currAvAuthor.DisplayName,
-		UpdatedAt:         time.Unix(u.CurrentAvatar.UpdatedAt, 0).Format("02-01-2006"),
+		UpdatedAt:         time.Unix(u.CurrentAvatar.CreatedAt, 0).UTC().Format(time.RFC3339Nano),
 		Description:       u.CurrentAvatar.Description,
 		ImageUrl:          u.CurrentAvatar.GetImageUrl(),
 		ThumbnailImageUrl: u.CurrentAvatar.GetThumbnailImageUrl(),
@@ -61,7 +61,7 @@ func (p *PhotonValidateJoinJWTResponse) FillFromUser(u *User) {
 		AssetUrl:          u.FallbackAvatar.GetAssetUrl(),
 		AuthorId:          u.FallbackAvatar.AuthorID,
 		AuthorName:        fbAvAuthor.DisplayName,
-		UpdatedAt:         time.Unix(u.FallbackAvatar.UpdatedAt, 0).Format("02-01-2006"),
+		UpdatedAt:         time.Unix(u.FallbackAvatar.CreatedAt, 0).UTC().Format(time.RFC3339Nano),
 		Description:       u.FallbackAvatar.Description,
 		ImageUrl:          u.FallbackAvatar.GetImageUrl(),
 		ThumbnailImageUrl: u.FallbackAvatar.GetThumbnailImageUrl(),
@@ -80,7 +80,7 @@ type PhotonPropUser struct {
 	CurrentAvatarImageUrl          string            `json:"currentAvatarImageUrl"`
 	CurrentAvatarThumbnailImageUrl string            `json:"currentAvatarThumbnailImageUrl"`
 	UserIcon                       string            `json:"userIcon"`
-	LastPlatform                   string            `json:"lastPlatform"`
+	LastPlatform                   string            `json:"last_platform"`
 	Status                         string            `json:"status"`
 	StatusDescription              string            `json:"statusDescription"`
 	Bio                            string            `json:"bio"`

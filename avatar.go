@@ -16,7 +16,7 @@ type Avatar struct {
 	Image         File
 	ReleaseStatus ReleaseStatus
 	Tags          pq.StringArray       `json:"tags" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
-	Version       int                  `json:"version" gorm:"default:0"` // TODO: set to type not null
+	Version       int                  `json:"version" gorm:"type:integer NOT NULL;default:0"`
 	UnityPackages []AvatarUnityPackage `gorm:"foreignKey:BelongsToAssetID"`
 }
 
@@ -76,7 +76,7 @@ func (a *Avatar) GetAPIAvatar() (*APIAvatar, error) {
 		ID:                a.ID,
 		AuthorID:          a.AuthorID,
 		AuthorName:        au.DisplayName,
-		CreatedAt:         time.Unix(a.CreatedAt, 0).Format("02-01-2006"), // TODO: Verify whether this is the correct format.
+		CreatedAt:         time.Unix(a.CreatedAt, 0).UTC().Format(time.RFC3339Nano),
 		Description:       a.Description,
 		Featured:          false,
 		ImageUrl:          a.GetImageUrl(),

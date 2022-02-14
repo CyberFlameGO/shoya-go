@@ -8,6 +8,10 @@ import (
 )
 
 func usersRoutes(router *fiber.App) {
+	// VRChat is inconsistent with how the do routing. Some are under /user, others /users.
+	user := router.Group("/user")
+	user.Get("/:id/friendStatus", ApiKeyMiddleware, AuthMiddleware, getUserFriendStatus)
+
 	users := router.Group("/users")
 	users.Get("/", GetUsers)
 	users.Get("/:id", ApiKeyMiddleware, AuthMiddleware, GetUser)
@@ -19,7 +23,7 @@ func usersRoutes(router *fiber.App) {
 
 func GetUsers(c *fiber.Ctx) error {
 	var users []User
-	var rUsers []*APILimitedUser
+	var rUsers = make([]*APILimitedUser, 0)
 	var searchTerm string
 	var searchDeveloperType string
 	var searchOffset = 0
@@ -136,4 +140,13 @@ func DeleteUser(c *fiber.Ctx) error {
 
 func GetUserFeedback(c *fiber.Ctx) error {
 	return c.JSON([]interface{}{})
+}
+
+func getUserFriendStatus(c *fiber.Ctx) error {
+	// TODO: Implement friendships.
+	return c.JSON(fiber.Map{
+		"incomingRequest": false,
+		"isFriend":        false,
+		"outgoingRequest": false,
+	})
 }

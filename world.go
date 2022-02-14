@@ -44,7 +44,6 @@ func (w *World) GetImageUrl() string {
 }
 
 // GetThumbnailImageUrl returns the Url present in the Image field.
-// TODO: Implement a thumbnails service.
 func (w *World) GetThumbnailImageUrl() string {
 	return w.Image.Url
 }
@@ -84,7 +83,7 @@ func (w *World) GetAPIWorld() (*APIWorld, error) {
 		AuthorID:    a.ID,
 		AuthorName:  a.DisplayName,
 		Capacity:    w.Capacity,
-		CreatedAt:   time.Unix(w.CreatedAt, 0).Format("02-01-2006"), // TODO: Verify whether this is the correct format.
+		CreatedAt:   time.Unix(w.CreatedAt, 0).UTC().Format(time.RFC3339Nano),
 		Description: w.Description,
 		Favorites:   0, // TODO: Implement favorites.
 		Heat:        0, // TODO: What the fuck is a "Heat"? Seems like an internal metric. Might always set to 0.
