@@ -7,21 +7,22 @@ import (
 )
 
 func systemRoutes(router *fiber.App) {
-	router.Get("/config", GetConfig)
-	router.Get("/health", GetHealth)
-	router.Get("/time", GetTime)
-	router.Put("/logout", Logout)
-	router.Get("/infoPush", GetInfoPush)
+	router.Get("/config", getConfig)
+	router.Get("/health", getHealth)
+	router.Get("/time", getTime)
+	router.Put("/logout", putLogout)
+	router.Get("/infoPush", getInfoPush)
+	router.Get("/visits", getVisits)
 }
 
-func GetHealth(c *fiber.Ctx) error {
+func getHealth(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{
 		"status":     "ok",
 		"serverName": ApiConfiguration.ServerName.Get(),
 	})
 }
 
-func GetConfig(c *fiber.Ctx) error {
+func getConfig(c *fiber.Ctx) error {
 	// Add cookie to response
 	c.Cookie(&fiber.Cookie{
 		Name:     "apiKey",
@@ -31,7 +32,7 @@ func GetConfig(c *fiber.Ctx) error {
 	return c.JSON(NewApiConfigResponse(&ApiConfiguration))
 }
 
-func Logout(c *fiber.Ctx) error {
+func putLogout(c *fiber.Ctx) error {
 	c.Cookie(&fiber.Cookie{
 		Name:     "auth",
 		Value:    "",
@@ -49,11 +50,11 @@ func Logout(c *fiber.Ctx) error {
 	})
 }
 
-func GetTime(c *fiber.Ctx) error {
+func getTime(c *fiber.Ctx) error {
 	return c.JSON(time.Now().UTC().Format("2006-01-02T15:04:05+00:00"))
 }
 
-func GetInfoPush(c *fiber.Ctx) error {
+func getInfoPush(c *fiber.Ctx) error {
 	var toPush []ApiInfoPush
 	requiredTags := strings.Split(c.Query("require"), ",")
 	includedTags := strings.Split(c.Query("include"), ",")
@@ -87,4 +88,8 @@ func GetInfoPush(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(toPush)
+}
+
+func getVisits(c *fiber.Ctx) error {
+	return c.JSON(0)
 }

@@ -56,11 +56,15 @@ func (u *WorldUnityPackage) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-func (u *WorldUnityPackage) GetAPIUnityPackage() *APIUnityPackage {
+func (u *WorldUnityPackage) GetAPIUnityPackage(withAssetUrl bool) *APIUnityPackage {
+	var assetUrl = ""
+	if withAssetUrl {
+		assetUrl = u.File.Url
+	}
 	return &APIUnityPackage{
 		ID:              u.ID,
 		CreatedAt:       time.Unix(u.CreatedAt, 0).Format("02-01-2006"),
-		AssetUrl:        u.File.Url,
+		AssetUrl:        assetUrl,
 		Platform:        u.Platform,
 		UnityVersion:    u.UnityVersion,
 		UnitySortNumber: u.UnitySortNumber,
@@ -70,7 +74,7 @@ func (u *WorldUnityPackage) GetAPIUnityPackage() *APIUnityPackage {
 type AvatarUnityPackage struct {
 	BaseModel
 	BelongsToAssetID string
-	FileID           string
+	FileID           string   `json:"-"`
 	File             File     `json:"-"`
 	Version          int      `json:"assetVersion"`
 	Platform         Platform `json:"platform"`

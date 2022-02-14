@@ -26,11 +26,11 @@ func (w *World) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-// GetAuthor returns the author of the world
+// GetAuthor returns a pointer to the world author's User.
 func (w *World) GetAuthor() (*User, error) {
 	var u User
 
-	tx := DB.Find(&u).Where("id = ?", w.AuthorID)
+	tx := DB.Where("id = ?", w.AuthorID).Find(&u)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
@@ -38,14 +38,19 @@ func (w *World) GetAuthor() (*User, error) {
 	return &u, nil
 }
 
+// GetImageUrl returns the Url present in the Image field.
 func (w *World) GetImageUrl() string {
 	return w.Image.Url
 }
 
+// GetThumbnailImageUrl returns the Url present in the Image field.
+// TODO: Implement a thumbnails service.
 func (w *World) GetThumbnailImageUrl() string {
-	return w.Image.Url // TODO: Thumbnail service?
+	return w.Image.Url
 }
 
+// GetLatestAssetUrl iterates through a World's UnityPackages and returns the Url present in the File
+// of the UnityPackage with the highest version number.
 func (w *World) GetLatestAssetUrl() string {
 	var assetUrl string
 	maxVersion := 0
@@ -58,10 +63,11 @@ func (w *World) GetLatestAssetUrl() string {
 	return assetUrl
 }
 
-func (w *World) GetUnityPackages() []APIUnityPackage {
+// GetUnityPackages returns a list of APIUnityPackage.
+func (w *World) GetUnityPackages(withAssetUrls bool) []APIUnityPackage {
 	var pkgs []APIUnityPackage
 	for _, pkg := range w.UnityPackages {
-		pkgs = append(pkgs, *pkg.GetAPIUnityPackage())
+		pkgs = append(pkgs, *pkg.GetAPIUnityPackage(withAssetUrls))
 	}
 
 	return pkgs
@@ -97,6 +103,7 @@ func (w *World) GetAPIWorld() (*APIWorld, error) {
 		Tags:                w.Tags,
 		ThumbnailImageUrl:   w.GetThumbnailImageUrl(),
 		Version:             w.Version,
+		UnityPackages:       w.GetUnityPackages(false),
 		Visits:              0, // TODO: Implement metrics.
 	}, nil
 }
@@ -108,34 +115,35 @@ func (w *World) GetAPIWorldWithPackages() (*APIWorldWithPackages, error) {
 	return &APIWorldWithPackages{
 		APIWorld:      *a,
 		AssetUrl:      w.GetLatestAssetUrl(),
-		UnityPackages: w.GetUnityPackages(),
+		UnityPackages: w.GetUnityPackages(true),
 	}, nil
 }
 
 type APIWorld struct {
-	ID                  string        `json:"id"`
-	AuthorID            string        `json:"authorId"`
-	AuthorName          string        `json:"authorName"`
-	Capacity            int           `json:"capacity"`
-	CreatedAt           string        `json:"created_at"`
-	Description         string        `json:"description"`
-	Favorites           int           `json:"favorites"`
-	Heat                int           `json:"heat"`
-	ImageUrl            string        `json:"imageUrl"`
-	Instances           [][]string    `json:"instances"`
-	LabsPublicationDate string        `json:"labsPublicationDate"`
-	Name                string        `json:"name"`
-	Occupants           int           `json:"occupants"`
-	Organization        string        `json:"organization"`
-	PluginUrlObject     interface{}   `json:"pluginUrlObject"`
-	PreviewYoutubeId    string        `json:"previewYoutubeId"`
-	PrivateOccupants    int           `json:"privateOccupants"`
-	PublicOccupants     int           `json:"publicOccupants"`
-	ReleaseStatus       ReleaseStatus `json:"releaseStatus"`
-	Tags                []string      `json:"tags"`
-	ThumbnailImageUrl   string        `json:"thumbnailImageUrl"`
-	Version             int           `json:"version"`
-	Visits              int           `json:"visits"`
+	ID                  string            `json:"id"`
+	AuthorID            string            `json:"authorId"`
+	AuthorName          string            `json:"authorName"`
+	Capacity            int               `json:"capacity"`
+	CreatedAt           string            `json:"created_at"`
+	Description         string            `json:"description"`
+	Favorites           int               `json:"favorites"`
+	Heat                int               `json:"heat"`
+	ImageUrl            string            `json:"imageUrl"`
+	Instances           [][]string        `json:"instances"`
+	LabsPublicationDate string            `json:"labsPublicationDate"`
+	Name                string            `json:"name"`
+	Occupants           int               `json:"occupants"`
+	Organization        string            `json:"organization"`
+	PluginUrlObject     interface{}       `json:"pluginUrlObject"`
+	PreviewYoutubeId    string            `json:"previewYoutubeId"`
+	PrivateOccupants    int               `json:"privateOccupants"`
+	PublicOccupants     int               `json:"publicOccupants"`
+	ReleaseStatus       ReleaseStatus     `json:"releaseStatus"`
+	Tags                []string          `json:"tags"`
+	ThumbnailImageUrl   string            `json:"thumbnailImageUrl"`
+	Version             int               `json:"version"`
+	Visits              int               `json:"visits"`
+	UnityPackages       []APIUnityPackage `json:"unityPackages"`
 }
 
 type APIWorldWithPackages struct {

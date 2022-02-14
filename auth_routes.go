@@ -129,11 +129,7 @@ func getSelf(c *fiber.Ctx) error {
 // getNotifications | /auth/user/notifications
 // Returns the current user's notifications.
 func getNotifications(c *fiber.Ctx) error {
-	u := c.Locals("user").(*User)
-
-	return c.Status(200).JSON(fiber.Map{
-		"user": u,
-	}) // TODO: implement
+	return c.Status(200).JSON([]fiber.Map{}) // TODO: implement
 }
 
 func getSubscription(c *fiber.Ctx) error {

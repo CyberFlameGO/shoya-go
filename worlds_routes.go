@@ -15,9 +15,10 @@ func worldsRoutes(app *fiber.App) {
 	worlds.Get("/recent", ApiKeyMiddleware, AuthMiddleware, getWorldsRecent)
 	worlds.Get("/:id", ApiKeyMiddleware, AuthMiddleware, getWorld)
 	worlds.Get("/:id/metadata", ApiKeyMiddleware, AuthMiddleware, getWorldMeta)
+	worlds.Get("/:id/publish", ApiKeyMiddleware, AuthMiddleware, getWorldPublish)
 }
 
-// getWorlds | /worlds
+// getWorlds | GET /worlds
 //
 // This route retrieves a list of worlds based on various parameters (e.g.: search, offset, number).
 // FIXME: This route is extremely unoptimized. Several tons of refactoring and fixing are required.
@@ -171,6 +172,11 @@ func getWorldsRecent(c *fiber.Ctx) error {
 	return c.Status(501).JSON([]fiber.Map{})
 }
 
+// getWorld | GET /worlds/:id
+//
+// This route retrieves information regarding a specific world id.
+// The returned JSON is an array of either APIWorld, or APIWorldWithPackages
+// It varies based on the request source (see: IsGameRequestMiddleware)
 func getWorld(c *fiber.Ctx) error {
 	var isGameRequest = c.Locals("isGameRequest").(bool)
 	var w World
@@ -206,9 +212,36 @@ func getWorld(c *fiber.Ctx) error {
 	}
 }
 
+// getWorldMeta | GET /worlds/:id/metadata
+//
+// This route returns metadata about a specific world id. At this time, there is only a "boilerplate" implementation,
+// with no functional metadata sourcing.
 func getWorldMeta(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"id":       c.Params("id"),
 		"metadata": fiber.Map{},
+	})
+}
+
+func getWorldPublish(c *fiber.Ctx) error {
+	var u *User
+	var w World
+
+	u = c.Locals("user").(*User)
+	tx := DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&World{}).Where("id = ?", c.Params("id")).First(&w)
+	if tx.Error != nil {
+		if tx.Error == gorm.ErrRecordNotFound {
+			return c.Status(404).JSON(ErrWorldNotFoundResponse)
+		}
+	}
+
+	if u.ID == w.AuthorID {
+		return c.JSON(fiber.Map{
+			"canPublish": true, // always true, not planning on doing labs.
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"canPublish": false,
 	})
 }
