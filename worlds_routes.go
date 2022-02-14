@@ -26,11 +26,12 @@ func worldsRoutes(app *fiber.App) {
 func getWorlds(c *fiber.Ctx) error {
 	var isGameRequest = c.Locals("isGameRequest").(bool)
 	var worlds []World
-	var apiWorlds []*APIWorld
-	var apiWorldsPackages []*APIWorldWithPackages
+	var apiWorlds = make([]*APIWorld, 0)
+	var apiWorldsPackages = make([]*APIWorldWithPackages, 0)
 	var u = c.Locals("user").(*User)
 	var numberOfWorldsToSearch = 60
 	var worldsOffset = 0
+	var searchSort = ""
 	var searchTerm = ""
 	var searchSelf = false
 	var searchUser = ""
@@ -100,6 +101,10 @@ func getWorlds(c *fiber.Ctx) error {
 		}
 	}
 
+	if c.Query("sort") != "" {
+		searchSort = c.Query("sort")
+	}
+
 	// Additional query prep based on parameters
 	if searchTerm != "" {
 		// TODO: full-text search on world name instead of this jank.
@@ -113,6 +118,12 @@ func getWorlds(c *fiber.Ctx) error {
 
 	if searchUser != "" {
 		tx = tx.Where("author_id = ?", searchUser)
+	}
+
+	if searchSort != "" {
+		if searchSort == "shuffle" {
+			tx.Order("random()")
+		}
 	}
 
 	if searchReleaseStatus != ReleaseStatusPublic {
