@@ -2,9 +2,11 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strconv"
+	"strings"
 )
 
 func worldsRoutes(app *fiber.App) {
@@ -33,6 +35,8 @@ func getWorlds(c *fiber.Ctx) error {
 	var worldsOffset = 0
 	var searchSort = ""
 	var searchTerm = ""
+	var searchTagsInclude = make([]string, 0)
+	var searchTagsExclude = make([]string, 0)
 	var searchSelf = false
 	var searchUser = ""
 	var searchReleaseStatus = ReleaseStatusPublic
@@ -81,6 +85,20 @@ func getWorlds(c *fiber.Ctx) error {
 		searchUser = c.Query("userId")
 	}
 
+	if c.Query("tag") != "" {
+		tags := strings.Split(c.Query("tag"), ",")
+		for _, tag := range tags {
+			searchTagsInclude = append(searchTagsInclude, tag)
+		}
+	}
+
+	if c.Query("notag") != "" {
+		tags := strings.Split(c.Query("notag"), ",")
+		for _, tag := range tags {
+			searchTagsExclude = append(searchTagsExclude, tag)
+		}
+	}
+
 	if c.Query("releaseStatus") != "" {
 		switch c.Query("releaseStatus") {
 		case string(ReleaseStatusPublic):
@@ -118,6 +136,14 @@ func getWorlds(c *fiber.Ctx) error {
 
 	if searchUser != "" {
 		tx = tx.Where("author_id = ?", searchUser)
+	}
+
+	if len(searchTagsInclude) > 0 {
+		tx.Where("(?::text[] && tags) IS true", pq.StringArray(searchTagsInclude))
+	}
+
+	if len(searchTagsExclude) > 0 {
+		tx.Where("(?::text[] && tags) IS NOT true", pq.StringArray(searchTagsExclude))
 	}
 
 	if searchSort != "" {

@@ -126,6 +126,20 @@ func (u *User) CheckPassword(password string) (bool, error) {
 	return m, nil
 }
 
+func (u *User) IsStaff() bool {
+	for _, tag := range u.Tags {
+		if tag == "admin_moderator" {
+			return true
+		}
+	}
+
+	if u.DeveloperType == "internal" {
+		return true
+	}
+
+	return false
+}
+
 // GetState returns the state of the user from the presence service.
 func (u *User) GetState() UserState {
 	return UserStateActive // TODO: Implement presence service.

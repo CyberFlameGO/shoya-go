@@ -13,15 +13,15 @@ func usersRoutes(router *fiber.App) {
 	user.Get("/:id/friendStatus", ApiKeyMiddleware, AuthMiddleware, getUserFriendStatus)
 
 	users := router.Group("/users")
-	users.Get("/", GetUsers)
-	users.Get("/:id", ApiKeyMiddleware, AuthMiddleware, GetUser)
-	users.Get("/:id/feedback", ApiKeyMiddleware, AuthMiddleware, GetUserFeedback)
-	users.Post("/", PostUser)
-	users.Put("/:id", PutUser)
-	users.Delete("/:id", DeleteUser)
+	users.Get("/", getUsers)
+	users.Get("/:id", ApiKeyMiddleware, AuthMiddleware, getUser)
+	users.Get("/:id/feedback", ApiKeyMiddleware, AuthMiddleware, getUserFeedback)
+	users.Post("/", postUser)
+	users.Put("/:id", putUser)
+	users.Delete("/:id", deleteUser)
 }
 
-func GetUsers(c *fiber.Ctx) error {
+func getUsers(c *fiber.Ctx) error {
 	var users []User
 	var rUsers = make([]*APILimitedUser, 0)
 	var searchTerm string
@@ -93,7 +93,7 @@ badRequest:
 	})
 }
 
-func GetUser(c *fiber.Ctx) error {
+func getUser(c *fiber.Ctx) error {
 	cu, ok := c.Locals("user").(*User)
 	if !ok {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -126,19 +126,29 @@ func GetUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(ru.GetAPIUser(false, false)) // TODO: Implement friendship system. Check friendship.
 }
 
-func PostUser(c *fiber.Ctx) error {
+func postUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(User{})
 }
 
-func PutUser(c *fiber.Ctx) error {
+func putUser(c *fiber.Ctx) error {
+	cu := c.Locals("user").(*User)
+
+	if c.Params("id") != cu.ID && !cu.IsStaff() {
+		return c.Status(403).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     "You're not allowed to update another user's profile",
+				"status_code": 403,
+			},
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(cu.GetAPICurrentUser())
+}
+
+func deleteUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(User{})
 }
 
-func DeleteUser(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).JSON(User{})
-}
-
-func GetUserFeedback(c *fiber.Ctx) error {
+func getUserFeedback(c *fiber.Ctx) error {
 	return c.JSON([]interface{}{})
 }
 
