@@ -166,6 +166,21 @@ func postUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(User{})
 }
 
+// putUser | PUT /users/:id
+// This endpoint is used to update the information of a user.
+//
+// The following fields can be updated via this endpoint:
+//  - acceptedTOSVersion
+//  - bio
+//  - bioLinks [Not Implemented]
+//  - status
+//  - statusDescription
+//  - email
+//  - displayName [Not Implemented]
+//  - userIcon [Staff-only]
+//  - profilePicOverride [Staff-only]
+//
+// FIXME: This endpoint is horribly unoptimized.
 func putUser(c *fiber.Ctx) error {
 	// dear client team, why are you sending separate PUT requests for status, statusDescription?
 	var r UpdateUserRequest
@@ -178,6 +193,7 @@ func putUser(c *fiber.Ctx) error {
 	var statusDescriptionChanged bool
 	var userIconChanged bool
 	var profilePicOverrideChanged bool
+	var tagsChanged bool
 
 	if c.Params("id") != cu.ID && !cu.IsStaff() {
 		return c.Status(403).JSON(fiber.Map{
@@ -249,12 +265,18 @@ func putUser(c *fiber.Ctx) error {
 		}
 	}
 
+	tagsChanged, err = r.TagsChecks(&u)
+	if err != nil {
+		goto badRequest
+	}
+
 	if bioChanged {
 		changes["bio"] = u.Bio
 	}
 
 	if emailChanged {
-		changes["email"] = u.Email
+		changes["pending_email"] = u.Email
+		// TODO: Queue up email verification sending
 	}
 
 	if statusChanged {
@@ -271,6 +293,10 @@ func putUser(c *fiber.Ctx) error {
 
 	if profilePicOverrideChanged {
 		changes["profile_pic_override"] = u.ProfilePicOverride
+	}
+
+	if tagsChanged {
+		changes["tags"] = u.Tags
 	}
 
 	DB.Omit(clause.Associations).Model(&u).Updates(changes)

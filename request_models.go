@@ -132,3 +132,25 @@ func (r *UpdateUserRequest) ProfilePicOverrideChecks(u *User) (bool, error) {
 	u.ProfilePicOverride = r.ProfilePictureOverride
 	return true, nil
 }
+
+func (r *UpdateUserRequest) TagsChecks(u *User) (bool, error) {
+	if len(r.Tags) == 0 {
+		return false, nil
+	}
+	var tagsThatWillApply []string
+	for _, tag := range r.Tags {
+		if !strings.HasPrefix(tag, "language_") && !u.IsStaff() {
+			continue
+		}
+		tagsThatWillApply = append(tagsThatWillApply, tag)
+	}
+
+	for _, tag := range u.Tags {
+		if strings.HasPrefix(tag, "system_") || strings.HasPrefix(tag, "admin_") {
+			tagsThatWillApply = append(tagsThatWillApply, tag)
+		}
+	}
+
+	u.Tags = tagsThatWillApply
+	return true, nil
+}
