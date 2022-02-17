@@ -18,19 +18,20 @@ type RegisterRequest struct {
 }
 
 type UpdateUserRequest struct {
-	AcceptedTOSVersion int      `json:"acceptedTOSVersion"`
-	Bio                string   `json:"bio"`
-	BioLinks           []string `json:"bioLinks"`
-	Birthday           string   `json:"birthday"`
-	CurrentPassword    string   `json:"currentPassword"`
-	DisplayName        string   `json:"displayName"`
-	Email              string   `json:"email"`
-	Password           string   `json:"password"`
-	Status             string   `json:"status"`
-	StatusDescription  string   `json:"statusDescription"`
-	Tags               []string `json:"tags"`
-	Unsubscribe        bool     `json:"unsubscribe"`
-	UserIcon           string   `json:"userIcon"`
+	AcceptedTOSVersion     int      `json:"acceptedTOSVersion"`
+	Bio                    string   `json:"bio"`
+	BioLinks               []string `json:"bioLinks"`
+	Birthday               string   `json:"birthday"`
+	CurrentPassword        string   `json:"currentPassword"`
+	DisplayName            string   `json:"displayName"`
+	Email                  string   `json:"email"`
+	Password               string   `json:"password"`
+	ProfilePictureOverride string   `json:"profilePicOverride"`
+	Status                 string   `json:"status"`
+	StatusDescription      string   `json:"statusDescription"`
+	Tags                   []string `json:"tags"`
+	Unsubscribe            bool     `json:"unsubscribe"`
+	UserIcon               string   `json:"userIcon"`
 }
 
 func (r *UpdateUserRequest) EmailChecks(u *User) (bool, error) {
@@ -103,5 +104,31 @@ func (r *UpdateUserRequest) BioChecks(u *User) (bool, error) {
 	}
 
 	u.Bio = r.Bio
+	return true, nil
+}
+
+func (r *UpdateUserRequest) UserIconChecks(u *User) (bool, error) {
+	if r.UserIcon == "" {
+		return false, nil
+	}
+
+	if !u.IsStaff() {
+		return false, triedToSetUserIconWithoutBeingStaffErrorInUserUpdate
+	}
+
+	u.UserIcon = r.UserIcon
+	return true, nil
+}
+
+func (r *UpdateUserRequest) ProfilePicOverrideChecks(u *User) (bool, error) {
+	if r.ProfilePictureOverride == "" {
+		return false, nil
+	}
+
+	if !u.IsStaff() {
+		return false, triedToSetProfilePicOverrideWithoutBeingStaffErrorInUserUpdate
+	}
+
+	u.ProfilePicOverride = r.ProfilePictureOverride
 	return true, nil
 }

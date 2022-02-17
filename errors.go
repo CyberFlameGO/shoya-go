@@ -45,3 +45,5 @@ var userWithEmailAlreadyExistsErrorInUserUpdate = errors.New("user with email al
 var invalidUserStatusErrorInUserUpdate = errors.New("invalid user status")
 var invalidStatusDescriptionErrorInUserUpdate = errors.New("invalid status description")
 var invalidBioErrorInUserUpdate = errors.New("invalid bio")
+var triedToSetUserIconWithoutBeingStaffErrorInUserUpdate = errors.New("tried to set user icon without being staff")
+var triedToSetProfilePicOverrideWithoutBeingStaffErrorInUserUpdate = errors.New("tried to set profile pic override without being staff")

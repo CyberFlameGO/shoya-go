@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strconv"
+	"strings"
 )
 
 func usersRoutes(router *fiber.App) {
@@ -16,6 +17,7 @@ func usersRoutes(router *fiber.App) {
 	users := router.Group("/users")
 	users.Get("/", ApiKeyMiddleware, AuthMiddleware, getUsers)
 	users.Get("/:id", ApiKeyMiddleware, AuthMiddleware, getUser)
+	users.Get("/:username/name", ApiKeyMiddleware, AuthMiddleware, getUserByUsername)
 	users.Get("/:id/feedback", ApiKeyMiddleware, AuthMiddleware, getUserFeedback)
 	users.Post("/", ApiKeyMiddleware, AuthMiddleware, postUser)
 	users.Put("/:id", ApiKeyMiddleware, AuthMiddleware, putUser)
@@ -127,6 +129,39 @@ func getUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(ru.GetAPIUser(false, false)) // TODO: Implement friendship system. Check friendship.
 }
 
+func getUserByUsername(c *fiber.Ctx) error {
+	cu, ok := c.Locals("user").(*User)
+	if !ok {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Couldn't retrieve current user.",
+		})
+	}
+
+	username := strings.ToLower(c.Params("username"))
+	if cu.Username == username {
+		return c.Status(fiber.StatusOK).JSON(cu.GetAPICurrentUser())
+	}
+
+	ru := &User{}
+	tx := DB.Where("username = ?", username).
+		Preload("CurrentAvatar.Image").
+		Preload("FallbackAvatar").
+		Find(&ru)
+
+	if tx.Error != nil {
+		if tx.Error == gorm.ErrRecordNotFound {
+			return c.Status(404).JSON(fiber.Map{
+				"error": fiber.Map{
+					"message":     fmt.Sprintf("User %s not found", username),
+					"status_code": 404,
+				},
+			})
+		}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(ru.GetAPIUser(false, false)) // TODO: Implement friendship system. Check friendship.
+}
+
 func postUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(User{})
 }
@@ -141,6 +176,8 @@ func putUser(c *fiber.Ctx) error {
 	var emailChanged bool
 	var statusChanged bool
 	var statusDescriptionChanged bool
+	var userIconChanged bool
+	var profilePicOverrideChanged bool
 
 	if c.Params("id") != cu.ID && !cu.IsStaff() {
 		return c.Status(403).JSON(fiber.Map{
@@ -198,9 +235,24 @@ func putUser(c *fiber.Ctx) error {
 		}
 	}
 
+	userIconChanged, err = r.UserIconChecks(&u)
+	if err != nil {
+		if err == triedToSetUserIconWithoutBeingStaffErrorInUserUpdate {
+			goto badRequest
+		}
+	}
+
+	profilePicOverrideChanged, err = r.ProfilePicOverrideChecks(&u)
+	if err != nil {
+		if err == triedToSetProfilePicOverrideWithoutBeingStaffErrorInUserUpdate {
+			goto badRequest
+		}
+	}
+
 	if bioChanged {
 		changes["bio"] = u.Bio
 	}
+
 	if emailChanged {
 		changes["email"] = u.Email
 	}
@@ -212,6 +264,15 @@ func putUser(c *fiber.Ctx) error {
 	if statusDescriptionChanged {
 		changes["status_description"] = u.StatusDescription
 	}
+
+	if userIconChanged {
+		changes["user_icon"] = u.UserIcon
+	}
+
+	if profilePicOverrideChanged {
+		changes["profile_pic_override"] = u.ProfilePicOverride
+	}
+
 	DB.Omit(clause.Associations).Model(&u).Updates(changes)
 
 	return c.Status(fiber.StatusOK).JSON(u.GetAPICurrentUser())
