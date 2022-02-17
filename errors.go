@@ -1,6 +1,9 @@
 package main
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"errors"
+	"github.com/gofiber/fiber/v2"
+)
 
 var ErrMissingCredentialsResponse = fiber.Map{
 	"error": fiber.Map{
@@ -36,3 +39,9 @@ var ErrWorldNotFoundResponse = fiber.Map{
 		"status_code": 404,
 	},
 }
+
+var invalidCredentialsErrorInUserUpdate = errors.New("invalid credentials presented during user update")
+var userWithEmailAlreadyExistsErrorInUserUpdate = errors.New("user with email already exists")
+var invalidUserStatusErrorInUserUpdate = errors.New("invalid user status")
+var invalidStatusDescriptionErrorInUserUpdate = errors.New("invalid status description")
+var invalidBioErrorInUserUpdate = errors.New("invalid bio")

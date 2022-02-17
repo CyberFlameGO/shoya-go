@@ -13,7 +13,7 @@ func usersRoutes(router *fiber.App) {
 	user.Get("/:id/friendStatus", ApiKeyMiddleware, AuthMiddleware, getUserFriendStatus)
 
 	users := router.Group("/users")
-	users.Get("/", getUsers)
+	users.Get("/", ApiKeyMiddleware, AuthMiddleware, getUsers)
 	users.Get("/:id", ApiKeyMiddleware, AuthMiddleware, getUser)
 	users.Get("/:id/feedback", ApiKeyMiddleware, AuthMiddleware, getUserFeedback)
 	users.Post("/", ApiKeyMiddleware, AuthMiddleware, postUser)
@@ -131,7 +131,15 @@ func postUser(c *fiber.Ctx) error {
 }
 
 func putUser(c *fiber.Ctx) error {
-	cu := c.Locals("user").(*User)
+	// dear client team, why are you sending separate PUT requests for status, statusDescription?
+	var r UpdateUserRequest
+	var u User
+	var cu = c.Locals("user").(*User)
+	var changes = map[string]interface{}{}
+	var bioChanged bool
+	var emailChanged bool
+	var statusChanged bool
+	var statusDescriptionChanged bool
 
 	if c.Params("id") != cu.ID && !cu.IsStaff() {
 		return c.Status(403).JSON(fiber.Map{
@@ -141,7 +149,82 @@ func putUser(c *fiber.Ctx) error {
 			},
 		})
 	}
-	return c.Status(fiber.StatusOK).JSON(cu.GetAPICurrentUser())
+
+	if c.Params("id") == cu.ID {
+		u = *cu
+	} else {
+		DB.Where("id = ?", c.Params("id")).Find(&u)
+	}
+
+	err := c.BodyParser(&r)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     err,
+				"status_code": 500,
+			},
+		})
+	}
+
+	bioChanged, err = r.BioChecks(&u)
+	if err != nil {
+		if err == invalidBioErrorInUserUpdate {
+			goto badRequest
+		}
+	}
+	emailChanged, err = r.EmailChecks(&u)
+	if err != nil {
+		if err == invalidCredentialsErrorInUserUpdate {
+			goto wrongPassword
+		}
+
+		if err == userWithEmailAlreadyExistsErrorInUserUpdate {
+			goto badRequest
+		}
+	}
+
+	statusChanged, err = r.StatusChecks(&u)
+	if err != nil {
+		if err == invalidUserStatusErrorInUserUpdate {
+			goto badRequest
+		}
+	}
+
+	statusDescriptionChanged, err = r.StatusDescriptionChecks(&u)
+	if err != nil {
+		if err == invalidStatusDescriptionErrorInUserUpdate {
+			goto badRequest
+		}
+	}
+
+	if bioChanged {
+		changes["bio"] = u.Bio
+	}
+	if emailChanged {
+		changes["email"] = u.Email
+	}
+
+	if statusChanged {
+		changes["status"] = u.Status
+	}
+
+	if statusDescriptionChanged {
+		changes["status_description"] = u.StatusDescription
+	}
+	DB.Model(&u).Updates(changes)
+
+	return c.Status(fiber.StatusOK).JSON(u.GetAPICurrentUser())
+
+wrongPassword:
+	return c.Status(400).JSON(ErrInvalidCredentialsResponse)
+
+badRequest:
+	return c.Status(400).JSON(fiber.Map{
+		"error": fiber.Map{
+			"message":     "Bad request",
+			"status_code": 400,
+		},
+	})
 }
 
 func deleteUser(c *fiber.Ctx) error {
