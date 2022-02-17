@@ -44,6 +44,10 @@ type ApiConfig struct {
 	InfoPushes   ApiInfoPushesList `seed:"[]" json:"infoPushes" redis:"{config}:infoPushes"`
 	JwtSecret    hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:jwtSecret"`
 	PhotonSecret hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:photonSecret"`
+	// Connector Mod AutoConfig Functionality
+	AutoConfigApiUrl         hsync.String `json:"autoConfigApiUrl" seed:"" redis:"{config}:autoConfigApiUrl"`
+	AutoConfigWebsocketUrl   hsync.String `json:"autoConfigWebsocketUrl" seed:"" redis:"{config}:autoConfigWebsocketUrl"`
+	AutoConfigNameServerHost hsync.String `json:"autoConfigNameServerHost" seed:"" redis:"{config}:autoConfigNameServerHost"`
 	// External Configuration (VRChat-specifics)
 	Address                       hsync.String           `seed:"" json:"address" redis:"{config}:address"`                                                  // Address is the physical address of the corporate entity.
 	Announcements                 ApiAnnouncementsList   `seed:"[]" json:"announcements" redis:"{config}:announcements"`                                    // Announcements is a list of announcements to be displayed to the user upon world load.

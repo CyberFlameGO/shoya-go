@@ -13,6 +13,7 @@ func systemRoutes(router *fiber.App) {
 	router.Put("/logout", putLogout)
 	router.Get("/infoPush", getInfoPush)
 	router.Get("/visits", getVisits)
+	router.Get("/m_autoConfig", getAutoConfig)
 }
 
 func getHealth(c *fiber.Ctx) error {
@@ -92,4 +93,12 @@ func getInfoPush(c *fiber.Ctx) error {
 
 func getVisits(c *fiber.Ctx) error {
 	return c.JSON(0)
+}
+
+func getAutoConfig(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{
+		"apiUrl":         ApiConfiguration.AutoConfigApiUrl.Get(),
+		"websocketUrl":   ApiConfiguration.AutoConfigWebsocketUrl.Get(),
+		"nameServerHost": ApiConfiguration.AutoConfigNameServerHost.Get(),
+	})
 }

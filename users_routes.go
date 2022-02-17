@@ -16,9 +16,9 @@ func usersRoutes(router *fiber.App) {
 	users.Get("/", getUsers)
 	users.Get("/:id", ApiKeyMiddleware, AuthMiddleware, getUser)
 	users.Get("/:id/feedback", ApiKeyMiddleware, AuthMiddleware, getUserFeedback)
-	users.Post("/", postUser)
-	users.Put("/:id", putUser)
-	users.Delete("/:id", deleteUser)
+	users.Post("/", ApiKeyMiddleware, AuthMiddleware, postUser)
+	users.Put("/:id", ApiKeyMiddleware, AuthMiddleware, putUser)
+	users.Delete("/:id", ApiKeyMiddleware, AuthMiddleware, deleteUser)
 }
 
 func getUsers(c *fiber.Ctx) error {
