@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"strconv"
 )
 
@@ -211,7 +212,7 @@ func putUser(c *fiber.Ctx) error {
 	if statusDescriptionChanged {
 		changes["status_description"] = u.StatusDescription
 	}
-	DB.Model(&u).Updates(changes)
+	DB.Omit(clause.Associations).Model(&u).Updates(changes)
 
 	return c.Status(fiber.StatusOK).JSON(u.GetAPICurrentUser())
 

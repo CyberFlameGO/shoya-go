@@ -97,7 +97,7 @@ func initializeDB() {
 		RuntimeConfig.Database.Database,
 		RuntimeConfig.Database.Port)
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: gormLogger.Default.LogMode(gormLogger.Error),
+		Logger: gormLogger.Default.LogMode(gormLogger.Info),
 	})
 	if err != nil {
 		panic(err)
