@@ -194,6 +194,7 @@ func putUser(c *fiber.Ctx) error {
 	var userIconChanged bool
 	var profilePicOverrideChanged bool
 	var tagsChanged bool
+	var homeWorldChanged bool
 
 	if c.Params("id") != cu.ID && !cu.IsStaff() {
 		return c.Status(403).JSON(fiber.Map{
@@ -270,6 +271,11 @@ func putUser(c *fiber.Ctx) error {
 		goto badRequest
 	}
 
+	homeWorldChanged, err = r.HomeLocationChecks(&u)
+	if err != nil {
+		goto badRequest
+	}
+
 	if bioChanged {
 		changes["bio"] = u.Bio
 	}
@@ -297,6 +303,10 @@ func putUser(c *fiber.Ctx) error {
 
 	if tagsChanged {
 		changes["tags"] = u.Tags
+	}
+
+	if homeWorldChanged {
+		changes["home_world_id"] = u.HomeWorldID
 	}
 
 	DB.Omit(clause.Associations).Model(&u).Updates(changes)

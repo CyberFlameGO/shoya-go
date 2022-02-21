@@ -16,7 +16,7 @@ type Avatar struct {
 	Image         File
 	ReleaseStatus ReleaseStatus
 	Tags          pq.StringArray       `json:"tags" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
-	Version       int                  `json:"version" gorm:"type:integer NOT NULL;default:0"`
+	Version       int                  `json:"version" gorm:"type:bigint NOT NULL;default:0"`
 	UnityPackages []AvatarUnityPackage `gorm:"foreignKey:BelongsToAssetID"`
 }
 

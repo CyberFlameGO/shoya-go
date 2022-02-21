@@ -17,7 +17,7 @@ type World struct {
 	Image         File
 	ReleaseStatus ReleaseStatus       `json:"releaseStatus" gorm:"default:'private'"`
 	Tags          pq.StringArray      `json:"tags" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
-	Version       int                 `json:"version" gorm:"type:integer NOT NULL;default:0"`
+	Version       int                 `json:"version" gorm:"type:bigint NOT NULL;default:0"`
 	UnityPackages []WorldUnityPackage `json:"unityPackages" gorm:"foreignKey:BelongsToAssetID"`
 }
 

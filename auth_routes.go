@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
+	"strings"
 )
 
 func authRoutes(router *fiber.App) {
@@ -89,9 +90,9 @@ func postRegister(c *fiber.Ctx) error {
 		})
 	}
 
-	tx := DB.Where("username = ?", c.Query("username")).
-		Or("display_name = ?", c.Query("username")).
-		Or("email = ?", c.Query("email")).First(&_u)
+	tx := DB.Where("username = ?", strings.ToLower(r.Username)).
+		Or("display_name = ?", r.Username).
+		Or("email = ?", strings.ToLower(r.Email)).First(&_u)
 
 	if tx.Error != gorm.ErrRecordNotFound {
 		return c.Status(400).JSON(fiber.Map{

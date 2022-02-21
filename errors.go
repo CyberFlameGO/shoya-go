@@ -47,3 +47,5 @@ var invalidStatusDescriptionErrorInUserUpdate = errors.New("invalid status descr
 var invalidBioErrorInUserUpdate = errors.New("invalid bio")
 var triedToSetUserIconWithoutBeingStaffErrorInUserUpdate = errors.New("tried to set user icon without being staff")
 var triedToSetProfilePicOverrideWithoutBeingStaffErrorInUserUpdate = errors.New("tried to set profile pic override without being staff")
+var worldNotFoundErrorInUserUpdate = errors.New("world not found")
+var worldIsPrivateAndNotOwnedByUser = errors.New("world is private and not owned by current user")

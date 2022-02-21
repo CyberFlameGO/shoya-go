@@ -32,6 +32,7 @@ type UpdateUserRequest struct {
 	Tags                   []string `json:"tags"`
 	Unsubscribe            bool     `json:"unsubscribe"`
 	UserIcon               string   `json:"userIcon"`
+	HomeLocation           string   `json:"homeLocation"`
 }
 
 func (r *UpdateUserRequest) EmailChecks(u *User) (bool, error) {
@@ -152,5 +153,28 @@ func (r *UpdateUserRequest) TagsChecks(u *User) (bool, error) {
 	}
 
 	u.Tags = tagsThatWillApply
+	return true, nil
+}
+
+func (r *UpdateUserRequest) HomeLocationChecks(u *User) (bool, error) {
+	if r.HomeLocation == "" {
+		return false, nil
+	}
+
+	var w World
+	tx := DB.Model(&World{}).Where("id = ?", r.HomeLocation).Find(&w)
+	if tx.Error != nil {
+		if tx.Error == gorm.ErrRecordNotFound {
+			return false, worldNotFoundErrorInUserUpdate
+		}
+
+		return false, nil
+	}
+
+	if w.ReleaseStatus == ReleaseStatusPrivate && (w.AuthorID != u.ID && !u.IsStaff()) {
+		return false, worldIsPrivateAndNotOwnedByUser
+	}
+
+	u.HomeWorldID = w.ID
 	return true, nil
 }

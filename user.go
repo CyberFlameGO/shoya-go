@@ -100,7 +100,7 @@ func NewUser(username, displayName, email, password string) *User {
 		AcceptedTermsOfServiceVersion: int(ApiConfiguration.CurrentTOSVersion.Get()),
 		Username:                      strings.ToLower(username),
 		DisplayName:                   displayName,
-		Email:                         email,
+		Email:                         strings.ToLower(email),
 		EmailVerified:                 true,
 		Password:                      pw,
 		CurrentAvatarID:               ApiConfiguration.DefaultAvatar.Get(),
