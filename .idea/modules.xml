@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/vrcps.iml" filepath="$PROJECT_DIR$/.idea/vrcps.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/shoya-go.iml" filepath="$PROJECT_DIR$/.idea/shoya-go.iml" />
     </modules>
   </component>
 </project>
