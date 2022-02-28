@@ -49,8 +49,8 @@ func (p *PhotonValidateJoinJWTResponse) FillFromUser(u *User) {
 		AuthorName:        currAvAuthor.DisplayName,
 		UpdatedAt:         time.Unix(u.CurrentAvatar.CreatedAt, 0).UTC().Format(time.RFC3339Nano),
 		Description:       u.CurrentAvatar.Description,
-		ImageUrl:          u.CurrentAvatar.GetImageUrl(),
-		ThumbnailImageUrl: u.CurrentAvatar.GetThumbnailImageUrl(),
+		ImageUrl:          avatarImageUrl,
+		ThumbnailImageUrl: avatarImageThumbnailUrl,
 		Name:              u.CurrentAvatar.Name,
 		ReleaseStatus:     string(u.CurrentAvatar.ReleaseStatus),
 		Version:           u.CurrentAvatar.Version,
@@ -105,4 +105,10 @@ type PhotonPropAvatarDict struct {
 	Version           int               `json:"version"`
 	Tags              []string          `json:"tags"`
 	UnityPackages     []APIUnityPackage `json:"unityPackages"`
+}
+
+type PhotonConfig struct {
+	MaxAccountsPerIPAddress int         `json:"maxAccsPerIp"`
+	RateLimitList           map[int]int `json:"ratelimitList"`
+	RateLimitUnknownBool    bool        `json:"ratelimitUnknownBool"`
 }

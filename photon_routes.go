@@ -12,6 +12,7 @@ func photonRoutes(router *fiber.App) {
 	photon.Get("/ns", photonSecret, doNsAuth)
 	photon.Get("/validateJoin", photonSecret, doJoinTokenValidation)
 	photon.Get("/user", photonSecret, doPropertyUpdate)
+	photon.Get("/getConfig", photonSecret, getPhotonConfig)
 }
 
 var PhotonInvalidParametersResponse = fiber.Map{"ResultCode": 3}
@@ -96,4 +97,28 @@ func doPropertyUpdate(c *fiber.Ctx) error {
 	}
 	r.FillFromUser(&u)
 	return c.JSON(r)
+}
+
+func getPhotonConfig(c *fiber.Ctx) error {
+	// TODO: Make this dynamic.
+	return c.JSON(&PhotonConfig{
+		MaxAccountsPerIPAddress: 5,
+		RateLimitList: map[int]int{
+			1:   60,
+			3:   5,
+			4:   200,
+			5:   50,
+			6:   400,
+			7:   500,
+			8:   1,
+			9:   75,
+			33:  2,
+			40:  1,
+			42:  1, // ?
+			202: 1,
+			209: 20,
+			210: 90,
+		},
+		RateLimitUnknownBool: true,
+	})
 }
