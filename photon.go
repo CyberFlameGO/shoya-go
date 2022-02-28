@@ -3,6 +3,7 @@ package main
 import "time"
 
 type PhotonValidateJoinJWTResponse struct {
+	Time               string               `json:"time"`
 	Valid              bool                 `json:"valid"`
 	User               PhotonPropUser       `json:"user"`
 	IP                 string               `json:"ip"`

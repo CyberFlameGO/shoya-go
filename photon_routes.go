@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm/clause"
+	"strconv"
+	"time"
 )
 
 func photonRoutes(router *fiber.App) {
@@ -66,6 +68,7 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 	}
 
 	r := PhotonValidateJoinJWTResponse{
+		Time:  strconv.Itoa(int(time.Now().Unix())),
 		Valid: true,
 		IP:    claims.IP,
 	}
@@ -87,6 +90,7 @@ func doPropertyUpdate(c *fiber.Ctx) error {
 	}
 
 	r := PhotonValidateJoinJWTResponse{
+		Time:  strconv.Itoa(int(time.Now().Unix())),
 		Valid: true,
 		IP:    "notset",
 	}

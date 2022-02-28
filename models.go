@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"strings"
 	"time"
 )
 
@@ -108,4 +110,56 @@ type APIUnityPackage struct {
 	PluginUrlObject interface{} `json:"pluginUrlObject"`
 	UnityVersion    string      `json:"unityVersion"`
 	UnitySortNumber int         `json:"unitySortNumber"`
+}
+
+type Location struct {
+	WorldID          string `json:"worldId"`          // WorldID is the id of the world the instance is for.
+	InstanceID       string `json:"instanceId"`       // InstanceID is the instance's identifier (usually 5 numbers).
+	LocationString   string `json:"locationString"`   // LocationString is the string minus the world id prefix.
+	InstanceType     string `json:"instanceType"`     // InstanceType is the instance's privacy setting. | Valid settings: public, hidden, friends, private.
+	OwnerID          string `json:"ownerId"`          // OwnerID is the id of the instance's creator.
+	Nonce            string `json:"nonce"`            // Nonce is a "shared key" for use in non-public instances.
+	Region           string `json:"region"`           // Region is the Photon region (us, or blank == usw photon) | Valid regions: us, use, eu, jp.
+	CanRequestInvite bool   `json:"canRequestInvite"` // CanRequestInvite turns an instance of InstanceType: private (invite-only) to an invite+.
+	IsStrict         bool   `json:"strict"`           // IsStrict ensures that the instance is only joinable if the user is friends with the creator.
+}
+
+// parseLocationString parses the location string provided in a request.
+func parseLocationString(s string) (*Location, error) {
+	var location = Location{}
+	s1 := strings.Split(s, ":")
+	if len(s1) < 2 {
+		return nil, errors.New("invalid instance id")
+	}
+
+	location.WorldID = s1[0]        // wrld_{uuid}
+	location.LocationString = s1[1] // 00000~xxx
+
+	/**
+	TODO: Implement regexes for further matching (non-globals!)
+		Instance ID: `(?P<instanceId>.*?)~`
+		Instance privacy & ownership: `(?P<privacy>hidden|friends|private)\((?P<ownerId>.*?)\)` (No match == public)
+		Region: `region\((?P<region>.*?)\)`
+		Nonce: `nonce\((?P<nonce>.*?)\)`
+	*/
+
+	s2 := strings.Split(s1[1], "~")
+	location.InstanceID = s2[0] // 00000
+
+	switch location.InstanceType {
+	case "private":
+		if strings.Contains(s1[1], "~canRequestInvite") {
+			location.CanRequestInvite = true // Invite+
+		}
+		if strings.Contains(s1[1], "~strict") {
+			location.IsStrict = true
+		}
+		break
+	case "friends":
+		if strings.Contains(s1[1], "~strict") {
+			location.IsStrict = true
+		}
+	}
+
+	return &location, nil
 }
