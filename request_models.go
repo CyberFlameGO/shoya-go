@@ -62,18 +62,18 @@ func (r *UpdateUserRequest) StatusChecks(u *User) (bool, error) {
 
 	switch strings.ToLower(r.Status) {
 	case "join me":
-		status = UserStatus(r.Status)
+		status = UserStatus(strings.ToLower(r.Status))
 	case "active":
-		status = UserStatus(r.Status)
+		status = UserStatus(strings.ToLower(r.Status))
 	case "ask me":
-		status = UserStatus(r.Status)
+		status = UserStatus(strings.ToLower(r.Status))
 	case "busy":
-		status = UserStatus(r.Status)
+		status = UserStatus(strings.ToLower(r.Status))
 	case "offline":
 		if !u.IsStaff() {
 			return false, invalidStatusDescriptionErrorInUserUpdate
 		}
-		status = UserStatus(r.Status)
+		status = UserStatus(strings.ToLower(r.Status))
 	default:
 		return false, invalidUserStatusErrorInUserUpdate
 	}
