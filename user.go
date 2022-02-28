@@ -252,6 +252,7 @@ func (u *User) GetAPILimitedUser(isFriend bool, shouldGetLocation bool) *APILimi
 			UpdatedAt: u.UpdatedAt,
 			DeletedAt: u.DeletedAt,
 		},
+		Bio:                            u.Bio,
 		CurrentAvatarImageUrl:          avatarImageUrl,
 		CurrentAvatarThumbnailImageUrl: avatarImageThumbnailUrl,
 		DeveloperType:                  u.DeveloperType,
@@ -357,6 +358,7 @@ type APIUser struct {
 }
 type APILimitedUser struct {
 	BaseModel
+	Bio                            string     `json:"bio"`
 	CurrentAvatarImageUrl          string     `json:"currentAvatarImageUrl"`
 	CurrentAvatarThumbnailImageUrl string     `json:"currentAvatarThumbnailImageUrl"`
 	DeveloperType                  string     `json:"developerType"`
