@@ -183,8 +183,8 @@ func (u *User) GetAPIUser(isFriend bool, shouldGetLocation bool) *APIUser {
 	profilePicOverride := u.ProfilePicOverride
 
 	if profilePicOverride != "" {
-		avatarImageUrl = profilePicOverride
-		avatarImageThumbnailUrl = profilePicOverride
+		avatarImageUrl = ""
+		avatarImageThumbnailUrl = ""
 	}
 
 	return &APIUser{
@@ -241,8 +241,8 @@ func (u *User) GetAPILimitedUser(isFriend bool, shouldGetLocation bool) *APILimi
 	profilePicOverride := u.ProfilePicOverride
 
 	if profilePicOverride != "" {
-		avatarImageUrl = profilePicOverride
-		avatarImageThumbnailUrl = profilePicOverride
+		avatarImageUrl = ""
+		avatarImageThumbnailUrl = ""
 	}
 
 	return &APILimitedUser{
@@ -275,8 +275,8 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 	profilePicOverride := u.ProfilePicOverride
 
 	if profilePicOverride != "" {
-		avatarImageUrl = profilePicOverride
-		avatarImageThumbnailUrl = profilePicOverride
+		avatarImageUrl = ""
+		avatarImageThumbnailUrl = ""
 	}
 
 	return &APICurrentUser{

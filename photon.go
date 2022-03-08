@@ -17,8 +17,8 @@ func (p *PhotonValidateJoinJWTResponse) FillFromUser(u *User) {
 	profilePicOverride := u.ProfilePicOverride
 
 	if profilePicOverride != "" {
-		avatarImageUrl = profilePicOverride
-		avatarImageThumbnailUrl = profilePicOverride
+		avatarImageUrl = ""
+		avatarImageThumbnailUrl = ""
 	}
 	p.User = PhotonPropUser{
 		ID:                             u.ID,
