@@ -1,16 +1,22 @@
 ### Features
 The following table contains a list of features, their implementation status, and notes about them.
 
-| Feature Name    | Implementation Status | Notes                                                                                                                         |
-|-----------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------|
-| Registration    | Implemented           | * CAPTCHA parameter is completely ignored.<br/> * Email verification is not present and currently sets it to true by default. |
-| Login           | Implemented           |                                                                                                                               |
-| User Profiles   | Implemented (Partial) | The following parameters can be set:<br/>* Status<br/>* Status Description<br/>* Bio<br/>* Languages                          |
-| User Search     | Implemented           |                                                                                                                               |
-| World Search    | Implemented           |                                                                                                                               |
-| InfoPush        | Implemented (Partial) | The InfoPush system is currently implemented as a mirror of the object stored in Redis. Management is missing.                |
-| Avatar Changing | Implemented           |                                                                                                                               |
-| Instances       | Implemented (Partial) | The creation & joining of instances based on their ID has been implemented, but discovery has not.                            |
+| Feature Name       | Implementation Status | Notes                                                                                                                                                                                                                                 |
+|--------------------|-----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Registration       | Implemented           | * CAPTCHA parameter is completely ignored.<br/> * Email verification is not present and currently sets it to true by default.                                                                                                         |
+| Login              | Implemented           |                                                                                                                                                                                                                                       |
+| User Profiles      | Implemented (Partial) | The following parameters can be set:<br/>* Status<br/>* Status Description<br/>* Bio<br/>* Languages                                                                                                                                  |
+| User Search        | Implemented           |                                                                                                                                                                                                                                       |
+| World Search       | Implemented           |                                                                                                                                                                                                                                       |
+| InfoPush           | Implemented (Partial) | The InfoPush system is currently implemented as a mirror of the object stored in Redis. Management is missing.                                                                                                                        |
+| Avatar Changing    | Implemented           |                                                                                                                                                                                                                                       |
+| Instances          | Implemented (Partial) | The creation & joining of instances based on their ID has been implemented, but discovery has not.                                                                                                                                    |
+| Instance Discovery | Not Implemented       | Instance Discovery: There currently is no way for instances to be discovered in the Worlds menu.                                                                                                                                      |
+| Friendship         | Not Implemented       | Friendship: Users cannot currently friend each-other.                                                                                                                                                                                 |
+| Presence           | Not Implemented       | Presence: Users cannot currently see where another user is. (Depends on Friendship).                                                                                                                                                  |
+| Moderation         | Not Implemented (WIP) | Moderation: Users cannot currently mute, unmute, block, unblock another user, or show/hide another user's avatar.                                                                                                                     |
+| Trust              | Not Implemented       | Trust: Will likely **not** be implemented. There is no reason to have a convoluted "social score" at this time. (Implementation may vary based on server operator; Open-source implementations could be cheated).                     |
+| Files              | Not Implemented       | Files: Content can only currently be written into the database by an administrator manually; Implementing VRChat's Unity SDK compatibility in order for individual users to be able to upload content is currently being looked into. |
 
 ---
 
