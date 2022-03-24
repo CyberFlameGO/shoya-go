@@ -1,0 +1,18 @@
+{
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "username": "shoya",
+    "password": "AVeryComplicatedPasswordShouldGoHere",
+    "database": "shoya"
+  },
+  "redis": {
+    "host": "localhost:6379",
+    "password": "AVeryComplicatedPasswordShouldGoHere",
+    "database": 0
+  },
+  "server": {
+    "address": "0.0.0.0:9999"
+  },
+  "apiConfigRefreshRateMs": 10
+}
