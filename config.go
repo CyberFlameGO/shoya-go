@@ -44,6 +44,8 @@ type ApiConfig struct {
 	InfoPushes   ApiInfoPushesList `seed:"[]" json:"infoPushes" redis:"{config}:infoPushes"`
 	JwtSecret    hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:jwtSecret"`
 	PhotonSecret hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:photonSecret"`
+	// Photon Room Settings
+	PhotonSettingMaxAccountsPerIpAddress hsync.Int64 `seed:"5" json:"maxAccountsPerIp" redis:"{config}:photonSettingMaxAccountsPerIp"`
 	// Connector Mod AutoConfig Functionality
 	AutoConfigApiUrl         hsync.String `json:"autoConfigApiUrl" seed:"" redis:"{config}:autoConfigApiUrl"`
 	AutoConfigWebsocketUrl   hsync.String `json:"autoConfigWebsocketUrl" seed:"" redis:"{config}:autoConfigWebsocketUrl"`

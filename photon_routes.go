@@ -100,25 +100,28 @@ func doPropertyUpdate(c *fiber.Ctx) error {
 }
 
 func getPhotonConfig(c *fiber.Ctx) error {
-	// TODO: Make this dynamic.
 	return c.JSON(&PhotonConfig{
-		MaxAccountsPerIPAddress: 5,
+		MaxAccountsPerIPAddress: int(ApiConfiguration.PhotonSettingMaxAccountsPerIpAddress.Get()),
 		RateLimitList: map[int]int{
-			1:   60,
-			3:   5,
-			4:   200,
-			5:   50,
-			6:   400,
-			7:   500,
-			8:   1,
-			9:   75,
-			33:  2,
-			40:  1,
-			42:  1, // ?
-			202: 1,
-			209: 20,
-			210: 90,
+			// This list of rate-limits is hard-coded for now; The following are real-world values as seen
+			// in official servers.
+			//
+			// The object consists of an event code & how many times it can be raised per second.
+			1:   60,  // Voice Data
+			3:   5,   // Request for past event synchronization (as part of world join)
+			4:   200, // Response for past event synchronization
+			5:   50,  // "FIN" packet for past event synchronization
+			6:   400, // VrcEvent (a.k.a, RPCs)
+			7:   500, // Unreliable sync (e.g: movement)
+			8:   1,   // Interest Management
+			9:   75,  // Reliable sync (e.g.: Udon variables)
+			33:  2,   // Moderation
+			40:  1,   // Update partial actor properties
+			42:  1,   // Update partial actor properties (currently only used for height [24-03-22])
+			202: 1,   // Instantiation
+			209: 20,  // Request for ownership transfer
+			210: 90,  // Ownership transfer
 		},
-		RateLimitUnknownBool: true,
+		RateLimitUnknownBool: true, // What this boolean does is currently unknown, but it is true in official servers.
 	})
 }
