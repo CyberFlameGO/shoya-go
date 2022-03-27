@@ -14,6 +14,7 @@ func authRoutes(router *fiber.App) {
 	router.Get("/auth/user/subscription", ApiKeyMiddleware, AuthMiddleware, getSubscription)
 	router.Get("/auth/user/moderations", ApiKeyMiddleware, AuthMiddleware, getModerations)
 	router.Get("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, getPlayerModerations)
+	router.Get("/auth/user/playermoderated", ApiKeyMiddleware, AuthMiddleware, getPlayerModerated)
 	router.Get("/auth/permissions", ApiKeyMiddleware, AuthMiddleware, getPermissions)
 	router.Get("/auth/user/notifications", ApiKeyMiddleware, AuthMiddleware, getNotifications)
 }
@@ -146,5 +147,10 @@ func getModerations(c *fiber.Ctx) error {
 }
 
 func getPlayerModerations(c *fiber.Ctx) error {
+	return c.JSON([]interface{}{})
+}
+
+func getPlayerModerated(c *fiber.Ctx) error {
+	// Stub route. Will likely not be implemented due to it no-longer existing in recent builds of the game.
 	return c.JSON([]interface{}{})
 }

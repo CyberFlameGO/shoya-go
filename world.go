@@ -148,6 +148,7 @@ type APIWorld struct {
 type APIWorldWithPackages struct {
 	APIWorld
 	AssetUrl              string            `json:"assetUrl"`
+	PluginUrl             string            `json:"pluginUrl"`      // Required for older builds of the game (e.g.: 333)
 	AssetUrlObject        interface{}       `json:"assetUrlObject"` // Always an empty object.
 	UnityPackages         []APIUnityPackage `json:"unityPackages"`
 	UnityPackageUrlObject interface{}       `json:"unityPackageUrlObject"` // Always an empty object.
