@@ -34,8 +34,9 @@ type RedisConfig struct {
 
 // ServerConfig holds the configuration for Fiber.
 type ServerConfig struct {
-	Address string `json:"address"`
-	Port    int    `json:"port"`
+	Address     string `json:"address"`
+	Port        int    `json:"port"`
+	ProxyHeader string `json:"proxyHeader"`
 }
 
 // ApiConfig holds the dynamic configuration for the API.
