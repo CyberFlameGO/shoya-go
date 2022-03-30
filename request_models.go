@@ -35,6 +35,8 @@ type UpdateUserRequest struct {
 	HomeLocation           string   `json:"homeLocation"`
 }
 
+var ValidLanguageTags = []string{"eng", "kor", "rus", "spa", "por", "zho", "deu", "jpn", "fra", "swe", "nld", "pol", "dan", "nor", "ita", "tha", "fin", "hun", "ces", "tur", "ara", "ron", "vie", "ukr", "ase", "bfi", "dse", "fsl", "kvk"}
+
 func (r *UpdateUserRequest) EmailChecks(u *User) (bool, error) {
 	if r.Email == "" {
 		return false, nil
@@ -138,19 +140,37 @@ func (r *UpdateUserRequest) TagsChecks(u *User) (bool, error) {
 	if len(r.Tags) == 0 {
 		return false, nil
 	}
+
+	// Check whether the user currently has over 3 language tags.
+	i := 0
+	for _, tag := range u.Tags {
+		if strings.HasPrefix("language_", tag) {
+			i++
+		}
+
+		if i > 3 {
+			return false, tooManyLanguageTagsInUserUpdate
+		}
+	}
+
 	var tagsThatWillApply []string
 	for _, tag := range r.Tags {
 		if !strings.HasPrefix(tag, "language_") && !u.IsStaff() {
 			continue
+		} else if strings.HasPrefix("language_", tag) {
+			if !isValidLanguageTag(tag) {
+				return false, invalidLanguageTagInUserUpdate
+			}
+			// Ensure that we do not add more that a total of 3 language tags to the user, including currently existing ones.
+			if i++; i > 3 {
+				return false, tooManyLanguageTagsInUserUpdate
+			}
 		}
+
 		tagsThatWillApply = append(tagsThatWillApply, tag)
 	}
 
-	for _, tag := range u.Tags {
-		if strings.HasPrefix(tag, "system_") || strings.HasPrefix(tag, "admin_") {
-			tagsThatWillApply = append(tagsThatWillApply, tag)
-		}
-	}
+	tagsThatWillApply = append(tagsThatWillApply, u.Tags...)
 
 	u.Tags = tagsThatWillApply
 	return true, nil
@@ -177,4 +197,24 @@ func (r *UpdateUserRequest) HomeLocationChecks(u *User) (bool, error) {
 
 	u.HomeWorldID = w.ID
 	return true, nil
+}
+
+func isValidLanguageTag(tag string) bool {
+	if !strings.HasPrefix("language_", tag) {
+		return false
+	}
+
+	split := strings.Split(tag, "_")
+	if len(split) != 2 {
+		return false
+	}
+
+	tagPart := split[1]
+	for _, validTag := range ValidLanguageTags {
+		if tagPart == validTag {
+			return true
+		}
+	}
+
+	return false
 }

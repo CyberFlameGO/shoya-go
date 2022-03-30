@@ -47,12 +47,16 @@ var ErrAvatarNotFoundResponse = fiber.Map{
 	},
 }
 
-var invalidCredentialsErrorInUserUpdate = errors.New("invalid credentials presented during user update")
-var userWithEmailAlreadyExistsErrorInUserUpdate = errors.New("user with email already exists")
-var invalidUserStatusErrorInUserUpdate = errors.New("invalid user status")
-var invalidStatusDescriptionErrorInUserUpdate = errors.New("invalid status description")
-var invalidBioErrorInUserUpdate = errors.New("invalid bio")
-var triedToSetUserIconWithoutBeingStaffErrorInUserUpdate = errors.New("tried to set user icon without being staff")
-var triedToSetProfilePicOverrideWithoutBeingStaffErrorInUserUpdate = errors.New("tried to set profile pic override without being staff")
-var worldNotFoundErrorInUserUpdate = errors.New("world not found")
-var worldIsPrivateAndNotOwnedByUser = errors.New("world is private and not owned by current user")
+var (
+	invalidCredentialsErrorInUserUpdate                            = errors.New("invalid credentials presented during user update")
+	userWithEmailAlreadyExistsErrorInUserUpdate                    = errors.New("user with email already exists")
+	invalidUserStatusErrorInUserUpdate                             = errors.New("invalid user status")
+	invalidStatusDescriptionErrorInUserUpdate                      = errors.New("invalid status description")
+	invalidBioErrorInUserUpdate                                    = errors.New("invalid bio")
+	tooManyLanguageTagsInUserUpdate                                = errors.New("too many language tags")
+	invalidLanguageTagInUserUpdate                                 = errors.New("invalid language tag")
+	triedToSetUserIconWithoutBeingStaffErrorInUserUpdate           = errors.New("tried to set user icon without being staff")
+	triedToSetProfilePicOverrideWithoutBeingStaffErrorInUserUpdate = errors.New("tried to set profile pic override without being staff")
+	worldNotFoundErrorInUserUpdate                                 = errors.New("world not found")
+	worldIsPrivateAndNotOwnedByUser                                = errors.New("world is private and not owned by current user")
+)
