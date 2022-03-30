@@ -40,6 +40,13 @@ var ErrWorldNotFoundResponse = fiber.Map{
 	},
 }
 
+var ErrAvatarNotFoundResponse = fiber.Map{
+	"error": fiber.Map{
+		"message":     "Avatar not found",
+		"status_code": 404,
+	},
+}
+
 var invalidCredentialsErrorInUserUpdate = errors.New("invalid credentials presented during user update")
 var userWithEmailAlreadyExistsErrorInUserUpdate = errors.New("user with email already exists")
 var invalidUserStatusErrorInUserUpdate = errors.New("invalid user status")

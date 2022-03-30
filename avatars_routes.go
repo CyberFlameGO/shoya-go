@@ -247,14 +247,14 @@ func selectAvatar(c *fiber.Ctx) error {
 	tx := DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&Avatar{}).Where("id = ?", c.Params("id")).First(&a)
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
-			return c.Status(404).JSON(ErrWorldNotFoundResponse)
+			return c.Status(404).JSON(ErrAvatarNotFoundResponse)
 		}
 	}
 
-	if !u.IsStaff() && u.ID != a.AuthorID {
+	if !u.IsStaff() && a.ReleaseStatus != ReleaseStatusPublic && u.ID != a.AuthorID {
 		return c.Status(403).JSON(fiber.Map{
 			"error": fiber.Map{
-				"message":     "trying to switch into avatar not uploaded by self",
+				"message":     "trying to switch into private avatar not uploaded by self",
 				"status_code": 403,
 			},
 		})
