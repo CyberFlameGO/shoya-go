@@ -11,6 +11,7 @@ func authRoutes(router *fiber.App) {
 	router.Get("/auth/exists", ApiKeyMiddleware, getExists)
 	router.Post("/auth/register", ApiKeyMiddleware, postRegister)
 	router.Get("/auth/user", ApiKeyMiddleware, DoLoginMiddleware, AuthMiddleware, getSelf)
+	router.Get("/auth/user/friends", ApiKeyMiddleware, AuthMiddleware, getFriends)
 	router.Get("/auth/user/subscription", ApiKeyMiddleware, AuthMiddleware, getSubscription)
 	router.Get("/auth/user/moderations", ApiKeyMiddleware, AuthMiddleware, getModerations)
 	router.Get("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, getPlayerModerations)
@@ -126,6 +127,10 @@ func getSelf(c *fiber.Ctx) error {
 	u := c.Locals("user").(*User)
 
 	return c.Status(200).JSON(u.GetAPICurrentUser())
+}
+
+func getFriends(c *fiber.Ctx) error {
+	return c.JSON([]fiber.Map{})
 }
 
 // getNotifications | /auth/user/notifications
