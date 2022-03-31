@@ -141,18 +141,7 @@ func (r *UpdateUserRequest) TagsChecks(u *User) (bool, error) {
 		return false, nil
 	}
 
-	// Check whether the user currently has over 3 language tags.
 	i := 0
-	for _, tag := range u.Tags {
-		if strings.HasPrefix("language_", tag) {
-			i++
-		}
-
-		if i > 3 {
-			return false, tooManyLanguageTagsInUserUpdate
-		}
-	}
-
 	var tagsThatWillApply []string
 	for _, tag := range r.Tags {
 		if !strings.HasPrefix(tag, "language_") && !u.IsStaff() {
@@ -161,7 +150,7 @@ func (r *UpdateUserRequest) TagsChecks(u *User) (bool, error) {
 			if !isValidLanguageTag(tag) {
 				return false, invalidLanguageTagInUserUpdate
 			}
-			// Ensure that we do not add more that a total of 3 language tags to the user, including currently existing ones.
+			// Ensure that we do not add more that a total of 3 language tags to the user.
 			if i++; i > 3 {
 				return false, tooManyLanguageTagsInUserUpdate
 			}
@@ -170,7 +159,11 @@ func (r *UpdateUserRequest) TagsChecks(u *User) (bool, error) {
 		tagsThatWillApply = append(tagsThatWillApply, tag)
 	}
 
-	tagsThatWillApply = append(tagsThatWillApply, u.Tags...)
+	for _, tag := range u.Tags {
+		if strings.HasPrefix(tag, "system_") || strings.HasPrefix(tag, "admin_") {
+			tagsThatWillApply = append(tagsThatWillApply, tag)
+		}
+	}
 
 	u.Tags = tagsThatWillApply
 	return true, nil
