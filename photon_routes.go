@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"gitlab.com/george/shoya-go/config"
+	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm/clause"
 	"strconv"
 	"time"
@@ -20,7 +22,7 @@ var PhotonCustomAuthFailedResponse = fiber.Map{"ResultCode": 2}
 var PhotonCustomAuthSuccessResponse = fiber.Map{"ResultCode": 1}
 
 func photonSecret(c *fiber.Ctx) error {
-	if c.Query("secret") != ApiConfiguration.PhotonSecret.Get() {
+	if c.Query("secret") != config.ApiConfiguration.PhotonSecret.Get() {
 		return c.JSON(fiber.Map{"ResultCode": 3})
 	}
 	return c.Next()
@@ -33,7 +35,7 @@ func doNsAuth(c *fiber.Ctx) error {
 		return c.JSON(PhotonInvalidParametersResponse)
 	}
 
-	uid, err := ValidateAuthCookie(t, c.IP(), false, true)
+	uid, err := models.ValidateAuthCookie(t, c.IP(), false, true)
 	if err != nil || uid != u {
 		return c.JSON(PhotonCustomAuthFailedResponse)
 	}
@@ -45,30 +47,30 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 	t := c.Query("jwt")
 	l := c.Query("roomId")
 	if t == "" || l == "" {
-		return c.JSON(PhotonValidateJoinJWTResponse{Valid: false})
+		return c.JSON(models.PhotonValidateJoinJWTResponse{Valid: false})
 	}
 
-	claims, err := ValidateJoinToken(t)
+	claims, err := models.ValidateJoinToken(t)
 	if err != nil {
-		return c.JSON(PhotonValidateJoinJWTResponse{Valid: false})
+		return c.JSON(models.PhotonValidateJoinJWTResponse{Valid: false})
 	}
 
 	if claims.Location != l {
-		return c.JSON(PhotonValidateJoinJWTResponse{Valid: false})
+		return c.JSON(models.PhotonValidateJoinJWTResponse{Valid: false})
 	}
 
-	var u User
-	tx := DB.Model(&User{}).Preload(clause.Associations).
+	var u models.User
+	tx := config.DB.Model(&models.User{}).Preload(clause.Associations).
 		Preload("CurrentAvatar.Image").
 		Preload("FallbackAvatar.Image").
 		Preload("CurrentAvatar.UnityPackages.File").
 		Preload("FallbackAvatar.UnityPackages.File").
 		Where("id = ?", claims.UserId).First(&u)
 	if tx.Error != nil {
-		return c.JSON(PhotonValidateJoinJWTResponse{Valid: false})
+		return c.JSON(models.PhotonValidateJoinJWTResponse{Valid: false})
 	}
 
-	r := PhotonValidateJoinJWTResponse{
+	r := models.PhotonValidateJoinJWTResponse{
 		Time:  strconv.Itoa(int(time.Now().Unix())),
 		Valid: true,
 		IP:    claims.IP,
@@ -79,18 +81,18 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 
 func doPropertyUpdate(c *fiber.Ctx) error {
 	var uid = c.Query("userId")
-	var u User
-	tx := DB.Model(&User{}).Preload(clause.Associations).
+	var u models.User
+	tx := config.DB.Model(&models.User{}).Preload(clause.Associations).
 		Preload("CurrentAvatar.Image").
 		Preload("FallbackAvatar.Image").
 		Preload("CurrentAvatar.UnityPackages.File").
 		Preload("FallbackAvatar.UnityPackages.File").
 		Where("id = ?", uid).First(&u)
 	if tx.Error != nil {
-		return c.JSON(PhotonValidateJoinJWTResponse{Valid: false})
+		return c.JSON(models.PhotonValidateJoinJWTResponse{Valid: false})
 	}
 
-	r := PhotonValidateJoinJWTResponse{
+	r := models.PhotonValidateJoinJWTResponse{
 		Time:  strconv.Itoa(int(time.Now().Unix())),
 		Valid: true,
 		IP:    "notset",
@@ -100,8 +102,8 @@ func doPropertyUpdate(c *fiber.Ctx) error {
 }
 
 func getPhotonConfig(c *fiber.Ctx) error {
-	return c.JSON(&PhotonConfig{
-		MaxAccountsPerIPAddress: int(ApiConfiguration.PhotonSettingMaxAccountsPerIpAddress.Get()),
+	return c.JSON(&models.PhotonConfig{
+		MaxAccountsPerIPAddress: int(config.ApiConfiguration.PhotonSettingMaxAccountsPerIpAddress.Get()),
 		RateLimitList: map[int]int{
 			// This list of rate-limits is hard-coded for now; The following are real-world values as seen
 			// in official servers.

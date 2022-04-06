@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"gitlab.com/george/shoya-go/config"
+	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strconv"
@@ -25,14 +27,14 @@ func usersRoutes(router *fiber.App) {
 }
 
 func getUsers(c *fiber.Ctx) error {
-	var users []User
-	var rUsers = make([]*APILimitedUser, 0)
+	var users []models.User
+	var rUsers = make([]*models.APILimitedUser, 0)
 	var searchTerm string
 	var searchDeveloperType string
 	var searchOffset = 0
 	var numberOfUsersToSearch = 60
 
-	tx := DB.Model(User{}).
+	tx := config.DB.Model(models.User{}).
 		Preload("CurrentAvatar.Image")
 
 	// Query parameter setup
@@ -97,7 +99,7 @@ badRequest:
 }
 
 func getUser(c *fiber.Ctx) error {
-	cu, ok := c.Locals("user").(*User)
+	cu, ok := c.Locals("user").(*models.User)
 	if !ok {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Couldn't retrieve current user.",
@@ -109,8 +111,8 @@ func getUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(cu.GetAPICurrentUser())
 	}
 
-	ru := &User{}
-	tx := DB.Where("id = ?", uid).
+	ru := &models.User{}
+	tx := config.DB.Where("id = ?", uid).
 		Preload("CurrentAvatar.Image").
 		Preload("FallbackAvatar").
 		Find(&ru)
@@ -130,7 +132,7 @@ func getUser(c *fiber.Ctx) error {
 }
 
 func getUserByUsername(c *fiber.Ctx) error {
-	cu, ok := c.Locals("user").(*User)
+	cu, ok := c.Locals("user").(*models.User)
 	if !ok {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Couldn't retrieve current user.",
@@ -142,8 +144,8 @@ func getUserByUsername(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(cu.GetAPICurrentUser())
 	}
 
-	ru := &User{}
-	tx := DB.Where("username = ?", username).
+	ru := &models.User{}
+	tx := config.DB.Where("username = ?", username).
 		Preload("CurrentAvatar.Image").
 		Preload("FallbackAvatar").
 		Find(&ru)
@@ -163,7 +165,7 @@ func getUserByUsername(c *fiber.Ctx) error {
 }
 
 func postUser(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).JSON(User{})
+	return c.Status(fiber.StatusOK).JSON(models.User{})
 }
 
 // putUser | PUT /users/:id
@@ -184,8 +186,8 @@ func postUser(c *fiber.Ctx) error {
 func putUser(c *fiber.Ctx) error {
 	// dear client team, why are you sending separate PUT requests for status, statusDescription?
 	var r UpdateUserRequest
-	var u User
-	var cu = c.Locals("user").(*User)
+	var u models.User
+	var cu = c.Locals("user").(*models.User)
 	var changes = map[string]interface{}{}
 	var bioChanged bool
 	var emailChanged bool
@@ -208,7 +210,7 @@ func putUser(c *fiber.Ctx) error {
 	if c.Params("id") == cu.ID {
 		u = *cu
 	} else {
-		DB.Where("id = ?", c.Params("id")).Find(&u)
+		config.DB.Where("id = ?", c.Params("id")).Find(&u)
 	}
 
 	err := c.BodyParser(&r)
@@ -223,45 +225,45 @@ func putUser(c *fiber.Ctx) error {
 
 	bioChanged, err = r.BioChecks(&u)
 	if err != nil {
-		if err == invalidBioErrorInUserUpdate {
+		if err == models.InvalidBioErrorInUserUpdate {
 			goto badRequest
 		}
 	}
 	emailChanged, err = r.EmailChecks(&u)
 	if err != nil {
-		if err == invalidCredentialsErrorInUserUpdate {
+		if err == models.InvalidCredentialsErrorInUserUpdate {
 			goto wrongPassword
 		}
 
-		if err == userWithEmailAlreadyExistsErrorInUserUpdate {
+		if err == models.UserWithEmailAlreadyExistsErrorInUserUpdate {
 			goto badRequest
 		}
 	}
 
 	statusChanged, err = r.StatusChecks(&u)
 	if err != nil {
-		if err == invalidUserStatusErrorInUserUpdate {
+		if err == models.InvalidUserStatusErrorInUserUpdate {
 			goto badRequest
 		}
 	}
 
 	statusDescriptionChanged, err = r.StatusDescriptionChecks(&u)
 	if err != nil {
-		if err == invalidStatusDescriptionErrorInUserUpdate {
+		if err == models.InvalidStatusDescriptionErrorInUserUpdate {
 			goto badRequest
 		}
 	}
 
 	userIconChanged, err = r.UserIconChecks(&u)
 	if err != nil {
-		if err == triedToSetUserIconWithoutBeingStaffErrorInUserUpdate {
+		if err == models.TriedToSetUserIconWithoutBeingStaffErrorInUserUpdate {
 			goto badRequest
 		}
 	}
 
 	profilePicOverrideChanged, err = r.ProfilePicOverrideChecks(&u)
 	if err != nil {
-		if err == triedToSetProfilePicOverrideWithoutBeingStaffErrorInUserUpdate {
+		if err == models.TriedToSetProfilePicOverrideWithoutBeingStaffErrorInUserUpdate {
 			goto badRequest
 		}
 	}
@@ -309,12 +311,12 @@ func putUser(c *fiber.Ctx) error {
 		changes["home_world_id"] = u.HomeWorldID
 	}
 
-	DB.Omit(clause.Associations).Model(&u).Updates(changes)
+	config.DB.Omit(clause.Associations).Model(&u).Updates(changes)
 
 	return c.Status(fiber.StatusOK).JSON(u.GetAPICurrentUser())
 
 wrongPassword:
-	return c.Status(400).JSON(ErrInvalidCredentialsResponse)
+	return c.Status(400).JSON(models.ErrInvalidCredentialsResponse)
 
 badRequest:
 	return c.Status(400).JSON(fiber.Map{
@@ -326,7 +328,7 @@ badRequest:
 }
 
 func deleteUser(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).JSON(User{})
+	return c.Status(fiber.StatusOK).JSON(models.User{})
 }
 
 func getUserFeedback(c *fiber.Ctx) error {

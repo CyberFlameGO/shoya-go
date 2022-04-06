@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/lib/pq"
+	"gitlab.com/george/shoya-go/config"
+	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strconv"
@@ -27,10 +29,10 @@ func worldsRoutes(app *fiber.App) {
 // TODO: Implement &tag, as well as &notag searching. No clue how to do this in SQL.
 func getWorlds(c *fiber.Ctx) error {
 	var isGameRequest = c.Locals("isGameRequest").(bool)
-	var worlds []World
-	var apiWorlds = make([]*APIWorld, 0)
-	var apiWorldsPackages = make([]*APIWorldWithPackages, 0)
-	var u = c.Locals("user").(*User)
+	var worlds []models.World
+	var apiWorlds = make([]*models.APIWorld, 0)
+	var apiWorldsPackages = make([]*models.APIWorldWithPackages, 0)
+	var u = c.Locals("user").(*models.User)
 	var numberOfWorldsToSearch = 60
 	var worldsOffset = 0
 	var searchSort = ""
@@ -39,10 +41,10 @@ func getWorlds(c *fiber.Ctx) error {
 	var searchTagsExclude = make([]string, 0)
 	var searchSelf = false
 	var searchUser = ""
-	var searchReleaseStatus = ReleaseStatusPublic
+	var searchReleaseStatus = models.ReleaseStatusPublic
 
 	// Query preparation
-	var tx = DB.Model(&World{}).
+	var tx = config.DB.Model(&models.World{}).
 		Preload("Image").
 		Preload("UnityPackages.File")
 
@@ -101,11 +103,11 @@ func getWorlds(c *fiber.Ctx) error {
 
 	if c.Query("releaseStatus") != "" {
 		switch c.Query("releaseStatus") {
-		case string(ReleaseStatusPublic):
-			searchReleaseStatus = ReleaseStatusPublic
+		case string(models.ReleaseStatusPublic):
+			searchReleaseStatus = models.ReleaseStatusPublic
 			break
-		case string(ReleaseStatusPrivate):
-			searchReleaseStatus = ReleaseStatusPrivate
+		case string(models.ReleaseStatusPrivate):
+			searchReleaseStatus = models.ReleaseStatusPrivate
 			if searchSelf == false {
 				searchSelf = true
 			}
@@ -113,8 +115,8 @@ func getWorlds(c *fiber.Ctx) error {
 				searchUser = u.ID
 			}
 			break
-		case string(ReleaseStatusHidden):
-			searchReleaseStatus = ReleaseStatusHidden
+		case string(models.ReleaseStatusHidden):
+			searchReleaseStatus = models.ReleaseStatusHidden
 			break
 		}
 	}
@@ -152,12 +154,12 @@ func getWorlds(c *fiber.Ctx) error {
 		}
 	}
 
-	if searchReleaseStatus != ReleaseStatusPublic {
-		if searchReleaseStatus == ReleaseStatusHidden && u.DeveloperType != "internal" {
+	if searchReleaseStatus != models.ReleaseStatusPublic {
+		if searchReleaseStatus == models.ReleaseStatusHidden && u.DeveloperType != "internal" {
 			goto badRequest
 		}
 
-		if searchReleaseStatus == ReleaseStatusPrivate &&
+		if searchReleaseStatus == models.ReleaseStatusPrivate &&
 			(searchUser != u.ID || searchSelf == false) && u.DeveloperType != "internal" {
 			goto badRequest
 		}
@@ -216,15 +218,15 @@ func getWorldsRecent(c *fiber.Ctx) error {
 // It varies based on the request source (see: IsGameRequestMiddleware)
 func getWorld(c *fiber.Ctx) error {
 	var isGameRequest = c.Locals("isGameRequest").(bool)
-	var w World
-	var aw *APIWorld
-	var awp *APIWorldWithPackages
+	var w models.World
+	var aw *models.APIWorld
+	var awp *models.APIWorldWithPackages
 	var err error
 
-	tx := DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&World{}).Where("id = ?", c.Params("id")).First(&w)
+	tx := config.DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&models.World{}).Where("id = ?", c.Params("id")).First(&w)
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
-			return c.Status(404).JSON(ErrWorldNotFoundResponse)
+			return c.Status(404).JSON(models.ErrWorldNotFoundResponse)
 		}
 	}
 
@@ -261,14 +263,14 @@ func getWorldMeta(c *fiber.Ctx) error {
 }
 
 func getWorldPublish(c *fiber.Ctx) error {
-	var u *User
-	var w World
+	var u *models.User
+	var w models.World
 
-	u = c.Locals("user").(*User)
-	tx := DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&World{}).Where("id = ?", c.Params("id")).First(&w)
+	u = c.Locals("user").(*models.User)
+	tx := config.DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&models.World{}).Where("id = ?", c.Params("id")).First(&w)
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
-			return c.Status(404).JSON(ErrWorldNotFoundResponse)
+			return c.Status(404).JSON(models.ErrWorldNotFoundResponse)
 		}
 	}
 

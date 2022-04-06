@@ -1,6 +1,8 @@
 package main
 
 import (
+	"gitlab.com/george/shoya-go/config"
+	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -37,18 +39,18 @@ type UpdateUserRequest struct {
 
 var ValidLanguageTags = []string{"eng", "kor", "rus", "spa", "por", "zho", "deu", "jpn", "fra", "swe", "nld", "pol", "dan", "nor", "ita", "tha", "fin", "hun", "ces", "tur", "ara", "ron", "vie", "ukr", "ase", "bfi", "dse", "fsl", "kvk"}
 
-func (r *UpdateUserRequest) EmailChecks(u *User) (bool, error) {
+func (r *UpdateUserRequest) EmailChecks(u *models.User) (bool, error) {
 	if r.Email == "" {
 		return false, nil
 	}
 
 	pwdMatch, err := u.CheckPassword(r.CurrentPassword)
 	if !pwdMatch || err != nil {
-		return false, invalidCredentialsErrorInUserUpdate
+		return false, models.InvalidCredentialsErrorInUserUpdate
 	}
 
-	if DB.Model(&User{}).Where("email = ?", r.Email).Or("pending_email = ?", r.Email).Error != gorm.ErrRecordNotFound {
-		return false, userWithEmailAlreadyExistsErrorInUserUpdate
+	if config.DB.Model(&models.User{}).Where("email = ?", r.Email).Or("pending_email = ?", r.Email).Error != gorm.ErrRecordNotFound {
+		return false, models.UserWithEmailAlreadyExistsErrorInUserUpdate
 	}
 
 	u.PendingEmail = r.Email
@@ -56,87 +58,87 @@ func (r *UpdateUserRequest) EmailChecks(u *User) (bool, error) {
 	return true, nil
 }
 
-func (r *UpdateUserRequest) StatusChecks(u *User) (bool, error) {
-	var status UserStatus
+func (r *UpdateUserRequest) StatusChecks(u *models.User) (bool, error) {
+	var status models.UserStatus
 	if r.Status == "" {
 		return false, nil
 	}
 
 	switch strings.ToLower(r.Status) {
 	case "join me":
-		status = UserStatus(strings.ToLower(r.Status))
+		status = models.UserStatus(strings.ToLower(r.Status))
 	case "active":
-		status = UserStatus(strings.ToLower(r.Status))
+		status = models.UserStatus(strings.ToLower(r.Status))
 	case "ask me":
-		status = UserStatus(strings.ToLower(r.Status))
+		status = models.UserStatus(strings.ToLower(r.Status))
 	case "busy":
-		status = UserStatus(strings.ToLower(r.Status))
+		status = models.UserStatus(strings.ToLower(r.Status))
 	case "offline":
 		if !u.IsStaff() {
-			return false, invalidStatusDescriptionErrorInUserUpdate
+			return false, models.InvalidStatusDescriptionErrorInUserUpdate
 		}
-		status = UserStatus(strings.ToLower(r.Status))
+		status = models.UserStatus(strings.ToLower(r.Status))
 	default:
-		return false, invalidUserStatusErrorInUserUpdate
+		return false, models.InvalidUserStatusErrorInUserUpdate
 	}
 
 	u.Status = status
 	return true, nil
 }
 
-func (r *UpdateUserRequest) StatusDescriptionChecks(u *User) (bool, error) {
+func (r *UpdateUserRequest) StatusDescriptionChecks(u *models.User) (bool, error) {
 	if r.StatusDescription == "" {
 		return false, nil
 	}
 
 	if len(r.StatusDescription) > 32 {
-		return false, invalidStatusDescriptionErrorInUserUpdate
+		return false, models.InvalidStatusDescriptionErrorInUserUpdate
 	}
 
 	u.StatusDescription = r.StatusDescription
 	return true, nil
 }
 
-func (r *UpdateUserRequest) BioChecks(u *User) (bool, error) {
+func (r *UpdateUserRequest) BioChecks(u *models.User) (bool, error) {
 	if r.Bio == "" {
 		return false, nil
 	}
 
 	if len(r.Bio) > 512 {
-		return false, invalidBioErrorInUserUpdate
+		return false, models.InvalidBioErrorInUserUpdate
 	}
 
 	u.Bio = r.Bio
 	return true, nil
 }
 
-func (r *UpdateUserRequest) UserIconChecks(u *User) (bool, error) {
+func (r *UpdateUserRequest) UserIconChecks(u *models.User) (bool, error) {
 	if r.UserIcon == "" {
 		return false, nil
 	}
 
 	if !u.IsStaff() {
-		return false, triedToSetUserIconWithoutBeingStaffErrorInUserUpdate
+		return false, models.TriedToSetUserIconWithoutBeingStaffErrorInUserUpdate
 	}
 
 	u.UserIcon = r.UserIcon
 	return true, nil
 }
 
-func (r *UpdateUserRequest) ProfilePicOverrideChecks(u *User) (bool, error) {
+func (r *UpdateUserRequest) ProfilePicOverrideChecks(u *models.User) (bool, error) {
 	if r.ProfilePictureOverride == "" {
 		return false, nil
 	}
 
 	if !u.IsStaff() {
-		return false, triedToSetProfilePicOverrideWithoutBeingStaffErrorInUserUpdate
+		return false, models.TriedToSetProfilePicOverrideWithoutBeingStaffErrorInUserUpdate
 	}
 
 	u.ProfilePicOverride = r.ProfilePictureOverride
 	return true, nil
 }
 
-func (r *UpdateUserRequest) TagsChecks(u *User) (bool, error) {
+func (r *UpdateUserRequest) TagsChecks(u *models.User) (bool, error) {
 	if len(r.Tags) == 0 {
 		return false, nil
 	}
@@ -148,11 +150,11 @@ func (r *UpdateUserRequest) TagsChecks(u *User) (bool, error) {
 			continue
 		} else if strings.HasPrefix("language_", tag) {
 			if !isValidLanguageTag(tag) {
-				return false, invalidLanguageTagInUserUpdate
+				return false, models.InvalidLanguageTagInUserUpdate
 			}
 			// Ensure that we do not add more that a total of 3 language tags to the user.
 			if i++; i > 3 {
-				return false, tooManyLanguageTagsInUserUpdate
+				return false, models.TooManyLanguageTagsInUserUpdate
 			}
 		}
 
@@ -169,23 +171,23 @@ func (r *UpdateUserRequest) TagsChecks(u *User) (bool, error) {
 	return true, nil
 }
 
-func (r *UpdateUserRequest) HomeLocationChecks(u *User) (bool, error) {
+func (r *UpdateUserRequest) HomeLocationChecks(u *models.User) (bool, error) {
 	if r.HomeLocation == "" {
 		return false, nil
 	}
 
-	var w World
-	tx := DB.Model(&World{}).Where("id = ?", r.HomeLocation).Find(&w)
+	var w models.World
+	tx := config.DB.Model(&models.World{}).Where("id = ?", r.HomeLocation).Find(&w)
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
-			return false, worldNotFoundErrorInUserUpdate
+			return false, models.WorldNotFoundErrorInUserUpdate
 		}
 
 		return false, nil
 	}
 
-	if w.ReleaseStatus == ReleaseStatusPrivate && (w.AuthorID != u.ID && !u.IsStaff()) {
-		return false, worldIsPrivateAndNotOwnedByUser
+	if w.ReleaseStatus == models.ReleaseStatusPrivate && (w.AuthorID != u.ID && !u.IsStaff()) {
+		return false, models.WorldIsPrivateAndNotOwnedByUser
 	}
 
 	u.HomeWorldID = w.ID

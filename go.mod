@@ -1,4 +1,4 @@
-module vrcps
+module gitlab.com/george/shoya-go
 
 go 1.17
 

@@ -10,6 +10,8 @@ import (
 	"github.com/gofiber/websocket/v2"
 	"github.com/gtsatsis/harvester"
 	"github.com/tkanos/gonfig"
+	"gitlab.com/george/shoya-go/config"
+	"gitlab.com/george/shoya-go/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
@@ -17,18 +19,11 @@ import (
 	"time"
 )
 
-var RuntimeConfig Config
-var ApiConfiguration = ApiConfig{}
-
-var RedisClient *redis.Client
-var HarvestRedisClient *redis.Client
-var DB *gorm.DB
-
 func main() {
 	vrcpsInit()
 
 	app := fiber.New(fiber.Config{
-		ProxyHeader: RuntimeConfig.Server.ProxyHeader,
+		ProxyHeader: config.RuntimeConfig.Server.ProxyHeader,
 		Prefork:     false,
 	})
 	app.Use(recover.New())
@@ -70,7 +65,7 @@ func main() {
 	instanceRoutes(app)
 	avatarsRoutes(app)
 
-	log.Fatal(app.Listen(RuntimeConfig.Server.Address))
+	log.Fatal(app.Listen(config.RuntimeConfig.Server.Address))
 }
 
 func vrcpsInit() {
@@ -82,7 +77,7 @@ func vrcpsInit() {
 
 // initializeConfig reads the config.json file and initializes the runtime config
 func initializeConfig() {
-	err := gonfig.GetConf("config.json", &RuntimeConfig)
+	err := gonfig.GetConf("config.json", &config.RuntimeConfig)
 	if err != nil {
 		panic("error reading config file")
 	}
@@ -92,38 +87,38 @@ func initializeConfig() {
 func initializeDB() {
 	var err error
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=Etc/GMT",
-		RuntimeConfig.Database.Host,
-		RuntimeConfig.Database.User,
-		RuntimeConfig.Database.Password,
-		RuntimeConfig.Database.Database,
-		RuntimeConfig.Database.Port)
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		config.RuntimeConfig.Database.Host,
+		config.RuntimeConfig.Database.User,
+		config.RuntimeConfig.Database.Password,
+		config.RuntimeConfig.Database.Database,
+		config.RuntimeConfig.Database.Port)
+	config.DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: gormLogger.Default.LogMode(gormLogger.Silent),
 	})
 	if err != nil {
 		panic(err)
 	}
 
-	_ = DB.AutoMigrate(&User{}, &Avatar{}, &File{}, &FavoriteGroup{}, &FavoriteItem{}, &Moderation{}, &Permission{},
-		&WorldUnityPackage{}, &AvatarUnityPackage{})
+	_ = config.DB.AutoMigrate(&models.User{}, &models.Avatar{}, &models.File{}, &models.FavoriteGroup{}, &models.FavoriteItem{}, &models.Moderation{}, &models.Permission{},
+		&models.WorldUnityPackage{}, &models.AvatarUnityPackage{})
 
 }
 
 // initializeRedis initializes the redis clients
 func initializeRedis() {
-	RedisClient = redis.NewClient(&redis.Options{
-		Addr:     RuntimeConfig.Redis.Host,
-		Password: RuntimeConfig.Redis.Password,
-		DB:       RuntimeConfig.Redis.Database,
+	config.RedisClient = redis.NewClient(&redis.Options{
+		Addr:     config.RuntimeConfig.Redis.Host,
+		Password: config.RuntimeConfig.Redis.Password,
+		DB:       config.RuntimeConfig.Redis.Database,
 	})
-	HarvestRedisClient = redis.NewClient(&redis.Options{
-		Addr:     RuntimeConfig.Redis.Host,
-		Password: RuntimeConfig.Redis.Password,
-		DB:       RuntimeConfig.Redis.Database,
+	config.HarvestRedisClient = redis.NewClient(&redis.Options{
+		Addr:     config.RuntimeConfig.Redis.Host,
+		Password: config.RuntimeConfig.Redis.Password,
+		DB:       config.RuntimeConfig.Redis.Database,
 	})
 
-	_, err := RedisClient.Ping(context.Background()).Result()
-	_, err2 := HarvestRedisClient.Ping(context.Background()).Result()
+	_, err := config.RedisClient.Ping(context.Background()).Result()
+	_, err2 := config.HarvestRedisClient.Ping(context.Background()).Result()
 	if err != nil || err2 != nil {
 		panic(err)
 	}
@@ -131,9 +126,9 @@ func initializeRedis() {
 
 // initializeApiConfig initializes harvester client used to configure the API
 func initializeApiConfig() {
-	h, err := harvester.New(&ApiConfiguration).
-		WithRedisSeed(HarvestRedisClient).
-		WithRedisMonitor(HarvestRedisClient, time.Duration(RuntimeConfig.ApiConfigRefreshRateMs)*time.Millisecond).
+	h, err := harvester.New(&config.ApiConfiguration).
+		WithRedisSeed(config.HarvestRedisClient).
+		WithRedisMonitor(config.HarvestRedisClient, time.Duration(config.RuntimeConfig.ApiConfigRefreshRateMs)*time.Millisecond).
 		Create()
 	err = h.Harvest(context.Background())
 	if err != nil {

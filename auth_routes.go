@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"gitlab.com/george/shoya-go/config"
+	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -32,10 +34,10 @@ func getAuth(c *fiber.Ctx) error {
 // getExists | /auth/exists
 // Used to check whether a user with a given username, display name, or email exists.
 func getExists(c *fiber.Ctx) error {
-	var u User
+	var u models.User
 	var exists = true
 
-	tx := DB.Where("username = ?", c.Query("username")).
+	tx := config.DB.Where("username = ?", c.Query("username")).
 		Or("display_name = ?", c.Query("displayName")).
 		Or("email = ?", c.Query("email")).
 		Not("id = ?", c.Query("excludeUserId")). // Exclude the user with the given id if provided.
@@ -55,7 +57,7 @@ func getExists(c *fiber.Ctx) error {
 // Used to register a new user.
 func postRegister(c *fiber.Ctx) error {
 	var r RegisterRequest
-	var _u User
+	var _u models.User
 	if err := c.BodyParser(&r); err != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"ok": false,
@@ -92,7 +94,7 @@ func postRegister(c *fiber.Ctx) error {
 		})
 	}
 
-	tx := DB.Where("username = ?", strings.ToLower(r.Username)).
+	tx := config.DB.Where("username = ?", strings.ToLower(r.Username)).
 		Or("display_name = ?", r.Username).
 		Or("email = ?", strings.ToLower(r.Email)).First(&_u)
 
@@ -105,8 +107,8 @@ func postRegister(c *fiber.Ctx) error {
 		})
 	}
 
-	u := NewUser(r.Username, r.Username, r.Email, r.Password)
-	tx = DB.Create(&u)
+	u := models.NewUser(r.Username, r.Username, r.Email, r.Password)
+	tx = config.DB.Create(&u)
 	if tx.Error != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"ok": false,
@@ -124,7 +126,7 @@ func postRegister(c *fiber.Ctx) error {
 // getSelf | /auth/user
 // Returns the current user's information.
 func getSelf(c *fiber.Ctx) error {
-	u := c.Locals("user").(*User)
+	u := c.Locals("user").(*models.User)
 
 	return c.Status(200).JSON(u.GetAPICurrentUser())
 }

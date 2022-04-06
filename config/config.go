@@ -1,12 +1,21 @@
-package main
+package config
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	hsync "github.com/gtsatsis/harvester/sync"
+	"gorm.io/gorm"
 	"sync"
 )
+
+var RuntimeConfig Config
+var ApiConfiguration = ApiConfig{}
+
+var RedisClient *redis.Client
+var HarvestRedisClient *redis.Client
+var DB *gorm.DB
 
 // Config holds the configuration for database & redis connections, fiber, and the harvester polling interval.
 type Config struct {

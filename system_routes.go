@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"gitlab.com/george/shoya-go/config"
 	"strings"
 	"time"
 )
@@ -19,7 +20,7 @@ func systemRoutes(router *fiber.App) {
 func getHealth(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{
 		"status":     "ok",
-		"serverName": ApiConfiguration.ServerName.Get(),
+		"serverName": config.ApiConfiguration.ServerName.Get(),
 	})
 }
 
@@ -27,10 +28,10 @@ func getConfig(c *fiber.Ctx) error {
 	// Add cookie to response
 	c.Cookie(&fiber.Cookie{
 		Name:     "apiKey",
-		Value:    ApiConfiguration.ApiKey.Get(),
+		Value:    config.ApiConfiguration.ApiKey.Get(),
 		SameSite: "disabled",
 	})
-	return c.JSON(NewApiConfigResponse(&ApiConfiguration))
+	return c.JSON(config.NewApiConfigResponse(&config.ApiConfiguration))
 }
 
 func putLogout(c *fiber.Ctx) error {
@@ -56,11 +57,11 @@ func getTime(c *fiber.Ctx) error {
 }
 
 func getInfoPush(c *fiber.Ctx) error {
-	var toPush []ApiInfoPush
+	var toPush []config.ApiInfoPush
 	requiredTags := strings.Split(c.Query("require"), ",")
 	includedTags := strings.Split(c.Query("include"), ",")
 
-	for _, push := range ApiConfiguration.InfoPushes.Get() {
+	for _, push := range config.ApiConfiguration.InfoPushes.Get() {
 		for _, pushed := range toPush {
 			if push.Id == pushed.Id {
 				break
@@ -97,8 +98,8 @@ func getVisits(c *fiber.Ctx) error {
 
 func getAutoConfig(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
-		"apiUrl":         ApiConfiguration.AutoConfigApiUrl.Get(),
-		"websocketUrl":   ApiConfiguration.AutoConfigWebsocketUrl.Get(),
-		"nameServerHost": ApiConfiguration.AutoConfigNameServerHost.Get(),
+		"apiUrl":         config.ApiConfiguration.AutoConfigApiUrl.Get(),
+		"websocketUrl":   config.ApiConfiguration.AutoConfigWebsocketUrl.Get(),
+		"nameServerHost": config.ApiConfiguration.AutoConfigNameServerHost.Get(),
 	})
 }

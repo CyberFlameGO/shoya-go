@@ -1,9 +1,10 @@
-package main
+package models
 
 import (
 	"errors"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
+	"gitlab.com/george/shoya-go/config"
 	"time"
 )
 
@@ -43,13 +44,13 @@ func CreateJoinToken(u *User, w *World, ip string, location string) (string, err
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(ApiConfiguration.JwtSecret.Get()))
+	return token.SignedString([]byte(config.ApiConfiguration.JwtSecret.Get()))
 }
 
 func ValidateJoinToken(token string) (*InstanceJoinJWTClaims, error) {
 	claims := InstanceJoinJWTClaims{}
 	tkn, err := jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(ApiConfiguration.JwtSecret.Get()), nil
+		return []byte(config.ApiConfiguration.JwtSecret.Get()), nil
 	})
 
 	if err != nil {

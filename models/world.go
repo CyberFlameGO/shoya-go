@@ -1,8 +1,9 @@
-package main
+package models
 
 import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+	"gitlab.com/george/shoya-go/config"
 	"gorm.io/gorm"
 	"time"
 )
@@ -30,7 +31,7 @@ func (w *World) BeforeCreate(tx *gorm.DB) (err error) {
 func (w *World) GetAuthor() (*User, error) {
 	var u User
 
-	tx := DB.Where("id = ?", w.AuthorID).Find(&u)
+	tx := config.DB.Where("id = ?", w.AuthorID).Find(&u)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}

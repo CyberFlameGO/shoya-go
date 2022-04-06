@@ -1,9 +1,10 @@
-package main
+package models
 
 import (
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+	"gitlab.com/george/shoya-go/config"
 	"gorm.io/gorm"
 	"strconv"
 	"strings"
@@ -97,15 +98,15 @@ func NewUser(username, displayName, email, password string) *User {
 	}
 
 	return &User{
-		AcceptedTermsOfServiceVersion: int(ApiConfiguration.CurrentTOSVersion.Get()),
+		AcceptedTermsOfServiceVersion: int(config.ApiConfiguration.CurrentTOSVersion.Get()),
 		Username:                      strings.ToLower(username),
 		DisplayName:                   displayName,
 		Email:                         strings.ToLower(email),
 		EmailVerified:                 true,
 		Password:                      pw,
-		CurrentAvatarID:               ApiConfiguration.DefaultAvatar.Get(),
-		FallbackAvatarID:              ApiConfiguration.DefaultAvatar.Get(),
-		HomeWorldID:                   ApiConfiguration.HomeWorldId.Get(),
+		CurrentAvatarID:               config.ApiConfiguration.DefaultAvatar.Get(),
+		FallbackAvatarID:              config.ApiConfiguration.DefaultAvatar.Get(),
+		HomeWorldID:                   config.ApiConfiguration.HomeWorldId.Get(),
 		Status:                        UserStatusActive,
 	}
 }

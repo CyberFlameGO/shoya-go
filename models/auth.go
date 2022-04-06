@@ -1,8 +1,9 @@
-package main
+package models
 
 import (
 	"errors"
 	"github.com/golang-jwt/jwt"
+	"gitlab.com/george/shoya-go/config"
 	"time"
 )
 
@@ -28,14 +29,14 @@ func CreateAuthCookie(u *User, ip string, isClientToken bool) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(ApiConfiguration.JwtSecret.Get()))
+	return token.SignedString([]byte(config.ApiConfiguration.JwtSecret.Get()))
 }
 
 // ValidateAuthCookie validates the given JWT and returns the user ID if it is valid
 func ValidateAuthCookie(token string, ip string, isClientRequest bool, isPhotonRequest bool) (string, error) {
 	claims := AuthCookieClaims{}
 	tkn, err := jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(ApiConfiguration.JwtSecret.Get()), nil
+		return []byte(config.ApiConfiguration.JwtSecret.Get()), nil
 	})
 
 	if err != nil {

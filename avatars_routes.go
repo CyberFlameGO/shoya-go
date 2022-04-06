@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lib/pq"
+	"gitlab.com/george/shoya-go/config"
+	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strconv"
@@ -21,10 +23,10 @@ func avatarsRoutes(router *fiber.App) {
 
 func getAvatars(c *fiber.Ctx) error {
 	var isGameRequest = c.Locals("isGameRequest").(bool)
-	var avatars []Avatar
-	var apiAvatars = make([]*APIAvatar, 0)
-	var apiAvatarsWithPackages = make([]*APIAvatarWithPackages, 0)
-	var u = c.Locals("user").(*User)
+	var avatars []models.Avatar
+	var apiAvatars = make([]*models.APIAvatar, 0)
+	var apiAvatarsWithPackages = make([]*models.APIAvatarWithPackages, 0)
+	var u = c.Locals("user").(*models.User)
 	var numberOfAvatarsToSearch = 60
 	var avatarsOffset = 0
 	var searchSort = ""
@@ -33,10 +35,10 @@ func getAvatars(c *fiber.Ctx) error {
 	var searchTagsExclude = make([]string, 0)
 	var searchSelf = false
 	var searchUser = ""
-	var searchReleaseStatus = ReleaseStatusPublic
+	var searchReleaseStatus = models.ReleaseStatusPublic
 	var limitToReleaseStatus = true
 
-	var tx = DB.Model(&Avatar{}).
+	var tx = config.DB.Model(&models.Avatar{}).
 		Preload("Image").
 		Preload("UnityPackages.File")
 
@@ -98,11 +100,11 @@ func getAvatars(c *fiber.Ctx) error {
 
 	if c.Query("releaseStatus") != "" {
 		switch c.Query("releaseStatus") {
-		case string(ReleaseStatusPublic):
-			searchReleaseStatus = ReleaseStatusPublic
+		case string(models.ReleaseStatusPublic):
+			searchReleaseStatus = models.ReleaseStatusPublic
 			break
-		case string(ReleaseStatusPrivate):
-			searchReleaseStatus = ReleaseStatusPrivate
+		case string(models.ReleaseStatusPrivate):
+			searchReleaseStatus = models.ReleaseStatusPrivate
 			if searchSelf == false {
 				searchSelf = true
 			}
@@ -110,8 +112,8 @@ func getAvatars(c *fiber.Ctx) error {
 				searchUser = u.ID
 			}
 			break
-		case string(ReleaseStatusHidden):
-			searchReleaseStatus = ReleaseStatusHidden
+		case string(models.ReleaseStatusHidden):
+			searchReleaseStatus = models.ReleaseStatusHidden
 			break
 		}
 	}
@@ -148,12 +150,12 @@ func getAvatars(c *fiber.Ctx) error {
 		}
 	}
 
-	if searchReleaseStatus != ReleaseStatusPublic {
-		if searchReleaseStatus == ReleaseStatusHidden && u.DeveloperType != "internal" {
+	if searchReleaseStatus != models.ReleaseStatusPublic {
+		if searchReleaseStatus == models.ReleaseStatusHidden && u.DeveloperType != "internal" {
 			goto badRequest
 		}
 
-		if searchReleaseStatus == ReleaseStatusPrivate &&
+		if searchReleaseStatus == models.ReleaseStatusPrivate &&
 			(searchUser != u.ID || searchSelf == false) && u.DeveloperType != "internal" {
 			goto badRequest
 		}
@@ -206,16 +208,16 @@ func getLicensedAvatars(c *fiber.Ctx) error {
 
 func getAvatar(c *fiber.Ctx) error {
 	var isGameRequest = c.Locals("isGameRequest").(bool)
-	var a Avatar
-	tx := DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&Avatar{}).Where("id = ?", c.Params("id")).First(&a)
+	var a models.Avatar
+	tx := config.DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&models.Avatar{}).Where("id = ?", c.Params("id")).First(&a)
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
-			return c.Status(404).JSON(ErrWorldNotFoundResponse)
+			return c.Status(404).JSON(models.ErrWorldNotFoundResponse)
 		}
 	}
 
-	var aa *APIAvatar
-	var aap *APIAvatarWithPackages
+	var aa *models.APIAvatar
+	var aap *models.APIAvatarWithPackages
 	var err error
 
 	if isGameRequest {
@@ -240,18 +242,18 @@ func getAvatar(c *fiber.Ctx) error {
 }
 
 func selectAvatar(c *fiber.Ctx) error {
-	var u = c.Locals("user").(*User)
-	var a Avatar
+	var u = c.Locals("user").(*models.User)
+	var a models.Avatar
 	var changes = map[string]interface{}{}
 
-	tx := DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&Avatar{}).Where("id = ?", c.Params("id")).First(&a)
+	tx := config.DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&models.Avatar{}).Where("id = ?", c.Params("id")).First(&a)
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
-			return c.Status(404).JSON(ErrAvatarNotFoundResponse)
+			return c.Status(404).JSON(models.ErrAvatarNotFoundResponse)
 		}
 	}
 
-	if !u.IsStaff() && a.ReleaseStatus != ReleaseStatusPublic && u.ID != a.AuthorID {
+	if !u.IsStaff() && a.ReleaseStatus != models.ReleaseStatusPublic && u.ID != a.AuthorID {
 		return c.Status(403).JSON(fiber.Map{
 			"error": fiber.Map{
 				"message":     "trying to switch into private avatar not uploaded by self",
@@ -263,7 +265,7 @@ func selectAvatar(c *fiber.Ctx) error {
 	changes["current_avatar_id"] = a.ID
 	changes["fallback_avatar_id"] = a.ID
 
-	tx = DB.Omit(clause.Associations).Model(&u).Updates(changes)
+	tx = config.DB.Omit(clause.Associations).Model(&u).Updates(changes)
 	fmt.Println(tx.Error)
 
 	u.CurrentAvatarID = a.ID

@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/base64"
 	"github.com/gofiber/fiber/v2"
+	"gitlab.com/george/shoya-go/config"
+	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm/clause"
 	"net/url"
 	"strings"
@@ -18,13 +20,13 @@ func ApiKeyMiddleware(c *fiber.Ctx) error {
 	if apiKey == "" {
 		apiKey = c.Cookies("apiKey")
 		if apiKey == "" {
-			return c.Status(401).JSON(ErrMissingCredentialsResponse)
+			return c.Status(401).JSON(models.ErrMissingCredentialsResponse)
 		}
 	}
 
-	if apiKey != ApiConfiguration.ApiKey.Get() {
+	if apiKey != config.ApiConfiguration.ApiKey.Get() {
 		// TODO: Check if the API key is valid against the database if it is not the public key.
-		return c.Status(401).JSON(ErrInvalidCredentialsResponse)
+		return c.Status(401).JSON(models.ErrInvalidCredentialsResponse)
 	}
 
 	c.Locals("apiKey", apiKey)
@@ -46,22 +48,22 @@ func DoLoginMiddleware(c *fiber.Ctx) error {
 	if authorizationHeader != "" {
 		username, password, err := parseVrchatBasicAuth(authorizationHeader)
 		if err != nil {
-			return c.Status(401).JSON(ErrInvalidCredentialsResponse)
+			return c.Status(401).JSON(models.ErrInvalidCredentialsResponse)
 		}
 
-		u := User{}
-		err = DB.Preload(clause.Associations).Where("username = ?", username).First(&u).Error
+		u := models.User{}
+		err = config.DB.Preload(clause.Associations).Where("username = ?", username).First(&u).Error
 		if err != nil {
-			return c.Status(401).JSON(ErrInvalidCredentialsResponse)
+			return c.Status(401).JSON(models.ErrInvalidCredentialsResponse)
 		}
 
 		m, err := u.CheckPassword(password)
 		if !m || err != nil {
-			return c.Status(401).JSON(ErrInvalidCredentialsResponse)
+			return c.Status(401).JSON(models.ErrInvalidCredentialsResponse)
 		}
 
 		isGameReq := c.Locals("isGameRequest").(bool)
-		t, err := CreateAuthCookie(&u, c.IP(), isGameReq)
+		t, err := models.CreateAuthCookie(&u, c.IP(), isGameReq)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "Failed to create auth cookie"})
 		}
@@ -86,24 +88,24 @@ func AuthMiddleware(c *fiber.Ctx) error {
 	if authCookie == "" {
 		authCookie_, ok := c.Locals("authCookie").(string)
 		if !ok || authCookie_ == "" {
-			return c.Status(401).JSON(ErrMissingCredentialsResponse)
+			return c.Status(401).JSON(models.ErrMissingCredentialsResponse)
 		}
 		authCookie = authCookie_ // TODO: Look into less hacky solution -- Currently the variable is locally assigned in the if.
 	}
 
 	isGameReq := c.Locals("isGameRequest").(bool)
-	uid, err := ValidateAuthCookie(authCookie, c.IP(), isGameReq, false)
+	uid, err := models.ValidateAuthCookie(authCookie, c.IP(), isGameReq, false)
 	if err != nil {
-		return c.Status(401).JSON(ErrInvalidCredentialsResponse)
+		return c.Status(401).JSON(models.ErrInvalidCredentialsResponse)
 	}
 
-	u := User{}
-	err = DB.Preload(clause.Associations).
+	u := models.User{}
+	err = config.DB.Preload(clause.Associations).
 		Preload("CurrentAvatar.Image").
 		Preload("FallbackAvatar").
 		Where("id = ?", uid).First(&u).Error
 	if err != nil {
-		return c.Status(401).JSON(ErrInvalidCredentialsResponse)
+		return c.Status(401).JSON(models.ErrInvalidCredentialsResponse)
 	}
 
 	c.Locals("authCookie", authCookie)
@@ -117,15 +119,15 @@ func AuthMiddleware(c *fiber.Ctx) error {
 func MfaMiddleware(c *fiber.Ctx) error {
 	if c.Locals("user") == nil {
 		// TODO: Throw error; user is not logged in, we should not be here.
-		return c.Status(401).JSON(ErrMissingCredentialsResponse)
+		return c.Status(401).JSON(models.ErrMissingCredentialsResponse)
 	}
 
-	user := c.Locals("user").(*User)
+	user := c.Locals("user").(*models.User)
 	if !user.MfaEnabled {
 		return c.Next()
 	}
 	if c.Cookies("twoFactorAuth") == "" {
-		return c.Status(401).JSON(ErrTwoFactorAuthenticationRequiredResponse)
+		return c.Status(401).JSON(models.ErrTwoFactorAuthenticationRequiredResponse)
 	}
 
 	// TODO: Check if the cookie is valid. If it is, the request is allowed to continue.
