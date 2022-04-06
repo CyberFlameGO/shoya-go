@@ -23,7 +23,7 @@ Doing so is fairly easy, but if you're not familiar with Go, it can be a bit dau
 
 Once you have Go installed and are ready to compile, you can run `git clone https://gitlab.com/george/shoya-go.git` to clone this repository, switch into its directory, and run `go mod download` to download all the required modules.
 
-Now with all the modules downloaded, run `go build -o shoya`, and you should have a binary compiled after a short while. Note that if you're on Windows, the following environment variables **must** be set to compile for Linux; `GOOS=linux`, and `GOARCH=amd64`.
+Now with all the modules downloaded, run `go build -o shoya ./api`, and you should have a binary compiled after a short while. Note that if you're on Windows, the following environment variables **must** be set to compile for Linux; `GOOS=linux`, and `GOARCH=amd64`.
 
 #### Step 1 - Installing & Running Shoya
 After putting that binary you just compiled on a Linux environment, create a `config.json` file in the same directory. (You can copy `config.example.json` for an example!)
