@@ -22,7 +22,7 @@ type FavoriteGroup struct {
 	Items     []FavoriteItem `json:"-"`
 }
 
-func (f *FavoriteGroup) BeforeCreate(tx *gorm.DB) (err error) {
+func (f *FavoriteGroup) BeforeCreate(*gorm.DB) (err error) {
 	f.ID = "fvgrp_" + uuid.New().String() // TODO: Possibly do a database lookup to see whether the UUID already exists.
 	return
 }
@@ -59,7 +59,7 @@ type FavoriteItem struct {
 	ItemId          string `json:"itemId"`
 }
 
-func (f *FavoriteItem) BeforeCreate(tx *gorm.DB) (err error) {
+func (f *FavoriteItem) BeforeCreate(*gorm.DB) (err error) {
 	f.ID = "fvrt_" + uuid.New().String() // TODO: Possibly do a database lookup to see whether the UUID already exists.
 	return
 }

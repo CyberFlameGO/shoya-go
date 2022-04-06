@@ -22,7 +22,7 @@ type World struct {
 	UnityPackages []WorldUnityPackage `json:"unityPackages" gorm:"foreignKey:BelongsToAssetID"`
 }
 
-func (w *World) BeforeCreate(tx *gorm.DB) (err error) {
+func (w *World) BeforeCreate(*gorm.DB) (err error) {
 	w.ID = "wrld_" + uuid.New().String()
 	return
 }

@@ -53,7 +53,7 @@ type WorldUnityPackage struct {
 	UnitySortNumber  int      `json:"unitySortNumber"`
 }
 
-func (u *WorldUnityPackage) BeforeCreate(tx *gorm.DB) (err error) {
+func (u *WorldUnityPackage) BeforeCreate(*gorm.DB) (err error) {
 	u.ID = "unp_" + uuid.New().String()
 	return
 }
@@ -84,7 +84,7 @@ type AvatarUnityPackage struct {
 	UnitySortNumber  int      `json:"unitySortNumber"`
 }
 
-func (u *AvatarUnityPackage) BeforeCreate(tx *gorm.DB) (err error) {
+func (u *AvatarUnityPackage) BeforeCreate(*gorm.DB) (err error) {
 	u.ID = "unp_" + uuid.New().String()
 	return
 }

@@ -113,7 +113,7 @@ func NewUser(username, displayName, email, password string) *User {
 
 // BeforeCreate is a hook called before the database entry is created.
 // It generates a UUID for the user.
-func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
+func (u *User) BeforeCreate(*gorm.DB) (err error) {
 	u.ID = "usr_" + uuid.New().String() // TODO: Possibly do a database lookup to see whether the UUID already exists.
 	return
 }

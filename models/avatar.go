@@ -21,7 +21,7 @@ type Avatar struct {
 	UnityPackages []AvatarUnityPackage `gorm:"foreignKey:BelongsToAssetID"`
 }
 
-func (a *Avatar) BeforeCreate(tx *gorm.DB) (err error) {
+func (a *Avatar) BeforeCreate(*gorm.DB) (err error) {
 	a.ID = "avtr_" + uuid.New().String()
 	return
 }

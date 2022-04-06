@@ -10,7 +10,7 @@ type File struct {
 	Url string
 }
 
-func (f *File) BeforeCreate(tx *gorm.DB) (err error) {
+func (f *File) BeforeCreate(*gorm.DB) (err error) {
 	f.ID = "file_" + uuid.New().String()
 	return
 }
