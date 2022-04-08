@@ -38,8 +38,8 @@ func getUsers(c *fiber.Ctx) error {
 		Preload("CurrentAvatar.Image")
 
 	// Query parameter setup
-	if c.Query("n") != "" {
-		atoi, err := strconv.Atoi(c.Query("n"))
+	if _n := c.Query("n"); _n != "" {
+		atoi, err := strconv.Atoi(_n)
 		if err != nil {
 			goto badRequest
 		}
@@ -51,8 +51,8 @@ func getUsers(c *fiber.Ctx) error {
 		numberOfUsersToSearch = atoi
 	}
 
-	if c.Query("offset") != "" {
-		atoi, err := strconv.Atoi(c.Query("offset"))
+	if _o := c.Query("offset"); _o != "" {
+		atoi, err := strconv.Atoi(_o)
 		if err != nil {
 			goto badRequest
 		}
@@ -64,12 +64,12 @@ func getUsers(c *fiber.Ctx) error {
 		searchOffset = atoi
 	}
 
-	if c.Query("developerType") != "" {
-		searchDeveloperType = c.Query("developerType")
+	if _d := c.Query("developerType"); _d != "" {
+		searchDeveloperType = _d
 	}
 
-	if c.Query("search") != "" {
-		searchTerm = "%" + c.Query("search") + "%" // TODO: FTS
+	if _s := c.Query("search"); _s != "" {
+		searchTerm = "%" + _s + "%" // TODO: FTS
 	}
 
 	if searchDeveloperType != "" {

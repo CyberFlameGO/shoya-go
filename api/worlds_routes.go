@@ -48,8 +48,8 @@ func getWorlds(c *fiber.Ctx) error {
 		Preload("UnityPackages.File")
 
 	// Query parameter setup
-	if c.Query("n") != "" {
-		atoi, err := strconv.Atoi(c.Query("n"))
+	if _n := c.Query("n"); _n != "" {
+		atoi, err := strconv.Atoi(_n)
 		if err != nil {
 			goto badRequest
 		}
@@ -61,8 +61,8 @@ func getWorlds(c *fiber.Ctx) error {
 		numberOfWorldsToSearch = atoi
 	}
 
-	if c.Query("offset") != "" {
-		atoi, err := strconv.Atoi(c.Query("offset"))
+	if _o := c.Query("offset"); _o != "" {
+		atoi, err := strconv.Atoi(_o)
 		if err != nil {
 			goto badRequest
 		}
@@ -74,34 +74,34 @@ func getWorlds(c *fiber.Ctx) error {
 		worldsOffset = atoi
 	}
 
-	if c.Query("search") != "" {
-		searchTerm = c.Query("search")
+	if _s := c.Query("search"); _s != "" {
+		searchTerm = _s
 	}
 
 	if c.Query("user") == "me" {
 		searchSelf = true
 	}
 
-	if c.Query("userId") != "" {
-		searchUser = c.Query("userId")
+	if _uid := c.Query("userId"); _uid != "" {
+		searchUser = _uid
 	}
 
-	if c.Query("tag") != "" {
-		tags := strings.Split(c.Query("tag"), ",")
+	if _tags := c.Query("tag"); _tags != "" {
+		tags := strings.Split(_tags, ",")
 		for _, tag := range tags {
 			searchTagsInclude = append(searchTagsInclude, tag)
 		}
 	}
 
-	if c.Query("notag") != "" {
-		tags := strings.Split(c.Query("notag"), ",")
+	if _exclTags := c.Query("notag"); _exclTags != "" {
+		tags := strings.Split(_exclTags, ",")
 		for _, tag := range tags {
 			searchTagsExclude = append(searchTagsExclude, tag)
 		}
 	}
 
-	if c.Query("releaseStatus") != "" {
-		switch c.Query("releaseStatus") {
+	if _r := c.Query("releaseStatus"); _r != "" {
+		switch _r {
 		case string(models.ReleaseStatusPublic):
 			searchReleaseStatus = models.ReleaseStatusPublic
 			break
@@ -120,8 +120,8 @@ func getWorlds(c *fiber.Ctx) error {
 		}
 	}
 
-	if c.Query("sort") != "" {
-		searchSort = c.Query("sort")
+	if _s := c.Query("sort"); _s != "" {
+		searchSort = _s
 	}
 
 	// Additional query prep based on parameters
