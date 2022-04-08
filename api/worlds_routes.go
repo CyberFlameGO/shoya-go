@@ -26,7 +26,6 @@ func worldsRoutes(app *fiber.App) {
 //
 // This route retrieves a list of worlds based on various parameters (e.g.: search, offset, number).
 // FIXME: This route is extremely unoptimized. Several tons of refactoring and fixing are required.
-// TODO: Implement &tag, as well as &notag searching. No clue how to do this in SQL.
 func getWorlds(c *fiber.Ctx) error {
 	var isGameRequest = c.Locals("isGameRequest").(bool)
 	var worlds []models.World
