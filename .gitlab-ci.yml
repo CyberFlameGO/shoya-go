@@ -1,0 +1,24 @@
+default:
+    image: golang:1.18
+
+stages:
+    - build
+
+build-api:
+    stage: build
+    cache:
+        key: "$CI_COMMIT_REF_SLUG"
+        paths:
+            - vendor/
+    script:
+        - mkdir -p ./bin/api
+        - go mod download
+        - go mod vendor
+        - GOARCH=amd64 GOOS=linux go build -o bin/api/api_amd64 ./api
+    artifacts:
+        name: api
+        paths:
+            - bin/api
+        expose_as: api
+        untracked: false
+        expire_in: 30 days
