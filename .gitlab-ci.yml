@@ -22,3 +22,22 @@ build-api:
         expose_as: api
         untracked: false
         expire_in: 30 days
+
+build-ws:
+    stage: build
+    cache:
+        key: "$CI_COMMIT_REF_SLUG"
+        paths:
+            - vendor/
+    script:
+        - mkdir -p ./bin/ws
+        - go mod download
+        - go mod vendor
+        - GOARCH=amd64 GOOS=linux go build -o bin/ws/ws_amd64 ./ws
+    artifacts:
+        name: ws
+        paths:
+            - bin/ws
+        expose_as: ws
+        untracked: false
+        expire_in: 30 days
