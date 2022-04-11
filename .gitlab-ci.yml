@@ -22,12 +22,6 @@ build-api:
         expose_as: api
         untracked: false
         expire_in: 30 days
-    rules:
-        - changes:
-            - go.mod
-            - go.sum
-            - /api/*.go
-            - /models/*.go
 
 build-ws:
     stage: build
@@ -47,9 +41,3 @@ build-ws:
         expose_as: ws
         untracked: false
         expire_in: 30 days
-    rules:
-        - changes:
-            - go.mod
-            - go.sum
-            - /ws/*.go
-            - /models/*.go
