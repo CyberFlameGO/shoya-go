@@ -58,6 +58,16 @@ func getExists(c *fiber.Ctx) error {
 func postRegister(c *fiber.Ctx) error {
 	var r RegisterRequest
 	var _u models.User
+
+	if config.ApiConfiguration.DisableRegistration.Get() {
+		return c.Status(400).JSON(fiber.Map{
+			"ok": false,
+			"error": fiber.Map{
+				"message": "Registrations are currently disabled.",
+			},
+		})
+	}
+
 	if err := c.BodyParser(&r); err != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"ok": false,
@@ -118,9 +128,7 @@ func postRegister(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.Status(200).JSON(fiber.Map{
-		"ok": true,
-	})
+	return c.Status(200).JSON(u.GetAPICurrentUser())
 }
 
 // getSelf | /auth/user
