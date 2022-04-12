@@ -35,11 +35,11 @@ func CreateJoinToken(u *User, w *World, ip string, location string) (string, err
 		WorldAuthorId:   w.AuthorID,
 		WorldName:       w.Name,
 		WorldTags:       w.Tags,
-		InstanceOwnerId: "", // TODO: parseLocationString()
+		InstanceOwnerId: "", // TODO: parseLocationString() || **This should always be empty in public instances.**
 		StandardClaims: jwt.StandardClaims{
 			Audience:  "VRChatNetworking",
 			Issuer:    "VRChat",
-			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+			ExpiresAt: time.Now().Add(time.Hour * 1).Unix(),
 		},
 	}
 
