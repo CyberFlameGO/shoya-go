@@ -11,6 +11,9 @@ type PhotonValidateJoinJWTResponse struct {
 	IP                 string               `json:"ip"`
 	AvatarDict         PhotonPropAvatarDict `json:"avatarDict"`
 	FallbackAvatarDict PhotonPropAvatarDict `json:"favatarDict"`
+	WorldCapacity      int                  `json:"worldCapacity,omitempty"`
+	WorldAuthor        string               `json:"worldAuthor,omitempty"`
+	InstanceCreator    string               `json:"instanceCreator,omitempty"`
 }
 
 func (p *PhotonValidateJoinJWTResponse) FillFromUser(u *User) {

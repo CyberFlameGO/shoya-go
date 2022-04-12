@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -106,4 +107,13 @@ func initializeApiConfig() {
 	if err != nil {
 		panic(fmt.Errorf("failed to harvest configuration: %v", err))
 	}
+}
+
+func boolConvert(s string) bool {
+	s = strings.ToLower(s)
+	if s == "true" {
+		return true
+	}
+
+	return false
 }

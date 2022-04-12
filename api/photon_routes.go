@@ -46,6 +46,8 @@ func doNsAuth(c *fiber.Ctx) error {
 func doJoinTokenValidation(c *fiber.Ctx) error {
 	t := c.Query("jwt")
 	l := c.Query("roomId")
+	oc := boolConvert(c.Query("onCreate"))
+
 	if t == "" || l == "" {
 		return c.JSON(models.PhotonValidateJoinJWTResponse{Valid: false})
 	}
@@ -76,6 +78,13 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 		IP:    claims.IP,
 	}
 	r.FillFromUser(&u)
+
+	if oc {
+		r.WorldAuthor = claims.WorldAuthorId
+		r.WorldCapacity = claims.WorldCapacity
+		r.InstanceCreator = claims.InstanceOwnerId
+	}
+
 	return c.JSON(r)
 }
 
