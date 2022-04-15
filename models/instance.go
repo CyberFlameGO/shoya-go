@@ -24,18 +24,19 @@ type InstanceJoinJWTClaims struct {
 	jwt.StandardClaims
 }
 
-func CreateJoinToken(u *User, w *World, ip string, location string) (string, error) {
+func CreateJoinToken(u *User, w *World, ip string, location *Location) (string, error) {
+	// TODO: Check whether location.IsStrict & check against presence service when made.
 	joinId, _ := uuid.NewUUID()
 	claims := InstanceJoinJWTClaims{
 		JoinId:          "join_" + joinId.String(),
 		UserId:          u.ID,
 		Session:         "", // Unknown at the moment.
 		IP:              ip,
-		Location:        location,
+		Location:        location.LocationString,
 		WorldAuthorId:   w.AuthorID,
 		WorldName:       w.Name,
 		WorldTags:       w.Tags,
-		InstanceOwnerId: "", // TODO: parseLocationString() || **This should always be empty in public instances.**
+		InstanceOwnerId: location.OwnerID,
 		StandardClaims: jwt.StandardClaims{
 			Audience:  "VRChatNetworking",
 			Issuer:    "VRChat",

@@ -24,7 +24,17 @@ func joinInstance(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": fiber.Map{"message": "shit broke", "status_code": 500}})
 	}
 
-	t, err := models.CreateJoinToken(c.Locals("user").(*models.User), &w, c.IP(), c.Params("instanceId"))
+	instance, err := models.ParseLocationString(c.Params("instanceId"))
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     err,
+				"status_code": 500,
+			},
+		})
+	}
+
+	t, err := models.CreateJoinToken(c.Locals("user").(*models.User), &w, c.IP(), instance)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": fiber.Map{"message": "shit broke", "status_code": 500}})
 	}

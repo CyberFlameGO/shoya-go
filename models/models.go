@@ -2,8 +2,10 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -112,6 +114,22 @@ type APIUnityPackage struct {
 	UnitySortNumber int         `json:"unitySortNumber"`
 }
 
+var InstanceFlagRegex = regexp.MustCompile("^(?P<flagName>.*)?\\((?P<flagValue>.*)\\)")
+
+type InstanceFlagType string
+
+var (
+	InstanceFlagTypeNone         InstanceFlagType = "none"
+	InstanceFlagTypePrivacy      InstanceFlagType = "privacy"
+	InstanceFlagTypeRegion       InstanceFlagType = "region"
+	InstanceFlagTypeNonce        InstanceFlagType = "nonce"
+	InstanceFlagTypeCanReqInvite InstanceFlagType = "canRequestInvite"
+	InstanceFlagTypeStrict       InstanceFlagType = "strict"
+)
+
+var AllowedInstanceTypes = []string{"hidden", "friends", "private"}
+var AllowedInstanceRegions = []string{"us", "usw", "use", "eu", "jp"}
+
 type Location struct {
 	WorldID          string `json:"worldId"`          // WorldID is the id of the world the instance is for.
 	InstanceID       string `json:"instanceId"`       // InstanceID is the instance's identifier (usually 5 numbers).
@@ -124,42 +142,97 @@ type Location struct {
 	IsStrict         bool   `json:"strict"`           // IsStrict ensures that the instance is only joinable if the user is friends with the creator.
 }
 
-// parseLocationString parses the location string provided in a request.
-func parseLocationString(s string) (*Location, error) {
+// ParseLocationString parses the location string provided in a request.
+func ParseLocationString(s string) (*Location, error) {
 	var location = Location{}
 	s1 := strings.Split(s, ":")
 	if len(s1) < 2 {
-		return nil, errors.New("invalid instance id")
+		return nil, errors.New(fmt.Sprintf("invalid instance id: %s", s1))
 	}
 
 	location.WorldID = s1[0]        // wrld_{uuid}
 	location.LocationString = s1[1] // 00000~xxx
 
-	/**
-	TODO: Implement regexes for further matching (non-globals!)
-		Instance ID: `(?P<instanceId>.*?)~`
-		Instance privacy & ownership: `(?P<privacy>hidden|friends|private)\((?P<ownerId>.*?)\)` (No match == public)
-		Region: `region\((?P<region>.*?)\)`
-		Nonce: `nonce\((?P<nonce>.*?)\)`
-	*/
-
 	s2 := strings.Split(s1[1], "~")
-	location.InstanceID = s2[0] // 00000
+	location.InstanceID = s2[0]
+	location.InstanceType = "public" // Default to public
+	location.Region = "usw"          // Default to usw
 
-	switch location.InstanceType {
-	case "private":
-		if strings.Contains(s1[1], "~canRequestInvite") {
-			location.CanRequestInvite = true // Invite+
-		}
-		if strings.Contains(s1[1], "~strict") {
-			location.IsStrict = true
-		}
-		break
-	case "friends":
-		if strings.Contains(s1[1], "~strict") {
-			location.IsStrict = true
-		}
+	err := parseInstanceFlags(s2[1:], &location)
+	if err != nil {
+		return nil, err
+	}
+
+	if location.InstanceType == "public" && location.IsStrict {
+		return nil, errors.New("can not tag a public instance as strict")
 	}
 
 	return &location, nil
+}
+
+func parseInstanceFlags(flags []string, l *Location) error {
+	for _, flag := range flags {
+		flagType, flagName, flagValue, err := parseInstanceFlag(flag)
+		if err != nil {
+			return err
+		}
+		switch flagType {
+		case InstanceFlagTypePrivacy:
+			for _, allowedInstanceType := range AllowedInstanceTypes {
+				if allowedInstanceType == flagName {
+					l.InstanceType = flagName
+					l.OwnerID = flagValue.(string)
+					break
+				}
+			}
+
+			break
+		case InstanceFlagTypeRegion:
+			instanceRegion := flagValue.(string)
+			for _, allowedInstanceRegion := range AllowedInstanceRegions {
+				if allowedInstanceRegion == instanceRegion {
+					l.Region = instanceRegion
+					break
+				}
+			}
+
+			break
+		case InstanceFlagTypeNonce:
+			l.Nonce = flagValue.(string)
+			break
+		case InstanceFlagTypeCanReqInvite:
+			l.CanRequestInvite = true // Will always return true if this flag exists
+			break
+		case InstanceFlagTypeStrict:
+			l.IsStrict = true // ^^
+			break
+		}
+	}
+	return nil
+}
+
+func parseInstanceFlag(flag string) (InstanceFlagType, string, interface{}, error) {
+	if strings.ToLower(flag) == "canrequestinvite" {
+		return InstanceFlagTypeCanReqInvite, "canrequestinvite", true, nil
+	}
+
+	if strings.ToLower(flag) == "strict" {
+		return InstanceFlagTypeStrict, "strict", true, nil
+	}
+
+	m := InstanceFlagRegex.FindStringSubmatch(flag)
+	if len(m) != 3 {
+		return InstanceFlagTypeNone, "", "", errors.New(fmt.Sprintf("could not find 3 matches for match \"%s\" in parseinstanceflag", m[0]))
+	}
+
+	var flagType = InstanceFlagType(m[1])
+	for _, instanceType := range AllowedInstanceTypes {
+		if m[1] == instanceType {
+			flagType = InstanceFlagTypePrivacy
+		}
+	}
+
+	// TODO: stricter checks here
+
+	return flagType, m[1], m[2], nil
 }
