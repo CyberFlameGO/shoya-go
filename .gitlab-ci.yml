@@ -21,7 +21,7 @@ build-api:
             - bin/api
         expose_as: api
         untracked: false
-        expire_in: 30 days
+        expire_in: 7 days
 
 build-ws:
     stage: build
@@ -40,4 +40,4 @@ build-ws:
             - bin/ws
         expose_as: ws
         untracked: false
-        expire_in: 30 days
+        expire_in: 7 days
