@@ -131,6 +131,7 @@ var AllowedInstanceTypes = []string{"hidden", "friends", "private"}
 var AllowedInstanceRegions = []string{"us", "usw", "use", "eu", "jp"}
 
 type Location struct {
+	ID               string `json:"id"`
 	WorldID          string `json:"worldId"`          // WorldID is the id of the world the instance is for.
 	InstanceID       string `json:"instanceId"`       // InstanceID is the instance's identifier (usually 5 numbers).
 	LocationString   string `json:"locationString"`   // LocationString is the string minus the world id prefix.
@@ -150,6 +151,7 @@ func ParseLocationString(s string) (*Location, error) {
 		return nil, errors.New(fmt.Sprintf("invalid instance id: %s", s1))
 	}
 
+	location.ID = s
 	location.WorldID = s1[0]        // wrld_{uuid}
 	location.LocationString = s1[1] // 00000~xxx
 

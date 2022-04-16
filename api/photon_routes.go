@@ -133,6 +133,6 @@ func getPhotonConfig(c *fiber.Ctx) error {
 			209: 20,  // Request for ownership transfer
 			210: 90,  // Ownership transfer
 		},
-		RateLimitUnknownBool: true, // What this boolean does is currently unknown, but it is true in official servers.
+		RatelimiterActive: false,
 	})
 }

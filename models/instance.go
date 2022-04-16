@@ -32,10 +32,11 @@ func CreateJoinToken(u *User, w *World, ip string, location *Location) (string, 
 		UserId:          u.ID,
 		Session:         "", // Unknown at the moment.
 		IP:              ip,
-		Location:        location.LocationString,
+		Location:        location.ID,
 		WorldAuthorId:   w.AuthorID,
 		WorldName:       w.Name,
 		WorldTags:       w.Tags,
+		WorldCapacity:   w.Capacity,
 		InstanceOwnerId: location.OwnerID,
 		StandardClaims: jwt.StandardClaims{
 			Audience:  "VRChatNetworking",

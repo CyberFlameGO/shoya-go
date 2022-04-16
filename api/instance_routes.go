@@ -91,5 +91,4 @@ func joinInstance(c *fiber.Ctx) error {
 		"token":   t,
 		"version": 1,
 	})
-
 }

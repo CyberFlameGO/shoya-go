@@ -115,5 +115,5 @@ type PhotonPropAvatarDict struct {
 type PhotonConfig struct {
 	MaxAccountsPerIPAddress int         `json:"maxAccsPerIp"`
 	RateLimitList           map[int]int `json:"ratelimitList"`
-	RateLimitUnknownBool    bool        `json:"ratelimitUnknownBool"`
+	RatelimiterActive       bool        `json:"ratelimiterActive"`
 }
