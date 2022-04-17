@@ -23,6 +23,39 @@ func getInstance(id string) (*models.WorldInstance, error) {
 	return i, nil
 }
 
+func findInstancesForWorldId(worldId, privacy string, includeOverCapacity bool) ([]*models.WorldInstance, error) {
+	var c string
+	if includeOverCapacity {
+		c = "(false|~true)"
+	} else {
+		c = "{false}"
+	}
+	arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instanceWorldIdIdx").Query(fmt.Sprintf("@worldId:{%s} @instanceType:{%s} @overCapacity:%s", worldId, privacy, c)).Build()).ToArray()
+	if err != nil {
+		return nil, err
+	}
+
+	var n int64
+	var p []FtSearchResult
+	n, p, err = parseFtSearch(arr)
+	if err != nil {
+		return nil, err
+	}
+
+	r := make([]*models.WorldInstance, n)
+	for idx, p := range p {
+		i := &models.WorldInstance{}
+		err = json.Unmarshal([]byte(p.Results["$"]), &i)
+		if err != nil {
+			return nil, err
+		}
+
+		r[idx] = i
+	}
+
+	return r, nil
+}
+
 func findInstancesPlayerIsIn(playerId string) ([]*models.WorldInstance, error) {
 	arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instancePlayersIdx").Query(fmt.Sprintf("@players:{%s}", playerId)).Build()).ToArray()
 	if err != nil {
@@ -45,7 +78,6 @@ func findInstancesPlayerIsIn(playerId string) ([]*models.WorldInstance, error) {
 		}
 
 		r[idx] = i
-
 	}
 
 	return r, nil

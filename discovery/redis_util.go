@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/rueian/rueidis"
+	"strings"
 )
 
 type FtSearchResult struct {
@@ -36,4 +37,8 @@ func parseFtSearch(ms []rueidis.RedisMessage) (int64, []FtSearchResult, error) {
 	}
 
 	return count, r, nil
+}
+
+func escapeId(s string) string {
+	return strings.Replace(s, "-", "\\-", -1)
 }

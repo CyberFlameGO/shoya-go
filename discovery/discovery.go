@@ -41,8 +41,23 @@ func main() {
 		}
 
 		return c.JSON(i)
-
 	})
+
+	app.Get("/world/:worldId", func(c *fiber.Ctx) error {
+		i, err := findInstancesForWorldId(escapeId(c.Params("worldId")), "public", false)
+		if err != nil {
+			if err == NotFoundErr {
+				return c.SendStatus(404)
+			}
+
+			return c.Status(500).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		return c.JSON(i)
+	})
+
 	app.Post("/register/:instanceId", func(c *fiber.Ctx) error {
 		i := c.Params("instanceId")
 		l, err := models.ParseLocationString(i)
