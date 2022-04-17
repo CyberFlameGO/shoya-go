@@ -23,6 +23,34 @@ func getInstance(id string) (*models.WorldInstance, error) {
 	return i, nil
 }
 
+func findInstancesPlayerIsIn(playerId string) ([]*models.WorldInstance, error) {
+	arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instancePlayersIdx").Query(fmt.Sprintf("@players:{%s}", playerId)).Build()).ToArray()
+	if err != nil {
+		return nil, err
+	}
+
+	var n int64
+	var p []FtSearchResult
+	n, p, err = parseFtSearch(arr)
+	if err != nil {
+		return nil, err
+	}
+
+	r := make([]*models.WorldInstance, n)
+	for idx, p := range p {
+		i := &models.WorldInstance{}
+		err = json.Unmarshal([]byte(p.Results["$"]), &i)
+		if err != nil {
+			return nil, err
+		}
+
+		r[idx] = i
+
+	}
+
+	return r, nil
+}
+
 // registerInstance registers a WorldInstance into Redis
 func registerInstance(id, worldId, instanceType, ownerId string, capacity int) error {
 	i, _ := json.Marshal(&models.WorldInstance{

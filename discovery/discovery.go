@@ -76,6 +76,22 @@ func main() {
 		return c.SendStatus(200)
 	})
 
+	app.Get("/player/:playerId", func(c *fiber.Ctx) error {
+		p := c.Params("playerId")
+		i, err := findInstancesPlayerIsIn(p)
+		if err != nil {
+			if err == NotFoundErr {
+				return c.SendStatus(404)
+			}
+
+			return c.Status(500).JSON(fiber.Map{
+				"error":    err.Error(),
+				"playerId": p,
+			})
+		}
+		return c.JSON(i)
+	})
+
 	app.Put("/player/:instanceId/:playerId", func(c *fiber.Ctx) error {
 		i := c.Params("instanceId")
 		p := c.Params("playerId")
