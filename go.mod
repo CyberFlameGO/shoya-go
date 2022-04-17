@@ -12,6 +12,7 @@ require (
 	github.com/gtsatsis/harvester v0.16.2
 	github.com/lib/pq v1.10.5
 	github.com/mitchellh/mapstructure v1.4.3
+	github.com/rueian/rueidis v0.0.43
 	github.com/tkanos/gonfig v0.0.0-20210106201359-53e13348de2f
 	gorm.io/driver/postgres v1.3.4
 	gorm.io/gorm v1.23.4

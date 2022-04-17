@@ -8,6 +8,30 @@ import (
 	"time"
 )
 
+type WorldInstancePlayerCount struct {
+	Total           int `json:"total"`
+	PlatformWindows int `json:"platformWindows"`
+	PlatformAndroid int `json:"platformAndroid"`
+}
+
+type WorldInstanceBlockedPlayers struct {
+	ID    string `json:"id"`
+	Until int64  `json:"until"`
+}
+
+type WorldInstance struct {
+	InstanceID      string                   `json:"instanceId"` // entire string
+	WorldID         string                   `json:"worldId"`
+	InstanceType    string                   `json:"instanceType"` // privacy
+	InstanceOwnerId string                   `json:"instanceOwnerId"`
+	Capacity        int                      `json:"capacity"`
+	OverCapacity    bool                     `json:"overCapacity"` // todo: investigate whether playercount.total can be used instead
+	PlayerCount     WorldInstancePlayerCount `json:"playerCount"`
+	Players         []string                 `json:"players"` // A list of players currently in this instance
+	// PlayerTags     []string
+	BlockedPlayers []WorldInstanceBlockedPlayers `json:"blockedPlayers"` // A list of players who are blocked from joining & until when
+}
+
 var ErrInvalidJoinJWT = errors.New("invalid join token")
 
 type InstanceJoinJWTClaims struct {
