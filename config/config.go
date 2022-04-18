@@ -23,6 +23,7 @@ type Config struct {
 	Redis                  RedisConfig  `json:"redis"`
 	Server                 ServerConfig `json:"server"`
 	ApiConfigRefreshRateMs int          `json:"apiConfigRefreshRateMs"`
+	DiscoveryApiKey        string       `json:"discoveryApiKey"` // TODO: Migrate to a separate config struct for each service on shared core
 }
 
 // DBConfig holds the configuration for the database.

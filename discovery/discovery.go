@@ -25,6 +25,21 @@ func main() {
 	})
 	//app.Use(recover.New())
 	app.Use(logger.New())
+	app.Use(func(c *fiber.Ctx) error {
+		k := c.Query("apiKey")
+		if k == "" {
+			k = c.Get("Authorization")
+			if k == "" {
+				return c.SendStatus(401)
+			}
+		}
+
+		if k != config.RuntimeConfig.DiscoveryApiKey {
+			return c.SendStatus(401)
+		}
+
+		return c.Next()
+	})
 
 	app.Get("/:instanceId", func(c *fiber.Ctx) error {
 		id := c.Params("instanceId")
@@ -36,7 +51,7 @@ func main() {
 
 			return c.Status(500).JSON(fiber.Map{
 				"error":      err.Error(),
-				"instanceId": i,
+				"instanceId": id,
 			})
 		}
 
