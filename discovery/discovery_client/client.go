@@ -5,11 +5,15 @@ package discovery_client
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"gitlab.com/george/shoya-go/models"
 	"io"
 	"net/http"
 )
+
+var NotFoundErr = errors.New("discovery: not found")
+var ServerErr = errors.New("discovery: service faced error, check logs")
 
 type Discovery struct {
 	c      *http.Client
@@ -45,6 +49,9 @@ func (d *Discovery) GetInstancesForWorld(world string) []*models.WorldInstance {
 	b, err := d.doRequest(http.MethodGet, fmt.Sprintf("%s/world/%s", d.Url, world))
 	err = json.Unmarshal(b, &i)
 	if err != nil {
+		if err == NotFoundErr {
+			return nil
+		}
 		return nil
 	}
 
@@ -94,7 +101,10 @@ func (d *Discovery) doRequest(method, url string) ([]byte, error) {
 	}
 
 	if do.StatusCode != 200 {
-		return nil, err
+		if do.StatusCode == 404 {
+			return nil, NotFoundErr
+		}
+		return nil, ServerErr
 	}
 
 	b, err := io.ReadAll(do.Body)

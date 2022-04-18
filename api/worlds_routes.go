@@ -43,6 +43,9 @@ func getWorlds(c *fiber.Ctx) error {
 	var searchUser = ""
 	var searchReleaseStatus = models.ReleaseStatusPublic
 
+	var is [][]string
+	var i []*models.WorldInstance
+
 	// Query preparation
 	var tx = config.DB.Model(&models.World{}).
 		Preload("Image").
@@ -175,6 +178,14 @@ func getWorlds(c *fiber.Ctx) error {
 			if err != nil {
 				return err
 			}
+
+			i = DiscoveryService.GetInstancesForWorld(wp.ID)
+			is = make([][]string, len(i))
+			for idx, _i := range i {
+				is[idx] = []string{_i.InstanceID, fmt.Sprintf("%d", _i.PlayerCount.Total)}
+			}
+			wp.Instances = is
+
 			apiWorldsPackages = append(apiWorldsPackages, wp)
 		}
 		return c.JSON(apiWorldsPackages)
@@ -184,6 +195,14 @@ func getWorlds(c *fiber.Ctx) error {
 			if err != nil {
 				return err
 			}
+
+			i = DiscoveryService.GetInstancesForWorld(w.ID)
+			is = make([][]string, len(i))
+			for idx, _i := range i {
+				is[idx] = []string{_i.InstanceID, fmt.Sprintf("%d", _i.PlayerCount.Total)}
+			}
+			w.Instances = is
+
 			apiWorlds = append(apiWorlds, w)
 		}
 
@@ -218,9 +237,14 @@ func getWorldsRecent(c *fiber.Ctx) error {
 // It varies based on the request source (see: IsGameRequestMiddleware)
 func getWorld(c *fiber.Ctx) error {
 	var isGameRequest = c.Locals("isGameRequest").(bool)
+
 	var w models.World
 	var aw *models.APIWorld
 	var awp *models.APIWorldWithPackages
+
+	var is [][]string
+	var i []*models.WorldInstance
+
 	var err error
 
 	tx := config.DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&models.World{}).Where("id = ?", c.Params("id")).First(&w)
@@ -232,21 +256,23 @@ func getWorld(c *fiber.Ctx) error {
 
 	if isGameRequest {
 		awp, err = w.GetAPIWorldWithPackages()
-
-		var is = map[string]string{}
-		i := DiscoveryService.GetInstancesForWorld(awp.ID)
-		for _, _i := range i {
-			is[_i.ID] = fmt.Sprintf("%d", _i.PlayerCount.Total)
-		}
+		i = DiscoveryService.GetInstancesForWorld(awp.ID)
 	} else {
 		aw, err = w.GetAPIWorld()
-
-		var is = map[string]string{}
-		i := DiscoveryService.GetInstancesForWorld(awp.ID)
-		for _, _i := range i {
-			is[_i.ID] = fmt.Sprintf("%d", _i.PlayerCount.Total)
-		}
+		i = DiscoveryService.GetInstancesForWorld(aw.ID)
 	}
+
+	is = make([][]string, len(i))
+	for idx, _i := range i {
+		is[idx] = []string{_i.InstanceID, fmt.Sprintf("%d", _i.PlayerCount.Total)}
+	}
+
+	if isGameRequest {
+		awp.Instances = is
+	} else {
+		aw.Instances = is
+	}
+
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
