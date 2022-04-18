@@ -10,6 +10,7 @@ import (
 	"github.com/gtsatsis/harvester"
 	"github.com/tkanos/gonfig"
 	"gitlab.com/george/shoya-go/config"
+	"gitlab.com/george/shoya-go/discovery/discovery_client"
 	"gitlab.com/george/shoya-go/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -18,6 +19,8 @@ import (
 	"strings"
 	"time"
 )
+
+var DiscoveryService *discovery_client.Discovery
 
 func main() {
 	vrcpsInit()
@@ -46,6 +49,8 @@ func vrcpsInit() {
 	initializeDB()
 	initializeRedis()
 	initializeApiConfig()
+
+	DiscoveryService = discovery_client.NewDiscovery(config.ApiConfiguration.DiscoveryServiceUrl.Get(), config.ApiConfiguration.DiscoveryServiceApiKey.Get())
 }
 
 // initializeConfig reads the config.json file and initializes the runtime config

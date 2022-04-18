@@ -82,7 +82,7 @@ func main() {
 				"instanceId": i,
 			})
 		}
-		err = registerInstance(l.ID, l.WorldID, l.InstanceType, l.OwnerID, 10)
+		err = registerInstance(l.ID, l.LocationString, l.WorldID, l.InstanceType, l.OwnerID, 10)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"error":      err.Error(),

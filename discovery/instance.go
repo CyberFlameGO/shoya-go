@@ -84,9 +84,10 @@ func findInstancesPlayerIsIn(playerId string) ([]*models.WorldInstance, error) {
 }
 
 // registerInstance registers a WorldInstance into Redis
-func registerInstance(id, worldId, instanceType, ownerId string, capacity int) error {
+func registerInstance(id, locationString, worldId, instanceType, ownerId string, capacity int) error {
 	i, _ := json.Marshal(&models.WorldInstance{
-		InstanceID:      id,
+		ID:              id,
+		InstanceID:      locationString,
 		WorldID:         worldId,
 		InstanceType:    instanceType,
 		InstanceOwnerId: ownerId,

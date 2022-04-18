@@ -20,6 +20,7 @@ type WorldInstanceBlockedPlayers struct {
 }
 
 type WorldInstance struct {
+	ID              string                   `json:"id"`
 	InstanceID      string                   `json:"instanceId"` // entire string
 	WorldID         string                   `json:"worldId"`
 	InstanceType    string                   `json:"instanceType"` // privacy

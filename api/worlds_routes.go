@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lib/pq"
 	"gitlab.com/george/shoya-go/config"
@@ -231,8 +232,20 @@ func getWorld(c *fiber.Ctx) error {
 
 	if isGameRequest {
 		awp, err = w.GetAPIWorldWithPackages()
+
+		var is = map[string]string{}
+		i := DiscoveryService.GetInstancesForWorld(awp.ID)
+		for _, _i := range i {
+			is[_i.ID] = fmt.Sprintf("%d", _i.PlayerCount.Total)
+		}
 	} else {
 		aw, err = w.GetAPIWorld()
+
+		var is = map[string]string{}
+		i := DiscoveryService.GetInstancesForWorld(awp.ID)
+		for _, _i := range i {
+			is[_i.ID] = fmt.Sprintf("%d", _i.PlayerCount.Total)
+		}
 	}
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{

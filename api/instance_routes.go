@@ -66,7 +66,6 @@ func getInstance(c *fiber.Ctx) error {
 }
 func joinInstance(c *fiber.Ctx) error {
 	var w models.World
-	// TODO: parseLocationString
 	tx := config.DB.Find(&w).Where("id = ?", strings.Split(c.Params("instanceId"), ":")[0])
 	if tx.Error != nil {
 		return c.Status(500).JSON(fiber.Map{"error": fiber.Map{"message": "shit broke", "status_code": 500}})
