@@ -81,6 +81,11 @@ func joinInstance(c *fiber.Ctx) error {
 		})
 	}
 
+	i := DiscoveryService.GetInstance(instance.ID)
+	if i == nil {
+		i = DiscoveryService.RegisterInstance(instance.ID, w.Capacity)
+	}
+
 	t, err := models.CreateJoinToken(c.Locals("user").(*models.User), &w, c.IP(), instance)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": fiber.Map{"message": "shit broke", "status_code": 500}})

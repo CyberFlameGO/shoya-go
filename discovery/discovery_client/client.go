@@ -47,7 +47,6 @@ func (d *Discovery) GetInstancesForWorld(world string) []*models.WorldInstance {
 	var i []*models.WorldInstance
 
 	b, err := d.doRequest(http.MethodGet, fmt.Sprintf("%s/world/%s", d.Url, world))
-	err = json.Unmarshal(b, &i)
 	if err != nil {
 		if err == NotFoundErr {
 			return nil
@@ -55,12 +54,31 @@ func (d *Discovery) GetInstancesForWorld(world string) []*models.WorldInstance {
 		return nil
 	}
 
+	err = json.Unmarshal(b, &i)
+	if err != nil {
+		return nil
+	}
+
 	return i
 }
 
 // RegisterInstance registers an instance in Redis.
-func (d *Discovery) RegisterInstance(instance string) {
-	d.c.Post(fmt.Sprintf("%s/register/%s", d.Url, instance), "application/json", nil)
+func (d *Discovery) RegisterInstance(instance string, capacity int) *models.WorldInstance {
+	var i *models.WorldInstance
+	b, err := d.doRequest(http.MethodPost, fmt.Sprintf("%s/register/%s?capacity=%d", d.Url, instance, capacity))
+	if err != nil {
+		if err == NotFoundErr {
+			return nil
+		}
+		return nil
+	}
+
+	err = json.Unmarshal(b, &i)
+	if err != nil {
+		return nil
+	}
+
+	return i
 }
 
 // UnregisterInstance removes an instance from Redis.

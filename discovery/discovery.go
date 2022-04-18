@@ -10,6 +10,7 @@ import (
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
 	"log"
+	"strconv"
 )
 
 var RedisClient rueidis.Client
@@ -74,23 +75,41 @@ func main() {
 	})
 
 	app.Post("/register/:instanceId", func(c *fiber.Ctx) error {
-		i := c.Params("instanceId")
-		l, err := models.ParseLocationString(i)
-		if err != nil {
+		var capacity int
+		id := c.Params("instanceId")
+		if _cap := c.Query("capacity"); _cap == "" {
 			return c.Status(500).JSON(fiber.Map{
-				"error":      err.Error(),
-				"instanceId": i,
+				"error":      "capacity query parameter is required",
+				"instanceId": id,
 			})
+		} else {
+			var err error
+			capacity, err = strconv.Atoi(_cap)
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{
+					"error":      err.Error(),
+					"instanceId": id,
+				})
+			}
 		}
-		err = registerInstance(l.ID, l.LocationString, l.WorldID, l.InstanceType, l.OwnerID, 10)
+
+		l, err := models.ParseLocationString(id)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"error":      err.Error(),
-				"instanceId": i,
+				"instanceId": id,
 			})
 		}
 
-		return c.SendStatus(200)
+		i, err := registerInstance(l.ID, l.LocationString, l.WorldID, l.InstanceType, l.OwnerID, capacity)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"error":      err.Error(),
+				"instanceId": id,
+			})
+		}
+
+		return c.JSON(i)
 	})
 
 	app.Post("/unregister/:instanceId", func(c *fiber.Ctx) error {

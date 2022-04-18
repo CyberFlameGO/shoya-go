@@ -84,8 +84,8 @@ func findInstancesPlayerIsIn(playerId string) ([]*models.WorldInstance, error) {
 }
 
 // registerInstance registers a WorldInstance into Redis
-func registerInstance(id, locationString, worldId, instanceType, ownerId string, capacity int) error {
-	i, _ := json.Marshal(&models.WorldInstance{
+func registerInstance(id, locationString, worldId, instanceType, ownerId string, capacity int) (*models.WorldInstance, error) {
+	i := &models.WorldInstance{
 		ID:              id,
 		InstanceID:      locationString,
 		WorldID:         worldId,
@@ -94,8 +94,14 @@ func registerInstance(id, locationString, worldId, instanceType, ownerId string,
 		Capacity:        capacity,
 		Players:         []string{},
 		BlockedPlayers:  []models.WorldInstanceBlockedPlayers{},
-	})
-	return RedisClient.Do(RedisCtx, RedisClient.B().JsonSet().Key("instances:"+id).Path(".").Value(string(i)).Build()).Error()
+	}
+	j, _ := json.Marshal(i)
+	err := RedisClient.Do(RedisCtx, RedisClient.B().JsonSet().Key("instances:"+id).Path(".").Value(string(j)).Build()).Error()
+	if err != nil {
+		return nil, err
+	}
+
+	return i, nil
 }
 
 // unregisterInstance removes a WorldInstance from Redis
