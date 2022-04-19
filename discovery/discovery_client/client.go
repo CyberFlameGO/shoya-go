@@ -31,9 +31,12 @@ func NewDiscovery(url, apiKey string) *Discovery {
 
 // GetInstance retrieves live information about an instance.
 func (d *Discovery) GetInstance(instance string) *models.WorldInstance {
-	var i *models.WorldInstance
-
 	b, err := d.doRequest(http.MethodGet, fmt.Sprintf("%s/%s", d.Url, instance))
+	if err != nil {
+		return nil
+	}
+
+	var i = &models.WorldInstance{}
 	err = json.Unmarshal(b, i)
 	if err != nil {
 		return nil
@@ -83,7 +86,7 @@ func (d *Discovery) RegisterInstance(instance string, capacity int) *models.Worl
 
 // UnregisterInstance removes an instance from Redis.
 func (d *Discovery) UnregisterInstance(instance string) {
-	d.c.Post(fmt.Sprintf("%s/unregister/%s", d.Url, instance), "application/json", nil)
+	d.c.Post(fmt.Sprintf("%s/unregister/%s?apiKey=%s", d.Url, instance, d.ApiKey), "application/json", nil)
 }
 
 // FindPlayer finds what instance(s) a player is in.
