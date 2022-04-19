@@ -20,6 +20,10 @@ func parseFtSearch(ms []rueidis.RedisMessage) (int64, []FtSearchResult, error) {
 		return 0, nil, NotFoundErr
 	}
 
+	if count > 10 { // FIXME(george): Discovery should be able to handle over ten results via paging (although this should never be required)
+		count = 10
+	}
+
 	r := make([]FtSearchResult, count)
 
 	cur := 0
