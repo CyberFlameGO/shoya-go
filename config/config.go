@@ -47,6 +47,7 @@ type ServerConfig struct {
 	Address     string `json:"address"`
 	Port        int    `json:"port"`
 	ProxyHeader string `json:"proxyHeader"`
+	Prefork     bool   `json:"prefork"`
 }
 
 // ApiConfig holds the dynamic configuration for the API.
