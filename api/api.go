@@ -27,7 +27,7 @@ func main() {
 
 	app := fiber.New(fiber.Config{
 		ProxyHeader: config.RuntimeConfig.Server.ProxyHeader,
-		Prefork:     false,
+		Prefork:     config.RuntimeConfig.Server.Prefork,
 	})
 	app.Use(recover.New())
 	app.Use(logger.New())
