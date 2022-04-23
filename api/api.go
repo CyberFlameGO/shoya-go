@@ -26,8 +26,9 @@ func main() {
 	vrcpsInit()
 
 	app := fiber.New(fiber.Config{
-		ProxyHeader: config.RuntimeConfig.Server.ProxyHeader,
-		Prefork:     config.RuntimeConfig.Server.Prefork,
+		ProxyHeader:   config.RuntimeConfig.Server.ProxyHeader,
+		Prefork:       config.RuntimeConfig.Server.Prefork,
+		CaseSensitive: false,
 	})
 	app.Use(recover.New())
 	app.Use(logger.New())
