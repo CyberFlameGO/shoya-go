@@ -8,18 +8,20 @@ import (
 )
 
 func systemRoutes(router *fiber.App) {
-	router.Get("/config", getConfig)
 	router.Get("/ping", getPing)
 	router.Get("/health", getHealth)
 	router.Get("/time", getTime)
-	router.Put("/logout", putLogout)
-	router.Get("/infoPush", getInfoPush)
-	router.Get("/m_autoConfig", getAutoConfig)
+	router.Get("/config", getConfig)
+
+	router.Get("/infoPush", ApiKeyMiddleware, AuthMiddleware, getInfoPush)
+	router.Put("/logout", ApiKeyMiddleware, AuthMiddleware, putLogout)
 
 	router.Get("/visits", getVisits)
 	router.Put("/visits", ApiKeyMiddleware, AuthMiddleware, putVisits)
 
 	router.Put("/joins", ApiKeyMiddleware, AuthMiddleware, putJoins)
+
+	router.Get("/m_autoConfig", getAutoConfig)
 }
 
 func getHealth(c *fiber.Ctx) error {
@@ -62,11 +64,11 @@ func putLogout(c *fiber.Ctx) error {
 }
 
 func getTime(c *fiber.Ctx) error {
-	return c.JSON(time.Now().UTC().Format("2006-01-02T15:04:05+00:00"))
+	return c.JSON(time.Now().UTC().Format(time.RFC3339))
 }
 
 func getInfoPush(c *fiber.Ctx) error {
-	var toPush []config.ApiInfoPush
+	toPush := []config.ApiInfoPush{}
 	requiredTags := strings.Split(c.Query("require"), ",")
 	includedTags := strings.Split(c.Query("include"), ",")
 
