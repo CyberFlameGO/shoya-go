@@ -9,12 +9,17 @@ import (
 
 func systemRoutes(router *fiber.App) {
 	router.Get("/config", getConfig)
+	router.Get("/ping", getPing)
 	router.Get("/health", getHealth)
 	router.Get("/time", getTime)
 	router.Put("/logout", putLogout)
 	router.Get("/infoPush", getInfoPush)
-	router.Get("/visits", getVisits)
 	router.Get("/m_autoConfig", getAutoConfig)
+
+	router.Get("/visits", getVisits)
+	router.Put("/visits", ApiKeyMiddleware, AuthMiddleware, putVisits)
+
+	router.Put("/joins", ApiKeyMiddleware, AuthMiddleware, putJoins)
 }
 
 func getHealth(c *fiber.Ctx) error {
@@ -32,6 +37,10 @@ func getConfig(c *fiber.Ctx) error {
 		SameSite: "disabled",
 	})
 	return c.JSON(config.NewApiConfigResponse(&config.ApiConfiguration))
+}
+
+func getPing(c *fiber.Ctx) error {
+	return c.JSON("pong")
 }
 
 func putLogout(c *fiber.Ctx) error {
@@ -92,8 +101,19 @@ func getInfoPush(c *fiber.Ctx) error {
 	return c.JSON(toPush)
 }
 
+// TODO: Implement active user count
 func getVisits(c *fiber.Ctx) error {
 	return c.JSON(0)
+}
+
+// TODO: This is a blocker due to requiring the presence service
+func putVisits(c *fiber.Ctx) error {
+	return c.SendStatus(200)
+}
+
+// TODO: This is a blocker due to requiring the presence service
+func putJoins(c *fiber.Ctx) error {
+	return c.SendStatus(200)
 }
 
 func getAutoConfig(c *fiber.Ctx) error {
