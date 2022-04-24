@@ -17,6 +17,7 @@ func getInstance(id string) (*models.WorldInstance, error) {
 		if rueidis.IsRedisNil(err) {
 			return nil, NotFoundErr
 		}
+		fmt.Println(err)
 		return nil, err
 	}
 
@@ -32,6 +33,7 @@ func findInstancesForWorldId(worldId, privacy string, includeOverCapacity bool) 
 	}
 	arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instanceWorldIdIdx").Query(fmt.Sprintf("@worldId:{%s} @instanceType:{%s} @overCapacity:%s", worldId, privacy, c)).Build()).ToArray()
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
@@ -39,6 +41,7 @@ func findInstancesForWorldId(worldId, privacy string, includeOverCapacity bool) 
 	var p []FtSearchResult
 	n, p, err = parseFtSearch(arr)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
@@ -47,6 +50,7 @@ func findInstancesForWorldId(worldId, privacy string, includeOverCapacity bool) 
 		i := &models.WorldInstance{}
 		err = json.Unmarshal([]byte(p.Results["$"]), &i)
 		if err != nil {
+			fmt.Println(err)
 			return nil, err
 		}
 
@@ -59,6 +63,7 @@ func findInstancesForWorldId(worldId, privacy string, includeOverCapacity bool) 
 func findInstancesPlayerIsIn(playerId string) ([]*models.WorldInstance, error) {
 	arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instancePlayersIdx").Query(fmt.Sprintf("@players:{%s}", playerId)).Build()).ToArray()
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
@@ -66,6 +71,7 @@ func findInstancesPlayerIsIn(playerId string) ([]*models.WorldInstance, error) {
 	var p []FtSearchResult
 	n, p, err = parseFtSearch(arr)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
@@ -74,6 +80,7 @@ func findInstancesPlayerIsIn(playerId string) ([]*models.WorldInstance, error) {
 		i := &models.WorldInstance{}
 		err = json.Unmarshal([]byte(p.Results["$"]), &i)
 		if err != nil {
+			fmt.Println(err)
 			return nil, err
 		}
 
@@ -98,6 +105,7 @@ func registerInstance(id, locationString, worldId, instanceType, ownerId string,
 	j, _ := json.Marshal(i)
 	err := RedisClient.Do(RedisCtx, RedisClient.B().JsonSet().Key("instances:"+id).Path(".").Value(string(j)).Build()).Error()
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
@@ -114,6 +122,7 @@ func addPlayer(instanceId, playerId string) error {
 	playerId = fmt.Sprintf("\"%s\"", playerId)
 	err := RedisClient.Do(RedisCtx, RedisClient.B().JsonArrappend().Key("instances:"+instanceId).Path(".players").Value(playerId).Build()).Error()
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
@@ -127,11 +136,13 @@ func removePlayer(instanceId, playerId string) error {
 	playerId = fmt.Sprintf("\"%s\"", playerId)
 	i, err := RedisClient.Do(RedisCtx, RedisClient.B().JsonArrindex().Key("instances:"+instanceId).Path(".players").Value(playerId).Build()).ToInt64()
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
 	err = RedisClient.Do(RedisCtx, RedisClient.B().JsonArrpop().Key("instances:"+instanceId).Path(".players").Index(i).Build()).Error()
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 

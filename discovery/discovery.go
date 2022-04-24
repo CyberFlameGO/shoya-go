@@ -50,6 +50,7 @@ func main() {
 				return c.SendStatus(404)
 			}
 
+			fmt.Println(err)
 			return c.Status(500).JSON(fiber.Map{
 				"error":      err.Error(),
 				"instanceId": id,
@@ -66,6 +67,7 @@ func main() {
 				return c.SendStatus(404)
 			}
 
+			fmt.Println(err)
 			return c.Status(500).JSON(fiber.Map{
 				"error": err.Error(),
 			})
@@ -103,6 +105,7 @@ func main() {
 
 		i, err := registerInstance(l.ID, l.LocationString, l.WorldID, l.InstanceType, l.OwnerID, capacity)
 		if err != nil {
+			fmt.Println(err)
 			return c.Status(500).JSON(fiber.Map{
 				"error":      err.Error(),
 				"instanceId": id,
@@ -133,6 +136,7 @@ func main() {
 				return c.SendStatus(404)
 			}
 
+			fmt.Println(err)
 			return c.Status(500).JSON(fiber.Map{
 				"error":    err.Error(),
 				"playerId": p,
@@ -165,6 +169,7 @@ func main() {
 		err := removePlayer(i, p)
 
 		if err != nil {
+			fmt.Println(err)
 			return c.Status(500).JSON(fiber.Map{
 				"error":      err.Error(),
 				"instanceId": i,
