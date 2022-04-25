@@ -29,5 +29,7 @@ The documentation for the project can be found in the [`docs/`](docs) directory.
 ### Help / Support
 The support scope for this project only includes bugs & missing core features ("feature requests"); Operators & end-users should **not** request support relating to end-issues that are not sourced from a bug in the code. The documentation exists for a reason.
 
+That said, a [Discord](https://discord.gg/bzb6TCfXsr) for the project does exist.
+
 ### Disclaimer
 This project is not owned by, affiliated with, or endorsed by VRChat, inc.
