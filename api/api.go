@@ -51,7 +51,9 @@ func vrcpsInit() {
 	initializeRedis()
 	initializeApiConfig()
 
-	DiscoveryService = discovery_client.NewDiscovery(config.ApiConfiguration.DiscoveryServiceUrl.Get(), config.ApiConfiguration.DiscoveryServiceApiKey.Get())
+	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
+		DiscoveryService = discovery_client.NewDiscovery(config.ApiConfiguration.DiscoveryServiceUrl.Get(), config.ApiConfiguration.DiscoveryServiceApiKey.Get())
+	}
 }
 
 // initializeConfig reads the config.json file and initializes the runtime config

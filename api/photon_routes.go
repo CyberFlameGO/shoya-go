@@ -87,7 +87,9 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 		r.InstanceCreator = claims.InstanceOwnerId
 	}
 
-	DiscoveryService.AddPlayerToInstance(u.ID, l)
+	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
+		DiscoveryService.AddPlayerToInstance(u.ID, l)
+	}
 	return c.JSON(r)
 }
 
@@ -95,14 +97,18 @@ func doLeaveCallback(c *fiber.Ctx) error {
 	l := c.Query("roomId")
 	u := c.Query("userId")
 
-	DiscoveryService.RemovePlayerFromInstance(u, l)
+	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
+		DiscoveryService.RemovePlayerFromInstance(u, l)
+	}
 	return c.SendStatus(200)
 }
 
 func doGameClose(c *fiber.Ctx) error {
 	l := c.Query("roomId")
 
-	DiscoveryService.UnregisterInstance(l)
+	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
+		DiscoveryService.UnregisterInstance(l)
+	}
 	return c.SendStatus(200)
 }
 

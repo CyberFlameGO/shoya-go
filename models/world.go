@@ -80,18 +80,16 @@ func (w *World) GetAPIWorld() (*APIWorld, error) {
 	}
 
 	return &APIWorld{
-		ID:          w.ID,
-		AuthorID:    a.ID,
-		AuthorName:  a.DisplayName,
-		Capacity:    w.Capacity,
-		CreatedAt:   time.Unix(w.CreatedAt, 0).UTC().Format(time.RFC3339Nano),
-		Description: w.Description,
-		Favorites:   0, // TODO: Implement favorites.
-		Heat:        0, // TODO: What the fuck is a "Heat"? Seems like an internal metric. Might always set to 0.
-		ImageUrl:    w.GetImageUrl(),
-		Instances: [][]string{
-			{"69420", "0"}, // TODO: Implement instances.
-		},
+		ID:                  w.ID,
+		AuthorID:            a.ID,
+		AuthorName:          a.DisplayName,
+		Capacity:            w.Capacity,
+		CreatedAt:           time.Unix(w.CreatedAt, 0).UTC().Format(time.RFC3339Nano),
+		Description:         w.Description,
+		Favorites:           0, // TODO: Implement favorites.
+		Heat:                0, // TODO: What the fuck is a "Heat"? Seems like an internal metric. Might always set to 0.
+		ImageUrl:            w.GetImageUrl(),
+		Instances:           [][]string{},
 		LabsPublicationDate: "", // TODO: Labs? Is that even something we care about in a PS?
 		Name:                w.Name,
 		Occupants:           0,        // TODO: Implement instances + overall occupancy.

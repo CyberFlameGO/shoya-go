@@ -179,12 +179,14 @@ func getWorlds(c *fiber.Ctx) error {
 				return err
 			}
 
-			i = DiscoveryService.GetInstancesForWorld(wp.ID)
-			is = make([][]string, len(i))
-			for idx, _i := range i {
-				is[idx] = []string{_i.InstanceID, fmt.Sprintf("%d", _i.PlayerCount.Total)}
+			if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
+				i = DiscoveryService.GetInstancesForWorld(wp.ID)
+				is = make([][]string, len(i))
+				for idx, _i := range i {
+					is[idx] = []string{_i.InstanceID, fmt.Sprintf("%d", _i.PlayerCount.Total)}
+				}
+				wp.Instances = is
 			}
-			wp.Instances = is
 
 			apiWorldsPackages = append(apiWorldsPackages, wp)
 		}
@@ -196,12 +198,14 @@ func getWorlds(c *fiber.Ctx) error {
 				return err
 			}
 
-			i = DiscoveryService.GetInstancesForWorld(w.ID)
-			is = make([][]string, len(i))
-			for idx, _i := range i {
-				is[idx] = []string{_i.InstanceID, fmt.Sprintf("%d", _i.PlayerCount.Total)}
+			if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
+				i = DiscoveryService.GetInstancesForWorld(w.ID)
+				is = make([][]string, len(i))
+				for idx, _i := range i {
+					is[idx] = []string{_i.InstanceID, fmt.Sprintf("%d", _i.PlayerCount.Total)}
+				}
+				w.Instances = is
 			}
-			w.Instances = is
 
 			apiWorlds = append(apiWorlds, w)
 		}
@@ -256,21 +260,27 @@ func getWorld(c *fiber.Ctx) error {
 
 	if isGameRequest {
 		awp, err = w.GetAPIWorldWithPackages()
-		i = DiscoveryService.GetInstancesForWorld(awp.ID)
+		if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
+			i = DiscoveryService.GetInstancesForWorld(awp.ID)
+		}
 	} else {
 		aw, err = w.GetAPIWorld()
-		i = DiscoveryService.GetInstancesForWorld(aw.ID)
+		if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
+			i = DiscoveryService.GetInstancesForWorld(aw.ID)
+		}
 	}
 
-	is = make([][]string, len(i))
-	for idx, _i := range i {
-		is[idx] = []string{_i.InstanceID, fmt.Sprintf("%d", _i.PlayerCount.Total)}
-	}
+	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
+		is = make([][]string, len(i))
+		for idx, _i := range i {
+			is[idx] = []string{_i.InstanceID, fmt.Sprintf("%d", _i.PlayerCount.Total)}
+		}
 
-	if isGameRequest {
-		awp.Instances = is
-	} else {
-		aw.Instances = is
+		if isGameRequest {
+			awp.Instances = is
+		} else {
+			aw.Instances = is
+		}
 	}
 
 	if err != nil {

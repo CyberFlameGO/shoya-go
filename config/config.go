@@ -53,11 +53,12 @@ type ServerConfig struct {
 // ApiConfig holds the dynamic configuration for the API.
 type ApiConfig struct {
 	// Internal Configuration
-	InfoPushes             ApiInfoPushesList `seed:"[]" json:"infoPushes" redis:"{config}:infoPushes"`
-	JwtSecret              hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:jwtSecret"`
-	PhotonSecret           hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:photonSecret"`
-	DiscoveryServiceUrl    hsync.String      `json:"-" seed:"http://discovery:9213" redis:"{config}:discoveryServiceUrl"`
-	DiscoveryServiceApiKey hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:discoveryServiceApiKey"`
+	InfoPushes              ApiInfoPushesList `seed:"[]" json:"infoPushes" redis:"{config}:infoPushes"`
+	JwtSecret               hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:jwtSecret"`
+	PhotonSecret            hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:photonSecret"`
+	DiscoveryServiceEnabled hsync.Bool        `json:"-" seed:"false" redis:"{config}:discoveryServiceEnabled"`
+	DiscoveryServiceUrl     hsync.String      `json:"-" seed:"http://discovery:9213" redis:"{config}:discoveryServiceUrl"`
+	DiscoveryServiceApiKey  hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:discoveryServiceApiKey"`
 	// Photon Room Settings
 	PhotonSettingMaxAccountsPerIpAddress hsync.Int64 `seed:"5" json:"maxAccountsPerIp" redis:"{config}:photonSettingMaxAccountsPerIp"`
 	// Connector Mod AutoConfig Functionality
