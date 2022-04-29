@@ -175,7 +175,7 @@ func getModerations(c *fiber.Ctx) error {
 
 func getPlayerModerations(c *fiber.Ctx) error {
 	var mods []models.PlayerModeration
-	var resp []*models.APIPlayerModeration
+	var resp = []*models.APIPlayerModeration{}
 
 	u := c.Locals("user").(*models.User)
 	modType := models.PlayerModerationAll
@@ -264,7 +264,7 @@ func putUnPlayerModerate(c *fiber.Ctx) error {
 		})
 	}
 
-	err = config.DB.Where("source_id = ?", u.ID).Where("target_id = ?", req.Against).Where("action = ?", req.Type).Delete(models.PlayerModeration{}).Error
+	err = config.DB.Unscoped().Where("source_id = ?", u.ID).Where("target_id = ?", req.Against).Where("action = ?", req.Type).Delete(&models.PlayerModeration{}).Error
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
@@ -285,7 +285,7 @@ func putUnPlayerModerate(c *fiber.Ctx) error {
 
 func deletePlayerModerations(c *fiber.Ctx) error {
 	u := c.Locals("user").(*models.User)
-	err := config.DB.Where("source_id = ?", u.ID).Delete(models.PlayerModeration{}).Error
+	err := config.DB.Unscoped().Where("source_id = ?", u.ID).Delete(&models.PlayerModeration{}).Error
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
@@ -360,7 +360,7 @@ func deletePlayerModeration(c *fiber.Ctx) error {
 		)
 	}
 
-	err = config.DB.Where("id = ?", c.Params("id")).Delete(models.PlayerModeration{}).Error
+	err = config.DB.Unscoped().Where("id = ?", c.Params("id")).Delete(&models.PlayerModeration{}).Error
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
