@@ -80,8 +80,46 @@ func initializeDB() {
 		panic(err)
 	}
 
-	_ = config.DB.AutoMigrate(&models.User{}, &models.Avatar{}, &models.File{}, &models.FavoriteGroup{}, &models.FavoriteItem{}, &models.Moderation{}, &models.Permission{},
-		&models.WorldUnityPackage{}, &models.AvatarUnityPackage{}, &models.PlayerModeration{})
+	err = config.DB.AutoMigrate(&models.User{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = config.DB.AutoMigrate(&models.Avatar{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = config.DB.AutoMigrate(&models.File{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = config.DB.AutoMigrate(&models.FavoriteGroup{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = config.DB.AutoMigrate(&models.FavoriteItem{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = config.DB.AutoMigrate(&models.Moderation{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = config.DB.AutoMigrate(&models.Permission{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = config.DB.AutoMigrate(models.WorldUnityPackage{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = config.DB.AutoMigrate(&models.AvatarUnityPackage{})
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = config.DB.AutoMigrate(&models.PlayerModeration{})
+	if err != nil {
+		fmt.Println(err)
+	}
 
 }
 
