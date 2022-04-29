@@ -16,10 +16,7 @@ func authRoutes(router *fiber.App) {
 	router.Post("/auth/register", ApiKeyMiddleware, postRegister)
 	router.Get("/auth/user", ApiKeyMiddleware, DoLoginMiddleware, AuthMiddleware, getSelf)
 	router.Get("/auth/user/friends", ApiKeyMiddleware, AuthMiddleware, getFriends)
-	router.Get("/auth/user/subscription", ApiKeyMiddleware, AuthMiddleware, getSubscription)
 	router.Get("/auth/user/moderations", ApiKeyMiddleware, AuthMiddleware, getModerations)
-	router.Get("/auth/user/playermoderated", ApiKeyMiddleware, AuthMiddleware, getPlayerModerated)
-	router.Get("/auth/permissions", ApiKeyMiddleware, AuthMiddleware, getPermissions)
 	router.Get("/auth/user/notifications", ApiKeyMiddleware, AuthMiddleware, getNotifications)
 
 	router.Get("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, getPlayerModerations)
@@ -28,6 +25,11 @@ func authRoutes(router *fiber.App) {
 
 	router.Get("/auth/user/playermoderations/:id", ApiKeyMiddleware, AuthMiddleware, getPlayerModeration)
 	router.Delete("/auth/user/playermoderations/:id", ApiKeyMiddleware, AuthMiddleware, deletePlayerModeration)
+
+	// Stub routes | Will not implement
+	router.Get("/auth/user/subscription", ApiKeyMiddleware, AuthMiddleware, getSubscription)
+	router.Get("/auth/permissions", ApiKeyMiddleware, AuthMiddleware, getPermissions)
+	router.Get("/auth/user/playermoderated", ApiKeyMiddleware, AuthMiddleware, getPlayerModerated)
 }
 
 // getAuth | /auth
