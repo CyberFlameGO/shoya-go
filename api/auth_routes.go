@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"strings"
 )
 
@@ -23,6 +25,9 @@ func authRoutes(router *fiber.App) {
 	router.Get("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, getPlayerModerations)
 	router.Post("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, putPlayerModerations)
 	router.Delete("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, deletePlayerModerations)
+
+	router.Get("/auth/user/playermoderations/:id", ApiKeyMiddleware, AuthMiddleware, getPlayerModeration)
+	router.Delete("/auth/user/playermoderations/:id", ApiKeyMiddleware, AuthMiddleware, deletePlayerModeration)
 }
 
 // getAuth | /auth
@@ -175,7 +180,7 @@ func getPlayerModerations(c *fiber.Ctx) error {
 		modType = models.GetPlayerModerationType(t)
 	}
 
-	tx := config.DB.Where("source_id = ?", u.ID)
+	tx := config.DB.Preload(clause.Associations).Where("source_id = ?", u.ID)
 	if modType != models.PlayerModerationAll {
 		tx.Where("action = ?", modType)
 	}
@@ -198,7 +203,98 @@ func putPlayerModerations(c *fiber.Ctx) error {
 }
 
 func deletePlayerModerations(c *fiber.Ctx) error {
-	return c.SendStatus(501)
+	u := c.Locals("user").(*models.User)
+	err := config.DB.Where("source_id = ?", u.ID).Delete(models.PlayerModeration{}).Error
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     err,
+				"status_code": 500,
+			},
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"success": fiber.Map{
+			"message":     "OK",
+			"status_code": 200,
+		}})
+}
+
+func getPlayerModeration(c *fiber.Ctx) error {
+	var mod *models.PlayerModeration
+	u := c.Locals("user").(*models.User)
+
+	err := config.DB.Preload(clause.Associations).Where("id = ?", c.Params("id")).Where("source_id = ?", u.ID).First(&mod).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(404).JSON(fiber.Map{
+				"error": fiber.Map{
+					"message":     "Can't find playerModerationǃ",
+					"status_code": 404,
+				},
+			})
+		}
+
+		return c.Status(500).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     err,
+				"status_code": 500,
+			},
+		})
+	}
+
+	return c.JSON(mod.GetAPIPlayerModeration())
+}
+
+func deletePlayerModeration(c *fiber.Ctx) error {
+	var mod *models.PlayerModeration
+	u := c.Locals("user").(*models.User)
+
+	err := config.DB.Preload(clause.Associations).Where("id = ?", c.Params("id")).First(&mod).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(404).JSON(fiber.Map{
+				"error": fiber.Map{
+					"message":     "Can't find playerModerationǃ",
+					"status_code": 404,
+				},
+			})
+		}
+
+		return c.Status(500).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     err,
+				"status_code": 500,
+			},
+		})
+	}
+
+	if mod.SourceID != u.ID {
+		return c.Status(403).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     "You definitely can't delete a playerModeration you didn't create",
+				"status_code": 403,
+			}},
+		)
+	}
+
+	err = config.DB.Where("id = ?", c.Params("id")).Delete(models.PlayerModeration{}).Error
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     err,
+				"status_code": 500,
+			},
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"success": fiber.Map{
+			"message":     fmt.Sprintf("PlayerModeration %s removed", c.Params("id")),
+			"status_code": 200,
+		},
+	})
 }
 
 func getPlayerModerated(c *fiber.Ctx) error {
