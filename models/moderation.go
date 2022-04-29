@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"strings"
 	"time"
 )
 
@@ -14,6 +15,7 @@ type Moderation struct {
 type PlayerModerationType string
 
 var (
+	PlayerModerationAll         PlayerModerationType = "all"
 	PlayerModerationShowAvatar  PlayerModerationType = "showAvatar"
 	PlayerModerationHideAvatar  PlayerModerationType = "hideAvatar"
 	PlayerModerationMute        PlayerModerationType = "mute"
@@ -23,6 +25,29 @@ var (
 	PlayerModerationInteractOn  PlayerModerationType = "interactOn"
 	PlayerModerationInteractOff PlayerModerationType = "interactOff"
 )
+
+func GetPlayerModerationType(s string) PlayerModerationType {
+	switch strings.ToLower(s) {
+	case "showavatar":
+		return PlayerModerationShowAvatar
+	case "hideavatar":
+		return PlayerModerationHideAvatar
+	case "mute":
+		return PlayerModerationMute
+	case "unmute":
+		return PlayerModerationUnmute
+	case "block":
+		return PlayerModerationBlock
+	case "unblock":
+		return PlayerModerationUnblock
+	case "interacton":
+		return PlayerModerationInteractOn
+	case "interactoff":
+		return PlayerModerationInteractOff
+	default:
+		return PlayerModerationAll
+	}
+}
 
 type PlayerModeration struct {
 	BaseModel

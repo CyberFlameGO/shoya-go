@@ -81,7 +81,7 @@ func initializeDB() {
 	}
 
 	_ = config.DB.AutoMigrate(&models.User{}, &models.Avatar{}, &models.File{}, &models.FavoriteGroup{}, &models.FavoriteItem{}, &models.Moderation{}, &models.Permission{},
-		&models.WorldUnityPackage{}, &models.AvatarUnityPackage{})
+		&models.WorldUnityPackage{}, &models.AvatarUnityPackage{}, &models.PlayerModeration{})
 
 }
 

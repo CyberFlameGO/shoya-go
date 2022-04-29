@@ -16,10 +16,13 @@ func authRoutes(router *fiber.App) {
 	router.Get("/auth/user/friends", ApiKeyMiddleware, AuthMiddleware, getFriends)
 	router.Get("/auth/user/subscription", ApiKeyMiddleware, AuthMiddleware, getSubscription)
 	router.Get("/auth/user/moderations", ApiKeyMiddleware, AuthMiddleware, getModerations)
-	router.Get("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, getPlayerModerations)
 	router.Get("/auth/user/playermoderated", ApiKeyMiddleware, AuthMiddleware, getPlayerModerated)
 	router.Get("/auth/permissions", ApiKeyMiddleware, AuthMiddleware, getPermissions)
 	router.Get("/auth/user/notifications", ApiKeyMiddleware, AuthMiddleware, getNotifications)
+
+	router.Get("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, getPlayerModerations)
+	router.Post("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, putPlayerModerations)
+	router.Delete("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, deletePlayerModerations)
 }
 
 // getAuth | /auth
@@ -162,7 +165,40 @@ func getModerations(c *fiber.Ctx) error {
 }
 
 func getPlayerModerations(c *fiber.Ctx) error {
-	return c.JSON([]interface{}{})
+	var mods []models.PlayerModeration
+	var resp []*models.APIPlayerModeration
+
+	u := c.Locals("user").(*models.User)
+	modType := models.PlayerModerationAll
+
+	if t := c.Query("type"); t != "" {
+		modType = models.GetPlayerModerationType(t)
+	}
+
+	tx := config.DB.Where("source_id = ?", u.ID)
+	if modType != models.PlayerModerationAll {
+		tx.Where("action = ?", modType)
+	}
+
+	if t := c.Query("targetUserId"); t != "" {
+		tx.Where("target_id = ?", t)
+	}
+
+	tx.Find(&mods)
+
+	for _, mod := range mods {
+		resp = append(resp, mod.GetAPIPlayerModeration())
+	}
+
+	return c.JSON(resp)
+}
+
+func putPlayerModerations(c *fiber.Ctx) error {
+	return c.SendStatus(501)
+}
+
+func deletePlayerModerations(c *fiber.Ctx) error {
+	return c.SendStatus(501)
 }
 
 func getPlayerModerated(c *fiber.Ctx) error {
