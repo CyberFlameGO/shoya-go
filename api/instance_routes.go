@@ -20,7 +20,7 @@ func getInstance(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
-				"message":     err,
+				"message":     err.Error(),
 				"status_code": 500,
 			},
 		})
@@ -75,7 +75,7 @@ func joinInstance(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
-				"message":     err,
+				"message":     err.Error(),
 				"status_code": 500,
 			},
 		})

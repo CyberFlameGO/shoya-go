@@ -210,7 +210,7 @@ func postPlayerModerations(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
-				"message":     err,
+				"message":     err.Error(),
 				"status_code": 500,
 			},
 		})
@@ -225,7 +225,7 @@ func postPlayerModerations(c *fiber.Ctx) error {
 		if err != gorm.ErrRecordNotFound {
 			return c.Status(500).JSON(fiber.Map{
 				"error": fiber.Map{
-					"message":     err,
+					"message":     err.Error(),
 					"status_code": 500,
 				},
 			})
@@ -242,7 +242,7 @@ func postPlayerModerations(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
-				"message":     err,
+				"message":     err.Error(),
 				"status_code": 500,
 			},
 		})
@@ -258,7 +258,7 @@ func putUnPlayerModerate(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
-				"message":     err,
+				"message":     err.Error(),
 				"status_code": 500,
 			},
 		})
@@ -268,7 +268,7 @@ func putUnPlayerModerate(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
-				"message":     err,
+				"message":     err.Error(),
 				"status_code": 500,
 			},
 		})
@@ -289,7 +289,7 @@ func deletePlayerModerations(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
-				"message":     err,
+				"message":     err.Error(),
 				"status_code": 500,
 			},
 		})
@@ -319,7 +319,7 @@ func getPlayerModeration(c *fiber.Ctx) error {
 
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
-				"message":     err,
+				"message":     err.Error(),
 				"status_code": 500,
 			},
 		})
@@ -345,7 +345,7 @@ func deletePlayerModeration(c *fiber.Ctx) error {
 
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
-				"message":     err,
+				"message":     err.Error(),
 				"status_code": 500,
 			},
 		})
@@ -364,7 +364,7 @@ func deletePlayerModeration(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": fiber.Map{
-				"message":     err,
+				"message":     err.Error(),
 				"status_code": 500,
 			},
 		})
