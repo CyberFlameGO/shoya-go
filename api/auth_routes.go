@@ -20,8 +20,10 @@ func authRoutes(router *fiber.App) {
 	router.Get("/auth/user/notifications", ApiKeyMiddleware, AuthMiddleware, getNotifications)
 
 	router.Get("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, getPlayerModerations)
-	router.Post("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, putPlayerModerations)
+	router.Post("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, postPlayerModerations)
 	router.Delete("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, deletePlayerModerations)
+
+	router.Put("/auth/user/unplayermoderate", ApiKeyMiddleware, AuthMiddleware, putUnPlayerModerate)
 
 	router.Get("/auth/user/playermoderations/:id", ApiKeyMiddleware, AuthMiddleware, getPlayerModeration)
 	router.Delete("/auth/user/playermoderations/:id", ApiKeyMiddleware, AuthMiddleware, deletePlayerModeration)
@@ -200,8 +202,85 @@ func getPlayerModerations(c *fiber.Ctx) error {
 	return c.JSON(resp)
 }
 
-func putPlayerModerations(c *fiber.Ctx) error {
-	return c.SendStatus(501)
+func postPlayerModerations(c *fiber.Ctx) error {
+	var mod *models.PlayerModeration
+	var req PlayerModerationRequest
+	u := c.Locals("user").(*models.User)
+	err := c.BodyParser(&req)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     err,
+				"status_code": 500,
+			},
+		})
+	}
+
+	tx := config.DB.Preload(clause.Associations).Where("id = ?", c.Params("id")).Where("source_id = ?", u.ID).First(&mod)
+	if tx.RowsAffected != 0 {
+		return c.JSON(mod.GetAPIPlayerModeration())
+	}
+
+	if err != nil {
+		if err != gorm.ErrRecordNotFound {
+			return c.Status(500).JSON(fiber.Map{
+				"error": fiber.Map{
+					"message":     err,
+					"status_code": 500,
+				},
+			})
+		}
+	}
+
+	mod = &models.PlayerModeration{
+		SourceID: u.ID,
+		TargetID: req.Against,
+		Action:   req.Type,
+	}
+
+	err = config.DB.Create(mod).Error
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     err,
+				"status_code": 500,
+			},
+		})
+	}
+
+	return c.JSON(mod.GetAPIPlayerModeration())
+}
+
+func putUnPlayerModerate(c *fiber.Ctx) error {
+	var req PlayerModerationRequest
+	u := c.Locals("user").(*models.User)
+	err := c.BodyParser(&req)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     err,
+				"status_code": 500,
+			},
+		})
+	}
+
+	err = config.DB.Where("source_id = ?", u.ID).Where("target_id = ?", req.Against).Where("action = ?", req.Type).Delete(models.PlayerModeration{}).Error
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     err,
+				"status_code": 500,
+			},
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"success": fiber.Map{
+			"message":     fmt.Sprintf("User %s unmoderated", req.Against),
+			"status_code": 200,
+		},
+	})
+
 }
 
 func deletePlayerModerations(c *fiber.Ctx) error {
