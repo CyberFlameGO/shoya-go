@@ -81,9 +81,11 @@ func joinInstance(c *fiber.Ctx) error {
 		})
 	}
 
-	i := DiscoveryService.GetInstance(instance.ID)
-	if i == nil {
-		i = DiscoveryService.RegisterInstance(instance.ID, w.Capacity)
+	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
+		i := DiscoveryService.GetInstance(instance.ID)
+		if i == nil {
+			i = DiscoveryService.RegisterInstance(instance.ID, w.Capacity)
+		}
 	}
 
 	t, err := models.CreateJoinToken(c.Locals("user").(*models.User), &w, c.IP(), instance)
