@@ -11,7 +11,7 @@ As such, this project aims to provide a self-hosted alternative to the official 
 
 ### Version Support
 The following versions have been confirmed to work on Shoya; 
- - Any build from `1130` and up to build `1174` have been tested and work.
+ - Any build from `1130` and up to build `1192` have been tested and work.
  
 ### Features Policy
 As part of writing a server emulator, specific design decisions have to be made, including which features will be supported & implemented. As such, the following features will not be implemented;
