@@ -19,6 +19,11 @@ type RegisterRequest struct {
 	RecaptchaCode      string `json:"recaptchaCode"`
 }
 
+type PlayerModerationRequest struct {
+	Against string                      `json:"moderated"`
+	Type    models.PlayerModerationType `json:"type"`
+}
+
 type UpdateUserRequest struct {
 	AcceptedTOSVersion     int      `json:"acceptedTOSVersion"`
 	Bio                    string   `json:"bio"`
