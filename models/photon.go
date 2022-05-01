@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	"time"
 )
 
@@ -16,7 +18,7 @@ type PhotonValidateJoinJWTResponse struct {
 	InstanceCreator    string               `json:"instanceCreator,omitempty"`
 }
 
-func (p *PhotonValidateJoinJWTResponse) FillFromUser(u *User) {
+func (p *PhotonValidateJoinJWTResponse) FillFromUser(u *User) error {
 	avatarImageUrl := u.CurrentAvatar.GetImageUrl()
 	avatarImageThumbnailUrl := u.CurrentAvatar.GetThumbnailImageUrl()
 	profilePicOverride := u.ProfilePicOverride
@@ -41,11 +43,13 @@ func (p *PhotonValidateJoinJWTResponse) FillFromUser(u *User) {
 	}
 	currAvAuthor, err := u.CurrentAvatar.GetAuthor()
 	if err != nil {
-		panic("avatar author was nil") // TODO: handle this better
+		fmt.Println("error: avatar author was nil")
+		return errors.New("avatar author was nil")
 	}
 	fbAvAuthor, err := u.FallbackAvatar.GetAuthor()
 	if err != nil {
-		panic("avatar author was nil") // TODO: handle this better
+		fmt.Println("error: avatar author was nil")
+		return errors.New("avatar author was nil")
 	}
 	p.AvatarDict = PhotonPropAvatarDict{
 		ID:                u.CurrentAvatar.ID,
@@ -77,6 +81,8 @@ func (p *PhotonValidateJoinJWTResponse) FillFromUser(u *User) {
 		Tags:              u.FallbackAvatar.Tags,
 		UnityPackages:     u.FallbackAvatar.GetUnityPackages(),
 	}
+
+	return nil
 }
 
 type PhotonPropUser struct {

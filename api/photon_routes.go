@@ -79,7 +79,15 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 		Valid: true,
 		IP:    claims.IP,
 	}
-	r.FillFromUser(&u)
+	err = r.FillFromUser(&u)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     err.Error(),
+				"status_code": 500,
+			},
+		})
+	}
 
 	if oc {
 		r.WorldAuthor = claims.WorldAuthorId
@@ -130,7 +138,15 @@ func doPropertyUpdate(c *fiber.Ctx) error {
 		Valid: true,
 		IP:    "notset",
 	}
-	r.FillFromUser(&u)
+	err := r.FillFromUser(&u)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     err.Error(),
+				"status_code": 500,
+			},
+		})
+	}
 	return c.JSON(r)
 }
 
