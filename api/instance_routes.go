@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
-	"strings"
+	"gorm.io/gorm"
 )
 
 func instanceRoutes(router *fiber.App) {
@@ -27,9 +27,12 @@ func getInstance(c *fiber.Ctx) error {
 	}
 
 	var w models.World
-	tx := config.DB.Find(&w).Where("id = ?", strings.Split(c.Params("instanceId"), ":")[0])
+	tx := config.DB.Find(&w).Where("id = ?", i.WorldID)
 	if tx.Error != nil {
-		return c.Status(500).JSON(fiber.Map{"error": fiber.Map{"message": "shit broke", "status_code": 500}})
+		if tx.Error == gorm.ErrRecordNotFound {
+			return c.Status(404).JSON(models.ErrWorldNotFoundResponse)
+		}
+		return c.Status(500).JSON(fiber.Map{"error": fiber.Map{"message": tx.Error.Error(), "status_code": 500}})
 	}
 
 	instanceResp := fiber.Map{
@@ -66,10 +69,6 @@ func getInstance(c *fiber.Ctx) error {
 }
 func joinInstance(c *fiber.Ctx) error {
 	var w models.World
-	tx := config.DB.Find(&w).Where("id = ?", strings.Split(c.Params("instanceId"), ":")[0])
-	if tx.Error != nil {
-		return c.Status(500).JSON(fiber.Map{"error": fiber.Map{"message": "shit broke", "status_code": 500}})
-	}
 
 	instance, err := models.ParseLocationString(c.Params("instanceId"))
 	if err != nil {
@@ -81,6 +80,14 @@ func joinInstance(c *fiber.Ctx) error {
 		})
 	}
 
+	tx := config.DB.Find(&w).Where("id = ?", instance.WorldID)
+	if tx.Error != nil {
+		if tx.Error == gorm.ErrRecordNotFound {
+			return c.Status(404).JSON(models.ErrWorldNotFoundResponse)
+		}
+		return c.Status(500).JSON(fiber.Map{"error": fiber.Map{"message": tx.Error.Error(), "status_code": 500}})
+	}
+
 	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
 		i := DiscoveryService.GetInstance(instance.ID)
 		if i == nil {
@@ -90,7 +97,7 @@ func joinInstance(c *fiber.Ctx) error {
 
 	t, err := models.CreateJoinToken(c.Locals("user").(*models.User), &w, c.IP(), instance)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": fiber.Map{"message": "shit broke", "status_code": 500}})
+		return c.Status(500).JSON(fiber.Map{"error": fiber.Map{"message": err.Error(), "status_code": 500}})
 	}
 
 	return c.JSON(fiber.Map{
