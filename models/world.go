@@ -87,10 +87,10 @@ func (w *World) GetAPIWorld() (*APIWorld, error) {
 		CreatedAt:           time.Unix(w.CreatedAt, 0).UTC().Format(time.RFC3339Nano),
 		Description:         w.Description,
 		Favorites:           0, // TODO: Implement favorites.
-		Heat:                0, // TODO: What the fuck is a "Heat"? Seems like an internal metric. Might always set to 0.
+		Heat:                0, // Intentionally hardcoded to zero; Will not implement.
 		ImageUrl:            w.GetImageUrl(),
 		Instances:           [][]string{},
-		LabsPublicationDate: "", // TODO: Labs? Is that even something we care about in a PS?
+		LabsPublicationDate: "", // Intentionally hardcoded to an empty string; Will not implement.
 		Name:                w.Name,
 		Occupants:           0,        // TODO: Implement instances + overall occupancy.
 		Organization:        "vrchat", // It's *always* vrchat.

@@ -26,7 +26,6 @@ func worldsRoutes(app *fiber.App) {
 // getWorlds | GET /worlds
 //
 // This route retrieves a list of worlds based on various parameters (e.g.: search, offset, number).
-// FIXME: This route is extremely unoptimized. Several tons of refactoring and fixing are required.
 func getWorlds(c *fiber.Ctx) error {
 	var isGameRequest = c.Locals("isGameRequest").(bool)
 	var worlds []models.World
@@ -130,7 +129,6 @@ func getWorlds(c *fiber.Ctx) error {
 
 	// Additional query prep based on parameters
 	if searchTerm != "" {
-		// TODO: full-text search on world name instead of this jank.
 		searchTerm = "%" + searchTerm + "%"
 		tx = tx.Where("name ILIKE ?", searchTerm)
 	}

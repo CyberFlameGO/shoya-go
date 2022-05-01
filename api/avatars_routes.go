@@ -123,7 +123,6 @@ func getAvatars(c *fiber.Ctx) error {
 	}
 
 	if searchTerm != "" {
-		// TODO: full-text search on world name instead of this jank.
 		searchTerm = "%" + searchTerm + "%"
 		tx = tx.Where("name ILIKE ?", searchTerm)
 	}
