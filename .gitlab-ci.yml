@@ -14,7 +14,7 @@ build-api:
         - mkdir -p ./bin/api
         - go mod download
         - go mod vendor
-        - GOARCH=amd64 GOOS=linux go build -o bin/api/api_amd64 ./api
+        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/api/api_amd64 ./api
     artifacts:
         name: api
         paths:
@@ -33,7 +33,7 @@ build-ws:
         - mkdir -p ./bin/ws
         - go mod download
         - go mod vendor
-        - GOARCH=amd64 GOOS=linux go build -o bin/ws/ws_amd64 ./ws
+        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/ws/ws_amd64 ./ws
     artifacts:
         name: ws
         paths:
@@ -52,7 +52,7 @@ build-discovery:
         - mkdir -p ./bin/discovery
         - go mod download
         - go mod vendor
-        - GOARCH=amd64 GOOS=linux go build -o bin/discovery/discovery_amd64 ./discovery
+        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/discovery/discovery_amd64 ./discovery
     artifacts:
         name: discovery
         paths:
