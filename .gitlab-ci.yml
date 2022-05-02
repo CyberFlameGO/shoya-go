@@ -41,3 +41,22 @@ build-ws:
         expose_as: ws
         untracked: false
         expire_in: 7 days
+
+build-discovery:
+    stage: build
+    cache:
+        key: "$CI_COMMIT_REF_SLUG"
+        paths:
+            - vendor/
+    script:
+        - mkdir -p ./bin/discovery
+        - go mod download
+        - go mod vendor
+        - GOARCH=amd64 GOOS=linux go build -o bin/discovery/discovery_amd64 ./discovery
+    artifacts:
+        name: discovery
+        paths:
+            - bin/discovery
+        expose_as: discovery
+        untracked: false
+        expire_in: 7 days
