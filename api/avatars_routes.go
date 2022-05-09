@@ -198,11 +198,11 @@ badRequest:
 }
 
 func getAvatarFavorites(c *fiber.Ctx) error {
-	return c.Status(501).JSON([]fiber.Map{})
+	return c.Status(501).JSON(models.ErrNotImplementedResponse)
 }
 
 func getLicensedAvatars(c *fiber.Ctx) error {
-	return c.Status(501).JSON([]fiber.Map{})
+	return c.Status(501).JSON(models.ErrNotImplementedResponse)
 }
 
 func getAvatar(c *fiber.Ctx) error {

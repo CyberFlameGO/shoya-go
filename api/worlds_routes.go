@@ -221,15 +221,15 @@ badRequest:
 }
 
 func getWorldFavorites(c *fiber.Ctx) error {
-	return c.Status(501).JSON([]fiber.Map{})
+	return c.Status(501).JSON(models.ErrNotImplementedResponse)
 }
 
 func getWorldsActive(c *fiber.Ctx) error {
-	return c.Status(501).JSON([]fiber.Map{})
+	return c.Status(501).JSON(models.ErrNotImplementedResponse)
 }
 
 func getWorldsRecent(c *fiber.Ctx) error {
-	return c.Status(501).JSON([]fiber.Map{})
+	return c.Status(501).JSON(models.ErrNotImplementedResponse)
 }
 
 // getWorld | GET /worlds/:id

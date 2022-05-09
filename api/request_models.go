@@ -51,11 +51,11 @@ func (r *UpdateUserRequest) EmailChecks(u *models.User) (bool, error) {
 
 	pwdMatch, err := u.CheckPassword(r.CurrentPassword)
 	if !pwdMatch || err != nil {
-		return false, models.InvalidCredentialsErrorInUserUpdate
+		return false, models.ErrInvalidCredentialsInUserUpdate
 	}
 
 	if config.DB.Model(&models.User{}).Where("email = ?", r.Email).Or("pending_email = ?", r.Email).Error != gorm.ErrRecordNotFound {
-		return false, models.UserWithEmailAlreadyExistsErrorInUserUpdate
+		return false, models.ErrEmailAlreadyExistsInUserUpdate
 	}
 
 	u.PendingEmail = r.Email
@@ -80,11 +80,11 @@ func (r *UpdateUserRequest) StatusChecks(u *models.User) (bool, error) {
 		status = models.UserStatus(strings.ToLower(r.Status))
 	case "offline":
 		if !u.IsStaff() {
-			return false, models.InvalidStatusDescriptionErrorInUserUpdate
+			return false, models.ErrInvalidStatusDescriptionInUserUpdate
 		}
 		status = models.UserStatus(strings.ToLower(r.Status))
 	default:
-		return false, models.InvalidUserStatusErrorInUserUpdate
+		return false, models.ErrInvalidUserStatusInUserUpdate
 	}
 
 	u.Status = status
@@ -97,7 +97,7 @@ func (r *UpdateUserRequest) StatusDescriptionChecks(u *models.User) (bool, error
 	}
 
 	if len(r.StatusDescription) > 32 {
-		return false, models.InvalidStatusDescriptionErrorInUserUpdate
+		return false, models.ErrInvalidStatusDescriptionInUserUpdate
 	}
 
 	u.StatusDescription = r.StatusDescription
@@ -110,7 +110,7 @@ func (r *UpdateUserRequest) BioChecks(u *models.User) (bool, error) {
 	}
 
 	if len(r.Bio) > 512 {
-		return false, models.InvalidBioErrorInUserUpdate
+		return false, models.ErrInvalidBioInUserUpdate
 	}
 
 	u.Bio = r.Bio
@@ -123,7 +123,7 @@ func (r *UpdateUserRequest) UserIconChecks(u *models.User) (bool, error) {
 	}
 
 	if !u.IsStaff() {
-		return false, models.TriedToSetUserIconWithoutBeingStaffErrorInUserUpdate
+		return false, models.ErrSetUserIconWhenNotStaffInUserUpdate
 	}
 
 	u.UserIcon = r.UserIcon
@@ -136,7 +136,7 @@ func (r *UpdateUserRequest) ProfilePicOverrideChecks(u *models.User) (bool, erro
 	}
 
 	if !u.IsStaff() {
-		return false, models.TriedToSetProfilePicOverrideWithoutBeingStaffErrorInUserUpdate
+		return false, models.ErrSetProfilePicOverrideWhenNotStaffInUserUpdate
 	}
 
 	u.ProfilePicOverride = r.ProfilePictureOverride
@@ -155,11 +155,11 @@ func (r *UpdateUserRequest) TagsChecks(u *models.User) (bool, error) {
 			continue
 		} else if strings.HasPrefix("language_", tag) {
 			if !isValidLanguageTag(tag) {
-				return false, models.InvalidLanguageTagInUserUpdate
+				return false, models.ErrInvalidLanguageTagInUserUpdate
 			}
 			// Ensure that we do not add more that a total of 3 language tags to the user.
 			if i++; i > 3 {
-				return false, models.TooManyLanguageTagsInUserUpdate
+				return false, models.ErrTooManyLanguageTagsInUserUpdate
 			}
 		}
 
@@ -185,14 +185,14 @@ func (r *UpdateUserRequest) HomeLocationChecks(u *models.User) (bool, error) {
 	tx := config.DB.Model(&models.World{}).Where("id = ?", r.HomeLocation).Find(&w)
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
-			return false, models.WorldNotFoundErrorInUserUpdate
+			return false, models.ErrWorldNotFoundInUserUpdate
 		}
 
 		return false, nil
 	}
 
 	if w.ReleaseStatus == models.ReleaseStatusPrivate && (w.AuthorID != u.ID && !u.IsStaff()) {
-		return false, models.WorldIsPrivateAndNotOwnedByUser
+		return false, models.ErrWorldPrivateNotOwnedByUserInUserUpdate
 	}
 
 	u.HomeWorldID = w.ID

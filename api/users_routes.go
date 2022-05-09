@@ -225,45 +225,45 @@ func putUser(c *fiber.Ctx) error {
 
 	bioChanged, err = r.BioChecks(&u)
 	if err != nil {
-		if err == models.InvalidBioErrorInUserUpdate {
+		if err == models.ErrInvalidBioInUserUpdate {
 			goto badRequest
 		}
 	}
 	emailChanged, err = r.EmailChecks(&u)
 	if err != nil {
-		if err == models.InvalidCredentialsErrorInUserUpdate {
+		if err == models.ErrInvalidCredentialsInUserUpdate {
 			goto wrongPassword
 		}
 
-		if err == models.UserWithEmailAlreadyExistsErrorInUserUpdate {
+		if err == models.ErrEmailAlreadyExistsInUserUpdate {
 			goto badRequest
 		}
 	}
 
 	statusChanged, err = r.StatusChecks(&u)
 	if err != nil {
-		if err == models.InvalidUserStatusErrorInUserUpdate {
+		if err == models.ErrInvalidUserStatusInUserUpdate {
 			goto badRequest
 		}
 	}
 
 	statusDescriptionChanged, err = r.StatusDescriptionChecks(&u)
 	if err != nil {
-		if err == models.InvalidStatusDescriptionErrorInUserUpdate {
+		if err == models.ErrInvalidStatusDescriptionInUserUpdate {
 			goto badRequest
 		}
 	}
 
 	userIconChanged, err = r.UserIconChecks(&u)
 	if err != nil {
-		if err == models.TriedToSetUserIconWithoutBeingStaffErrorInUserUpdate {
+		if err == models.ErrSetUserIconWhenNotStaffInUserUpdate {
 			goto badRequest
 		}
 	}
 
 	profilePicOverrideChanged, err = r.ProfilePicOverrideChecks(&u)
 	if err != nil {
-		if err == models.TriedToSetProfilePicOverrideWithoutBeingStaffErrorInUserUpdate {
+		if err == models.ErrSetProfilePicOverrideWhenNotStaffInUserUpdate {
 			goto badRequest
 		}
 	}
