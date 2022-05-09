@@ -14,7 +14,7 @@ func instanceRoutes(router *fiber.App) {
 }
 
 func getInstance(c *fiber.Ctx) error {
-	// TODO: Fetch instance data from Redis
+	var instance *models.WorldInstance
 	id := c.Params("instanceId")
 	i, err := models.ParseLocationString(id)
 	if err != nil {
@@ -24,6 +24,13 @@ func getInstance(c *fiber.Ctx) error {
 				"status_code": 500,
 			},
 		})
+	}
+
+	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
+		instance = DiscoveryService.GetInstance(id)
+		if instance == nil {
+			return c.Status(404).JSON(models.ErrInstanceNotFoundResponse)
+		}
 	}
 
 	var w models.World
@@ -44,13 +51,13 @@ func getInstance(c *fiber.Ctx) error {
 		"type":       i.InstanceType,
 		"ownerId":    i.OwnerID,
 		"tags":       []string{},
-		"active":     true,  // whether the instance currently has players in it
-		"full":       false, // requires redis
-		"n_users":    0,     // requires redis
+		"active":     true,
+		"full":       instance.OverCapacity,
+		"n_users":    instance.PlayerCount.Total, // requires redis
 		"capacity":   w.Capacity,
-		"platforms": fiber.Map{ // requires redis
-			"standalonewindows": 0,
-			"android":           0,
+		"platforms": fiber.Map{
+			"standalonewindows": instance.PlayerCount.PlatformWindows,
+			"android":           instance.PlayerCount.PlatformAndroid,
 		},
 		"secureName":       "",       // unknown
 		"shortName":        "",       // unknown
