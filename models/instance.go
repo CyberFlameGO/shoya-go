@@ -20,7 +20,7 @@ type WorldInstanceBlockedPlayers struct {
 
 type WorldInstance struct {
 	ID              string                   `json:"id"`
-	LastPing        uint64                   `json:"lastPing"`
+	LastPing        int64                    `json:"lastPing"`
 	InstanceID      string                   `json:"instanceId"` // entire string
 	WorldID         string                   `json:"worldId"`
 	InstanceType    string                   `json:"instanceType"` // privacy
