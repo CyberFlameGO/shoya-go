@@ -66,4 +66,6 @@ var (
 	ErrSetProfilePicOverrideWhenNotStaffInUserUpdate = errors.New("tried to set profile pic override without being staff")
 	ErrWorldNotFoundInUserUpdate                     = errors.New("world not found")
 	ErrWorldPrivateNotOwnedByUserInUserUpdate        = errors.New("world is private and not owned by current user")
+
+	ErrInvalidJoinJWT = errors.New("invalid join token")
 )

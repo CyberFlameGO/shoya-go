@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"gitlab.com/george/shoya-go/config"
@@ -21,6 +20,7 @@ type WorldInstanceBlockedPlayers struct {
 
 type WorldInstance struct {
 	ID              string                   `json:"id"`
+	LastPing        uint64                   `json:"lastPing"`
 	InstanceID      string                   `json:"instanceId"` // entire string
 	WorldID         string                   `json:"worldId"`
 	InstanceType    string                   `json:"instanceType"` // privacy
@@ -32,8 +32,6 @@ type WorldInstance struct {
 	// PlayerTags     []string
 	BlockedPlayers []WorldInstanceBlockedPlayers `json:"blockedPlayers"` // A list of players who are blocked from joining & until when
 }
-
-var ErrInvalidJoinJWT = errors.New("invalid join token")
 
 type InstanceJoinJWTClaims struct {
 	JoinId          string   `json:"joinId"`
