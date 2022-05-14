@@ -1,6 +1,6 @@
 module gitlab.com/george/shoya-go
 
-go 1.17
+go 1.18
 
 require (
 	github.com/alexedwards/argon2id v0.0.0-20211130144151-3585854a6387
