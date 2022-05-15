@@ -110,12 +110,22 @@ func getVisits(c *fiber.Ctx) error {
 
 // TODO: This is a blocker due to requiring the presence service
 func putVisits(c *fiber.Ctx) error {
-	return c.SendStatus(200)
+	return c.JSON(fiber.Map{
+		"success": fiber.Map{
+			"message":     "User pinged room",
+			"status_code": 200,
+		},
+	})
 }
 
 // TODO: This is a blocker due to requiring the presence service
 func putJoins(c *fiber.Ctx) error {
-	return c.SendStatus(200)
+	return c.JSON(fiber.Map{
+		"success": fiber.Map{
+			"message":     "User joined room",
+			"status_code": 200,
+		},
+	})
 }
 
 func getAutoConfig(c *fiber.Ctx) error {
