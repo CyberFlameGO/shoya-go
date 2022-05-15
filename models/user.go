@@ -6,7 +6,6 @@ import (
 	"github.com/lib/pq"
 	"gitlab.com/george/shoya-go/config"
 	"gorm.io/gorm"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -206,7 +205,7 @@ func (u *User) GetAPIUser(isFriend bool, shouldGetLocation bool) *APIUser {
 		FriendKey:                      friendKey,
 		InstanceId:                     instanceId,
 		IsFriend:                       isFriend,
-		LastLogin:                      strconv.FormatInt(u.LastLogin, 10), // FIXME (george): Proper dates.
+		LastLogin:                      time.Unix(u.LastLogin, 0).Format(time.RFC3339),
 		LastPlatform:                   Platform(u.LastPlatform),
 		Location:                       location,
 		ProfilePictureOverride:         profilePicOverride,
@@ -346,6 +345,7 @@ type APIUser struct {
 	InstanceId                     string     `json:"instanceId"`
 	IsFriend                       bool       `json:"isFriend"`
 	LastLogin                      string     `json:"last_login"`
+	LastActivity                   string     `json:"last_activity"`
 	LastPlatform                   Platform   `json:"last_platform"`
 	Location                       string     `json:"location"`
 	ProfilePictureOverride         string     `json:"profilePicOverride"`
@@ -356,6 +356,14 @@ type APIUser struct {
 	UserIcon                       string     `json:"userIcon"`
 	Username                       string     `json:"username"`
 	WorldId                        string     `json:"worldId"`
+	FriendRequestStatus            string     `json:"friendRequestStatus"` // Requires implementation of friendship
+
+	// The following have not been implemented so far, and they seem to have undocumented behavior on official.
+	// They have been seen as an empty string (""), "private", or "offline", but not once as what they describe.
+	// Additionally, the implementation of them requires the presence service.
+	TravelingToInstance string `json:"travelingToInstance"`
+	TravelingToLocation string `json:"travelingToLocation"`
+	TravelingToWorld    string `json:"travelingToWorld"`
 }
 type APILimitedUser struct {
 	BaseModel

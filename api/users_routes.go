@@ -15,17 +15,22 @@ func usersRoutes(router *fiber.App) {
 	// VRChat is inconsistent with how the do routing. Some are under /user, others /users.
 	user := router.Group("/user")
 	user.Get("/:id/friendStatus", ApiKeyMiddleware, AuthMiddleware, getUserFriendStatus)
+	user.Get("/:id/moderations", ApiKeyMiddleware, AuthMiddleware, AdminMiddleware, getUserModerations)
+	user.Post("/:id/moderations", ApiKeyMiddleware, AuthMiddleware, postUserModerations)
 
 	users := router.Group("/users")
 	users.Get("/", ApiKeyMiddleware, AuthMiddleware, getUsers)
 	users.Get("/:id", ApiKeyMiddleware, AuthMiddleware, getUser)
 	users.Get("/:username/name", ApiKeyMiddleware, AuthMiddleware, getUserByUsername)
+
 	users.Get("/:id/feedback", ApiKeyMiddleware, AuthMiddleware, getUserFeedback)
-	users.Post("/", ApiKeyMiddleware, AuthMiddleware, postUser)
+
 	users.Put("/:id", ApiKeyMiddleware, AuthMiddleware, putUser)
 	users.Delete("/:id", ApiKeyMiddleware, AuthMiddleware, deleteUser)
 }
 
+// getUsers | GET /users
+// This endpoint allows you to search through the users of the platform.
 func getUsers(c *fiber.Ctx) error {
 	var users []models.User
 	var rUsers = make([]*models.APILimitedUser, 0)
@@ -181,8 +186,6 @@ func postUser(c *fiber.Ctx) error {
 //  - displayName [Not Implemented]
 //  - userIcon [Staff-only]
 //  - profilePicOverride [Staff-only]
-//
-// FIXME: This endpoint is horribly unoptimized.
 func putUser(c *fiber.Ctx) error {
 	// dear client team, why are you sending separate PUT requests for status, statusDescription?
 	var r UpdateUserRequest
@@ -333,6 +336,14 @@ func deleteUser(c *fiber.Ctx) error {
 
 func getUserFeedback(c *fiber.Ctx) error {
 	return c.JSON([]interface{}{})
+}
+
+func getUserModerations(c *fiber.Ctx) error {
+	return c.SendStatus(501)
+}
+
+func postUserModerations(c *fiber.Ctx) error {
+	return c.SendStatus(501)
 }
 
 func getUserFriendStatus(c *fiber.Ctx) error {

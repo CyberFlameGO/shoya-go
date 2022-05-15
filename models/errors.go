@@ -24,6 +24,13 @@ var (
 		},
 	}
 
+	ErrMissingAdminCredentialsResponse = fiber.Map{
+		"error": fiber.Map{
+			"message":     "Missing Admin Credentials!",
+			"status_code": 401,
+		},
+	}
+
 	ErrInvalidCredentialsResponse = fiber.Map{
 		"error": fiber.Map{
 			"message":     "Invalid Credentials!",

@@ -124,7 +124,6 @@ func AuthMiddleware(c *fiber.Ctx) error {
 // If the user has not completed MFA, the request is denied with a 401 ErrTwoFactorAuthenticationRequiredResponse.
 func MfaMiddleware(c *fiber.Ctx) error {
 	if c.Locals("user") == nil {
-		// TODO: Throw error; user is not logged in, we should not be here.
 		return c.Status(401).JSON(models.ErrMissingCredentialsResponse)
 	}
 
@@ -181,6 +180,16 @@ func IsGameRequestMiddleware(c *fiber.Ctx) error {
 
 failedChecks:
 	c.Locals("isGameRequest", false)
+	return c.Next()
+}
+
+func AdminMiddleware(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+
+	if !u.IsStaff() {
+		return c.Status(401).JSON(models.ErrMissingAdminCredentialsResponse)
+	}
+
 	return c.Next()
 }
 
