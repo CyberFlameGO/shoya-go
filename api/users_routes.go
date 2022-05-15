@@ -169,10 +169,6 @@ func getUserByUsername(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(ru.GetAPIUser(false, false)) // TODO: Implement friendship system. Check friendship.
 }
 
-func postUser(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).JSON(models.User{})
-}
-
 // putUser | PUT /users/:id
 // This endpoint is used to update the information of a user.
 //

@@ -68,6 +68,7 @@ func getTime(c *fiber.Ctx) error {
 }
 
 func getInfoPush(c *fiber.Ctx) error {
+	//goland:noinspection GoPreferNilSlice
 	toPush := []config.ApiInfoPush{}
 	requiredTags := strings.Split(c.Query("require"), ",")
 	includedTags := strings.Split(c.Query("include"), ",")

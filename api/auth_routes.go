@@ -175,6 +175,7 @@ func getModerations(c *fiber.Ctx) error {
 
 func getPlayerModerations(c *fiber.Ctx) error {
 	var mods []models.PlayerModeration
+	//goland:noinspection GoPreferNilSlice,GoPreferNilSlice
 	var resp = []*models.APIPlayerModeration{}
 
 	u := c.Locals("user").(*models.User)
