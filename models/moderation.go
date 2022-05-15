@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+type ModerationType string
+
+const (
+	ModerationWarn ModerationType = "warn"
+	ModerationKick ModerationType = "kick"
+)
+
 type Moderation struct {
 	BaseModel
 	UserID string
@@ -14,7 +21,7 @@ type Moderation struct {
 
 type PlayerModerationType string
 
-var (
+const (
 	PlayerModerationAll         PlayerModerationType = "all"
 	PlayerModerationShowAvatar  PlayerModerationType = "showAvatar"
 	PlayerModerationHideAvatar  PlayerModerationType = "hideAvatar"

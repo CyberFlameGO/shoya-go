@@ -23,7 +23,7 @@ type BaseModel struct {
 // PlatformAndroid ("android"): The asset has a build for Android (Quest) versions of the game.
 type Platform string
 
-var (
+const (
 	PlatformWindows Platform = "standalonewindows"
 	PlatformAndroid Platform = "android"
 )
@@ -38,7 +38,7 @@ var (
 // ReleaseStatusHidden ("hidden"): This is the status that deleted content goes into.
 type ReleaseStatus string
 
-var (
+const (
 	ReleaseStatusPublic  ReleaseStatus = "public"
 	ReleaseStatusPrivate ReleaseStatus = "private"
 	ReleaseStatusHidden  ReleaseStatus = "hidden"

@@ -12,14 +12,14 @@ import (
 // EventSource indicates what endpoint an event was ingested from; The website and game use separate endpoints to ingest events.
 type EventSource string
 
-var (
+const (
 	EventSourceWeb  EventSource = "web"
 	EventSourceGame EventSource = "game"
 )
 
 type EventType string
 
-var (
+const (
 	EventTypeLoginLoginSuccess EventType = "Login_LoginSuccess"
 	EventTypeLoginLoginFail    EventType = "Login_LoginFail"
 

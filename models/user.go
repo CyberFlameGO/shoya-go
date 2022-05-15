@@ -14,7 +14,7 @@ import (
 // UserState represents the activity state of a user.
 type UserState string
 
-var (
+const (
 	UserStateOffline UserState = "offline"
 	UserStateActive  UserState = "active"
 	UserStateOnline  UserState = "online"
@@ -23,7 +23,7 @@ var (
 // UserStatus is the status of a user. It can be offline, active, join me, ask me, or busy.
 type UserStatus string
 
-var (
+const (
 	UserStatusOffline UserStatus = "offline"
 	UserStatusActive  UserStatus = "active"
 	UserStatusJoinMe  UserStatus = "join me"

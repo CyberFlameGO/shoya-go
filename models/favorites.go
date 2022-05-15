@@ -7,7 +7,7 @@ import (
 
 type FavoriteGroupType string
 
-var (
+const (
 	FavoriteGroupTypeUser   FavoriteGroupType = "user"
 	FavoriteGroupTypeWorld  FavoriteGroupType = "world"
 	FavoriteGroupTypeAvatar FavoriteGroupType = "avatar"
