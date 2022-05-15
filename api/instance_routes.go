@@ -108,7 +108,8 @@ func joinInstance(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"token":   t,
-		"version": 1,
+		"canModerateInstance": false, // So, err… the official API also returns this as false at all times, because it's not implemented on their end.
+		"token":               t,
+		"version":             1,
 	})
 }
