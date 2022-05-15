@@ -5,6 +5,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+var XPoweredByHeaders = []string{
+	"uwu", // ... i have no words other than "why?". This is actually present on Official btw.
+	"Chaos Monkey",
+	"Bone Hurting Juice",
+	"SAL 9000",
+	"; DROP TABLE avatars;",
+	"Human-readable Slorgs",
+	"Honestly, we have no clue, and we're afraid to find out",
+	"Thats it! You people have stood in my way long enough. Im going to clown college!",
+}
+
 var (
 	ErrMissingCredentialsResponse = fiber.Map{
 		"error": fiber.Map{

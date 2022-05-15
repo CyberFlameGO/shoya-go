@@ -6,10 +6,16 @@ import (
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm/clause"
+	"math/rand"
 	"net/url"
 	"strings"
 	"time"
 )
+
+func AddXPoweredByHeader(c *fiber.Ctx) error {
+	c.Set("X-Powered-By", models.XPoweredByHeaders[rand.Intn(len(models.XPoweredByHeaders))])
+	return c.Next()
+}
 
 // ApiKeyMiddleware ensures that the request has a valid API key attached.
 // The check order is: query > cookie

@@ -32,7 +32,7 @@ func main() {
 	})
 	app.Use(recover.New())
 	app.Use(logger.New())
-	app.Use(IsGameRequestMiddleware)
+	app.Use(AddXPoweredByHeader, IsGameRequestMiddleware)
 
 	systemRoutes(app)
 	authRoutes(app)
@@ -61,6 +61,10 @@ func initializeConfig() {
 	err := gonfig.GetConf("config.json", &config.RuntimeConfig)
 	if err != nil {
 		panic("error reading config file")
+	}
+
+	if config.RuntimeConfig.Api == nil {
+		panic("error reading config file: RuntimeConfig.Api was nil")
 	}
 }
 
