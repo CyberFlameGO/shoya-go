@@ -26,8 +26,8 @@ func main() {
 	vrcpsInit()
 
 	app := fiber.New(fiber.Config{
-		ProxyHeader:   config.RuntimeConfig.Server.ProxyHeader,
-		Prefork:       config.RuntimeConfig.Server.Prefork,
+		ProxyHeader:   config.RuntimeConfig.Api.Fiber.ProxyHeader,
+		Prefork:       config.RuntimeConfig.Api.Fiber.Prefork,
 		CaseSensitive: false,
 	})
 	app.Use(recover.New())
@@ -42,7 +42,7 @@ func main() {
 	instanceRoutes(app)
 	avatarsRoutes(app)
 
-	log.Fatal(app.Listen(config.RuntimeConfig.Server.Address))
+	log.Fatal(app.Listen(config.RuntimeConfig.Api.Fiber.ListenAddress))
 }
 
 func vrcpsInit() {
@@ -68,11 +68,11 @@ func initializeConfig() {
 func initializeDB() {
 	var err error
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=Etc/GMT",
-		config.RuntimeConfig.Database.Host,
-		config.RuntimeConfig.Database.User,
-		config.RuntimeConfig.Database.Password,
-		config.RuntimeConfig.Database.Database,
-		config.RuntimeConfig.Database.Port)
+		config.RuntimeConfig.Api.Postgres.Host,
+		config.RuntimeConfig.Api.Postgres.User,
+		config.RuntimeConfig.Api.Postgres.Password,
+		config.RuntimeConfig.Api.Postgres.Database,
+		config.RuntimeConfig.Api.Postgres.Port)
 	config.DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: gormLogger.Default.LogMode(gormLogger.Silent),
 	})
@@ -126,14 +126,14 @@ func initializeDB() {
 // initializeRedis initializes the redis clients
 func initializeRedis() {
 	config.RedisClient = redis.NewClient(&redis.Options{
-		Addr:     config.RuntimeConfig.Redis.Host,
-		Password: config.RuntimeConfig.Redis.Password,
-		DB:       config.RuntimeConfig.Redis.Database,
+		Addr:     config.RuntimeConfig.Api.Redis.Host,
+		Password: config.RuntimeConfig.Api.Redis.Password,
+		DB:       config.RuntimeConfig.Api.Redis.Database,
 	})
 	config.HarvestRedisClient = redis.NewClient(&redis.Options{
-		Addr:     config.RuntimeConfig.Redis.Host,
-		Password: config.RuntimeConfig.Redis.Password,
-		DB:       config.RuntimeConfig.Redis.Database,
+		Addr:     config.RuntimeConfig.Api.Redis.Host,
+		Password: config.RuntimeConfig.Api.Redis.Password,
+		DB:       config.RuntimeConfig.Api.Redis.Database,
 	})
 
 	_, err := config.RedisClient.Ping(context.Background()).Result()
@@ -147,7 +147,7 @@ func initializeRedis() {
 func initializeApiConfig() {
 	h, err := harvester.New(&config.ApiConfiguration).
 		WithRedisSeed(config.HarvestRedisClient).
-		WithRedisMonitor(config.HarvestRedisClient, time.Duration(config.RuntimeConfig.ApiConfigRefreshRateMs)*time.Millisecond).
+		WithRedisMonitor(config.HarvestRedisClient, time.Duration(config.RuntimeConfig.Api.ApiConfigRefreshRateMs)*time.Millisecond).
 		Create()
 	err = h.Harvest(context.Background())
 	if err != nil {

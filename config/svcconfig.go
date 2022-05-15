@@ -1,5 +1,7 @@
 package config
 
+var RuntimeConfig SvcConfig
+
 // SvcConfig is the root configuration struct used for all core services.
 type SvcConfig struct {
 	Api       *ApiSvcConfig       `json:"api,omitempty"`

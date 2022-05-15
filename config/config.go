@@ -10,45 +10,11 @@ import (
 	"sync"
 )
 
-var RuntimeConfig Config
 var ApiConfiguration = ApiConfig{}
 
 var RedisClient *redis.Client
 var HarvestRedisClient *redis.Client
 var DB *gorm.DB
-
-// Config holds the configuration for database & redis connections, fiber, and the harvester polling interval.
-type Config struct {
-	Database               DBConfig     `json:"database"`
-	Redis                  RedisConfig  `json:"redis"`
-	Server                 ServerConfig `json:"server"`
-	ApiConfigRefreshRateMs int          `json:"apiConfigRefreshRateMs"`
-	DiscoveryApiKey        string       `json:"discoveryApiKey"` // TODO: Migrate to a separate config struct for each service on shared core
-}
-
-// DBConfig holds the configuration for the database.
-type DBConfig struct {
-	Host     string `json:"host"`
-	Port     int    `json:"port"`
-	User     string `json:"username"`
-	Password string `json:"password"`
-	Database string `json:"database"`
-}
-
-// RedisConfig holds the configuration for the redis connection.
-type RedisConfig struct {
-	Host     string `json:"host"`
-	Password string `json:"password"`
-	Database int    `json:"database"`
-}
-
-// ServerConfig holds the configuration for Fiber.
-type ServerConfig struct {
-	Address     string `json:"address"`
-	Port        int    `json:"port"`
-	ProxyHeader string `json:"proxyHeader"`
-	Prefork     bool   `json:"prefork"`
-}
 
 // ApiConfig holds the dynamic configuration for the API.
 type ApiConfig struct {

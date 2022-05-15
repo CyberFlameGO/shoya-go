@@ -14,7 +14,7 @@ import (
 func main() {
 	initializeConfig()
 	app := fiber.New(fiber.Config{
-		ProxyHeader: config.RuntimeConfig.Server.ProxyHeader,
+		ProxyHeader: config.RuntimeConfig.Ws.Fiber.ProxyHeader,
 		Prefork:     false,
 	})
 
@@ -49,7 +49,7 @@ func main() {
 		}
 	}))
 
-	log.Fatal(app.Listen(config.RuntimeConfig.Server.Address))
+	log.Fatal(app.Listen(config.RuntimeConfig.Ws.Fiber.ListenAddress))
 }
 
 // initializeConfig reads the config.json file and initializes the runtime config

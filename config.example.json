@@ -1,18 +1,80 @@
 {
-  "database": {
-    "host": "localhost",
-    "port": 5432,
-    "username": "shoya",
-    "password": "AVeryComplicatedPasswordShouldGoHere",
-    "database": "shoya"
+  "api": {
+    "fiber": {
+      "listen_address": "localhost:3000",
+      "proxy_header": "",
+      "prefork": false
+    },
+    "redis": {
+      "host": "localhost:6379",
+      "password": "example",
+      "db": 0
+    },
+    "postgres": {
+      "host": "localhost",
+      "port": 5432,
+      "user": "",
+      "password": "",
+      "db": "shoya"
+    },
+    "apiConfigRefreshRateMs": 10
   },
-  "redis": {
-    "host": "localhost:6379",
-    "password": "AVeryComplicatedPasswordShouldGoHere",
-    "database": 0
+  "ws": {
+    "fiber": {
+      "listen_address": "localhost:3000",
+      "proxy_header": "",
+      "prefork": false
+    },
+    "redis": {
+      "host": "localhost:6379",
+      "password": "example",
+      "db": 0
+    },
+    "postgres": {
+      "host": "localhost",
+      "port": 5432,
+      "user": "",
+      "password": "",
+      "db": "shoya"
+    }
   },
-  "server": {
-    "address": "0.0.0.0:9999"
+  "discovery": {
+    "fiber": {
+      "listen_address": "localhost:3000",
+      "proxy_header": "",
+      "prefork": false
+    },
+    "redis": {
+      "host": "localhost:6379",
+      "password": "example",
+      "db": 0
+    },
+    "postgres": {
+      "host": "localhost",
+      "port": 5432,
+      "user": "",
+      "password": "",
+      "db": "shoya"
+    },
+    "discoveryApiKey": ""
   },
-  "apiConfigRefreshRateMs": 10
+  "analytics": {
+    "fiber": {
+      "listen_address": "localhost:3000",
+      "proxy_header": "",
+      "prefork": false
+    },
+    "redis": {
+      "host": "localhost:6379",
+      "password": "example",
+      "db": 0
+    },
+    "postgres": {
+      "host": "localhost",
+      "port": 5432,
+      "user": "",
+      "password": "",
+      "db": "shoya"
+    }
+  }
 }

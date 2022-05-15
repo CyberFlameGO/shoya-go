@@ -19,7 +19,7 @@ func main() {
 	initializeDB()
 
 	app := fiber.New(fiber.Config{
-		ProxyHeader: config.RuntimeConfig.Server.ProxyHeader,
+		ProxyHeader: config.RuntimeConfig.Analytics.Fiber.ProxyHeader,
 		Prefork:     false,
 	})
 	app.Use(recover.New())
@@ -61,7 +61,7 @@ func main() {
 		return c.JSON(ae)
 	})
 
-	log.Fatal(app.Listen(config.RuntimeConfig.Server.Address))
+	log.Fatal(app.Listen(config.RuntimeConfig.Analytics.Fiber.ListenAddress))
 }
 
 // initializeConfig reads the config.json file and initializes the runtime config
@@ -76,11 +76,11 @@ func initializeConfig() {
 func initializeDB() {
 	var err error
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=Etc/GMT",
-		config.RuntimeConfig.Database.Host,
-		config.RuntimeConfig.Database.User,
-		config.RuntimeConfig.Database.Password,
-		config.RuntimeConfig.Database.Database,
-		config.RuntimeConfig.Database.Port)
+		config.RuntimeConfig.Analytics.Postgres.Host,
+		config.RuntimeConfig.Analytics.Postgres.User,
+		config.RuntimeConfig.Analytics.Postgres.Password,
+		config.RuntimeConfig.Analytics.Postgres.Database,
+		config.RuntimeConfig.Analytics.Postgres.Port)
 	config.DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: gormLogger.Default.LogMode(gormLogger.Info),
 	})

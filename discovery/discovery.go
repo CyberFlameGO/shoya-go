@@ -11,6 +11,7 @@ import (
 	"gitlab.com/george/shoya-go/models"
 	"log"
 	"strconv"
+	"time"
 )
 
 var RedisClient rueidis.Client
@@ -20,8 +21,10 @@ func main() {
 	initializeConfig()
 	initializeRedis()
 
+	go instanceCleanup()
+
 	app := fiber.New(fiber.Config{
-		ProxyHeader: config.RuntimeConfig.Server.ProxyHeader,
+		ProxyHeader: config.RuntimeConfig.Discovery.Fiber.ProxyHeader,
 		Prefork:     false,
 	})
 	//app.Use(recover.New())
@@ -35,7 +38,7 @@ func main() {
 			}
 		}
 
-		if k != config.RuntimeConfig.DiscoveryApiKey {
+		if k != config.RuntimeConfig.Discovery.DiscoveryApiKey {
 			return c.SendStatus(401)
 		}
 
@@ -179,7 +182,7 @@ func main() {
 		return c.SendStatus(200)
 	})
 
-	log.Fatal(app.Listen(config.RuntimeConfig.Server.Address))
+	log.Fatal(app.Listen(config.RuntimeConfig.Discovery.Fiber.ListenAddress))
 }
 
 // initializeConfig reads the config.json file and initializes the runtime config
@@ -193,8 +196,8 @@ func initializeConfig() {
 func initializeRedis() {
 	redisClient, err := rueidis.NewClient(rueidis.ClientOption{
 		Username:    "default",
-		Password:    config.RuntimeConfig.Redis.Password,
-		InitAddress: []string{config.RuntimeConfig.Redis.Host},
+		Password:    config.RuntimeConfig.Discovery.Redis.Password,
+		InitAddress: []string{config.RuntimeConfig.Discovery.Redis.Host},
 	})
 
 	if err != nil {
@@ -202,4 +205,23 @@ func initializeRedis() {
 	}
 
 	RedisClient = redisClient
+}
+
+func instanceCleanup() {
+	var currentTime = int64(0)
+	for {
+		currentTime = time.Now().UTC().Unix()
+
+		arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instancePingTimeIdx").Query(fmt.Sprintf("@lastPing:[(%d -inf]", currentTime-3600)).Build()).ToArray()
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		var n int64
+		var p []FtSearchResult
+		n, p, err = parseFtSearch(arr)
+		fmt.Println(n)
+		fmt.Println(p)
+		time.Sleep(30 * time.Second)
+	}
 }
