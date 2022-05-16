@@ -18,12 +18,7 @@ func getInstance(c *fiber.Ctx) error {
 	id := c.Params("instanceId")
 	i, err := models.ParseLocationString(id)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
@@ -39,7 +34,7 @@ func getInstance(c *fiber.Ctx) error {
 		if tx.Error == gorm.ErrRecordNotFound {
 			return c.Status(404).JSON(models.ErrWorldNotFoundResponse)
 		}
-		return c.Status(500).JSON(fiber.Map{"error": fiber.Map{"message": tx.Error.Error(), "status_code": 500}})
+		return c.Status(500).JSON(models.MakeErrorResponse(tx.Error.Error(), 500))
 	}
 
 	instanceResp := fiber.Map{
@@ -79,12 +74,7 @@ func joinInstance(c *fiber.Ctx) error {
 
 	instance, err := models.ParseLocationString(c.Params("instanceId"))
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	tx := config.DB.Find(&w).Where("id = ?", instance.WorldID)
@@ -92,7 +82,7 @@ func joinInstance(c *fiber.Ctx) error {
 		if tx.Error == gorm.ErrRecordNotFound {
 			return c.Status(404).JSON(models.ErrWorldNotFoundResponse)
 		}
-		return c.Status(500).JSON(fiber.Map{"error": fiber.Map{"message": tx.Error.Error(), "status_code": 500}})
+		return c.Status(500).JSON(models.MakeErrorResponse(tx.Error.Error(), 500))
 	}
 
 	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
@@ -104,7 +94,7 @@ func joinInstance(c *fiber.Ctx) error {
 
 	t, err := models.CreateJoinToken(c.Locals("user").(*models.User), &w, c.IP(), instance)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": fiber.Map{"message": err.Error(), "status_code": 500}})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	return c.JSON(fiber.Map{

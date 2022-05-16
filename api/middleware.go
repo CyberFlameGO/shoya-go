@@ -71,7 +71,7 @@ func DoLoginMiddleware(c *fiber.Ctx) error {
 		isGameReq := c.Locals("isGameRequest").(bool)
 		t, err := models.CreateAuthCookie(&u, c.IP(), isGameReq)
 		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "Failed to create auth cookie"})
+			return c.Status(500).JSON(models.MakeErrorResponse("failed to create auth cookie", 500))
 		}
 
 		c.Locals("user", &u)

@@ -189,12 +189,7 @@ func getAvatars(c *fiber.Ctx) error {
 	}
 
 badRequest:
-	return c.Status(400).JSON(fiber.Map{
-		"error": fiber.Map{
-			"message":     "Bad request",
-			"status_code": 400,
-		},
-	})
+	return c.Status(400).JSON(models.MakeErrorResponse("Bad request", 400))
 }
 
 func getAvatarFavorites(c *fiber.Ctx) error {
@@ -225,12 +220,7 @@ func getAvatar(c *fiber.Ctx) error {
 		aa, err = a.GetAPIAvatar()
 	}
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     "internal server error while trying to get apiavatar",
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse("internal server error while trying to get apiavatar", 500))
 	}
 
 	if isGameRequest {
@@ -253,12 +243,7 @@ func selectAvatar(c *fiber.Ctx) error {
 	}
 
 	if !u.IsStaff() && a.ReleaseStatus != models.ReleaseStatusPublic && u.ID != a.AuthorID {
-		return c.Status(403).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     "trying to switch into private avatar not uploaded by self",
-				"status_code": 403,
-			},
-		})
+		return c.Status(403).JSON(models.MakeErrorResponse("trying to switch into private avatar not uploaded by self", 403))
 	}
 
 	changes["current_avatar_id"] = a.ID

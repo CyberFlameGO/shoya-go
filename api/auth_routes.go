@@ -209,12 +209,7 @@ func postPlayerModerations(c *fiber.Ctx) error {
 	u := c.Locals("user").(*models.User)
 	err := c.BodyParser(&req)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	tx := config.DB.Preload(clause.Associations).Where("id = ?", c.Params("id")).Where("source_id = ?", u.ID).First(&mod)
@@ -241,12 +236,7 @@ func postPlayerModerations(c *fiber.Ctx) error {
 
 	err = config.DB.Create(mod).Error
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	return c.JSON(mod.GetAPIPlayerModeration())
@@ -257,22 +247,12 @@ func putUnPlayerModerate(c *fiber.Ctx) error {
 	u := c.Locals("user").(*models.User)
 	err := c.BodyParser(&req)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	err = config.DB.Unscoped().Where("source_id = ?", u.ID).Where("target_id = ?", req.Against).Where("action = ?", req.Type).Delete(&models.PlayerModeration{}).Error
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	return c.JSON(fiber.Map{
@@ -288,12 +268,7 @@ func deletePlayerModerations(c *fiber.Ctx) error {
 	u := c.Locals("user").(*models.User)
 	err := config.DB.Unscoped().Where("source_id = ?", u.ID).Delete(&models.PlayerModeration{}).Error
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	return c.JSON(fiber.Map{
@@ -310,20 +285,10 @@ func getPlayerModeration(c *fiber.Ctx) error {
 	err := config.DB.Preload(clause.Associations).Where("id = ?", c.Params("id")).Where("source_id = ?", u.ID).First(&mod).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return c.Status(404).JSON(fiber.Map{
-				"error": fiber.Map{
-					"message":     "Can't find playerModerationǃ",
-					"status_code": 404,
-				},
-			})
+			return c.Status(404).JSON(models.MakeErrorResponse("can't find playerModeration!", 404))
 		}
 
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	return c.JSON(mod.GetAPIPlayerModeration())
@@ -336,39 +301,19 @@ func deletePlayerModeration(c *fiber.Ctx) error {
 	err := config.DB.Preload(clause.Associations).Where("id = ?", c.Params("id")).First(&mod).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return c.Status(404).JSON(fiber.Map{
-				"error": fiber.Map{
-					"message":     "Can't find playerModerationǃ",
-					"status_code": 404,
-				},
-			})
+			return c.Status(404).JSON(models.MakeErrorResponse("can't find playerModeration!", 404))
 		}
 
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	if mod.SourceID != u.ID {
-		return c.Status(403).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     "You definitely can't delete a playerModeration you didn't create",
-				"status_code": 403,
-			}},
-		)
+		return c.Status(403).JSON(models.MakeErrorResponse("You definitely can't delete a playerModeration you didn't create", 403))
 	}
 
 	err = config.DB.Unscoped().Where("id = ?", c.Params("id")).Delete(&models.PlayerModeration{}).Error
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	return c.JSON(fiber.Map{

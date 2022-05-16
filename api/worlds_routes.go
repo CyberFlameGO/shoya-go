@@ -212,12 +212,7 @@ func getWorlds(c *fiber.Ctx) error {
 	}
 
 badRequest:
-	return c.Status(400).JSON(fiber.Map{
-		"error": fiber.Map{
-			"message":     "Bad request",
-			"status_code": 400,
-		},
-	})
+	return c.Status(400).JSON(models.MakeErrorResponse("Bad request", 400))
 }
 
 func getWorldFavorites(c *fiber.Ctx) error {
@@ -282,12 +277,7 @@ func getWorld(c *fiber.Ctx) error {
 	}
 
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     "internal server error while trying to get apiworld",
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse("internal server error while trying to get apiworld", 500))
 	}
 
 	if isGameRequest {

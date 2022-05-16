@@ -97,20 +97,13 @@ func getUsers(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(rUsers)
 
 badRequest:
-	return c.Status(400).JSON(fiber.Map{
-		"error": fiber.Map{
-			"message":     "Bad request",
-			"status_code": 400,
-		},
-	})
+	return c.Status(400).JSON(models.MakeErrorResponse("Bad request", 400))
 }
 
 func getUser(c *fiber.Ctx) error {
 	cu, ok := c.Locals("user").(*models.User)
 	if !ok {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Couldn't retrieve current user.",
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse("couldn't retrieve current user", 500))
 	}
 
 	uid := c.Params("id")
@@ -126,12 +119,7 @@ func getUser(c *fiber.Ctx) error {
 
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
-			return c.Status(404).JSON(fiber.Map{
-				"error": fiber.Map{
-					"message":     fmt.Sprintf("User %s not found", uid),
-					"status_code": 404,
-				},
-			})
+			return c.Status(404).JSON(models.MakeErrorResponse(fmt.Sprintf("User %s not found", uid), 404))
 		}
 	}
 
@@ -141,9 +129,7 @@ func getUser(c *fiber.Ctx) error {
 func getUserByUsername(c *fiber.Ctx) error {
 	cu, ok := c.Locals("user").(*models.User)
 	if !ok {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Couldn't retrieve current user.",
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse("couldn't retrieve current user", 500))
 	}
 
 	username := strings.ToLower(c.Params("username"))
@@ -159,12 +145,7 @@ func getUserByUsername(c *fiber.Ctx) error {
 
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
-			return c.Status(404).JSON(fiber.Map{
-				"error": fiber.Map{
-					"message":     fmt.Sprintf("User %s not found", username),
-					"status_code": 404,
-				},
-			})
+			return c.Status(404).JSON(models.MakeErrorResponse(fmt.Sprintf("User %s not found", username), 404))
 		}
 	}
 
@@ -200,12 +181,7 @@ func putUser(c *fiber.Ctx) error {
 	var homeWorldChanged bool
 
 	if c.Params("id") != cu.ID && !cu.IsStaff() {
-		return c.Status(403).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     "You're not allowed to update another user's profile",
-				"status_code": 403,
-			},
-		})
+		return c.Status(403).JSON(models.MakeErrorResponse("You're not allowed to update another user's profile", 403))
 	}
 
 	if c.Params("id") == cu.ID {
@@ -216,12 +192,7 @@ func putUser(c *fiber.Ctx) error {
 
 	err := c.BodyParser(&r)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	bioChanged, err = r.BioChecks(&u)
@@ -320,12 +291,7 @@ wrongPassword:
 	return c.Status(400).JSON(models.ErrInvalidCredentialsResponse)
 
 badRequest:
-	return c.Status(400).JSON(fiber.Map{
-		"error": fiber.Map{
-			"message":     "Bad request",
-			"status_code": 400,
-		},
-	})
+	return c.Status(400).JSON(models.MakeErrorResponse("Bad request", 400))
 }
 
 func deleteUser(c *fiber.Ctx) error {
@@ -349,12 +315,7 @@ func postUserModerations(c *fiber.Ctx) error {
 
 	err := c.BodyParser(&req)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	if (req.Type == models.ModerationBan) && !u.IsStaff() {
@@ -367,51 +328,28 @@ func postUserModerations(c *fiber.Ctx) error {
 		//       multi-mod is implemented
 		i, err := models.ParseLocationString(fmt.Sprintf("%s:%s", req.WorldID, req.InstanceID))
 		if err != nil {
-			return c.Status(500).JSON(fiber.Map{
-				"error": fiber.Map{
-					"message":     err.Error(),
-					"status_code": 500,
-				},
-			})
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 		}
 
 		if i.OwnerID != u.ID {
-			return c.Status(403).JSON(fiber.Map{
-				"error": fiber.Map{
-					"message":     "not authorized to moderate in this instance",
-					"status_code": 403,
-				},
-			})
+			return c.Status(403).JSON(models.MakeErrorResponse("not authorized to moderate this instance", 403))
 		}
 	}
 
 	if boolConvert(req.IsPermanent) {
 		if !u.IsStaff() {
-			return c.Status(403).JSON(fiber.Map{
-				"error": fiber.Map{
-					"message":     "not authorized to create permanent moderations",
-					"status_code": 403,
-				},
-			})
+			return c.Status(403).JSON(models.MakeErrorResponse("not authorized to create permanent moderations", 403))
 		}
 
 		exp = time.Unix(0, 0) // If expiry is `0`, we'll assume it's permanent.
 	} else {
 		exp, err = naturaldate.Parse(strings.ReplaceAll(req.ExpiresAt, "_", " "), time.Now().UTC())
 		if err != nil {
-			return c.Status(500).JSON(fiber.Map{
-				"error": fiber.Map{
-					"message":     err.Error(),
-					"status_code": 500,
-				},
-			})
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 		}
 
 		if exp.Before(time.Now()) {
-			return c.Status(400).JSON(fiber.Map{
-				"error":       "cannot create moderation in the past",
-				"status_code": 400,
-			})
+			return c.Status(400).JSON(models.MakeErrorResponse("cannot create moderation in the past", 400))
 		}
 	}
 
@@ -427,12 +365,7 @@ func postUserModerations(c *fiber.Ctx) error {
 
 	err = config.DB.Create(mod).Error
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	return c.JSON(fiber.Map{

@@ -16,6 +16,15 @@ var XPoweredByHeaders = []string{
 	"Thats it! You people have stood in my way long enough. Im going to clown college!",
 }
 
+func MakeErrorResponse(message string, statusCode int) fiber.Map {
+	return fiber.Map{
+		"error": fiber.Map{
+			"message":     message,
+			"status_code": statusCode,
+		},
+	}
+}
+
 var (
 	ErrMissingCredentialsResponse = fiber.Map{
 		"error": fiber.Map{

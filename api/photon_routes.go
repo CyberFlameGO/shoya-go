@@ -81,12 +81,7 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 	}
 	err = r.FillFromUser(&u)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	if oc {
@@ -140,12 +135,7 @@ func doPropertyUpdate(c *fiber.Ctx) error {
 	}
 	err := r.FillFromUser(&u)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": fiber.Map{
-				"message":     err.Error(),
-				"status_code": 500,
-			},
-		})
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 	return c.JSON(r)
 }
