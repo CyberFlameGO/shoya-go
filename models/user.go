@@ -83,7 +83,7 @@ type User struct {
 	MfaSecret                     string          `json:"-"`
 	MfaRecoveryCodes              pq.StringArray  `json:"-" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
 	Permissions                   []Permission    `json:"-"`
-	Moderations                   []Moderation    `json:"-"`
+	Moderations                   []Moderation    `json:"-" gorm:"foreignKey:TargetID"`
 	FriendKey                     string          `json:"-"`
 	ProfilePicOverride            string          `json:"profilePicOverride"`
 	Unsubscribe                   bool            `json:"unsubscribe"`
@@ -135,6 +135,17 @@ func (u *User) IsStaff() bool {
 
 	if u.DeveloperType == "internal" {
 		return true
+	}
+
+	return false
+}
+
+func (u *User) IsBanned() bool {
+	checkTime := time.Now().UTC().Unix()
+	for _, mod := range u.Moderations {
+		if (mod.Type == ModerationBan) && (mod.ExpiresAt == 0 || mod.ExpiresAt > checkTime) {
+			return true
+		}
 	}
 
 	return false
