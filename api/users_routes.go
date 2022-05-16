@@ -364,12 +364,12 @@ func postUserModerations(c *fiber.Ctx) error {
 
 		exp = time.Unix(0, 0) // If expiry is `0`, we'll assume it's permanent.
 	} else {
-		exp, err = naturaldate.Parse(strings.ReplaceAll(req.ExpiresAt, "_", " "), time.Now().UTC())
+		exp, err = naturaldate.Parse(strings.ReplaceAll(req.ExpiresAt, "_", " "), time.Now().UTC(), naturaldate.WithDirection(naturaldate.Future))
 		if err != nil {
 			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 		}
 
-		if exp.Before(time.Now()) {
+		if exp.Before(time.Now().UTC()) {
 			return c.Status(400).JSON(models.MakeErrorResponse("cannot create moderation in the past", 400))
 		}
 	}
