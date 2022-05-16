@@ -27,6 +27,34 @@ type Moderation struct {
 	ExpiresAt  int64
 }
 
+func (m *Moderation) GetAPIModeration(withDisplayname bool) *APIModeration {
+	am := &APIModeration{
+		ID:           m.ID,
+		Type:         string(m.Type),
+		TargetUserId: m.TargetID,
+		Reason:       m.Reason,
+		Details:      map[string]string{}, // ??
+		Created:      time.Unix(m.CreatedAt, 0).UTC().Format(time.RFC3339),
+		Expires:      time.Unix(m.ExpiresAt, 0).UTC().Format(time.RFC3339),
+		WorldId:      m.WorldID,
+		InstanceId:   m.InstanceID,
+		Active:       m.ExpiresAt == 0 || m.ExpiresAt > time.Now().UTC().Unix(),
+		IsPermanent:  m.ExpiresAt == 0,
+		Acknowledged: false, // ??
+	}
+
+	if withDisplayname {
+		u, err := m.GetTarget()
+		if err != nil {
+			am.TargetDisplayName = "error: could not fetch user"
+		}
+
+		am.TargetDisplayName = u.DisplayName
+	}
+
+	return am
+}
+
 func (m *Moderation) GetSource() (*User, error) {
 	var u User
 
@@ -54,6 +82,22 @@ func (m *Moderation) GetTarget() (*User, error) {
 func (m *Moderation) BeforeCreate(*gorm.DB) (err error) {
 	m.ID = "mod_" + uuid.New().String() // TODO: Possibly do a database lookup to see whether the UUID already exists.
 	return
+}
+
+type APIModeration struct {
+	ID                string            `json:"id"`
+	Type              string            `json:"type"`
+	TargetUserId      string            `json:"targetUserId"`
+	TargetDisplayName string            `json:"targetDisplayName"`
+	Reason            string            `json:"reason"`
+	Details           map[string]string `json:"details"`
+	Created           string            `json:"created"`
+	Expires           string            `json:"expires"`
+	WorldId           string            `json:"worldId"`
+	InstanceId        string            `json:"instanceId"`
+	Active            bool              `json:"active"`
+	IsPermanent       bool              `json:"isPermanent"`
+	Acknowledged      bool              `json:"acknowledged"`
 }
 
 type PlayerModerationType string

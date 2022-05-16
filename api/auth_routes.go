@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strings"
+	"time"
 )
 
 func authRoutes(router *fiber.App) {
@@ -170,7 +171,17 @@ func getPermissions(c *fiber.Ctx) error {
 }
 
 func getModerations(c *fiber.Ctx) error {
-	return c.JSON([]interface{}{})
+	u := c.Locals("user").(*models.User)
+	r := []*models.APIModeration{}
+	for _, moderation := range u.Moderations {
+		if moderation.ExpiresAt == 0 || moderation.ExpiresAt > time.Now().UTC().Unix() {
+			am := moderation.GetAPIModeration(false)
+			am.TargetDisplayName = u.DisplayName
+			r = append(r, am)
+		}
+	}
+
+	return c.JSON(r)
 }
 
 func getPlayerModerations(c *fiber.Ctx) error {

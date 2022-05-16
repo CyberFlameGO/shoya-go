@@ -111,7 +111,7 @@ func getUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(cu.GetAPICurrentUser())
 	}
 
-	ru := &models.User{}
+	ru := models.User{}
 	tx := config.DB.Where("id = ?", uid).
 		Preload("CurrentAvatar.Image").
 		Preload("FallbackAvatar").
@@ -137,7 +137,7 @@ func getUserByUsername(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(cu.GetAPICurrentUser())
 	}
 
-	ru := &models.User{}
+	ru := models.User{}
 	tx := config.DB.Where("username = ?", username).
 		Preload("CurrentAvatar.Image").
 		Preload("FallbackAvatar").
@@ -303,7 +303,28 @@ func getUserFeedback(c *fiber.Ctx) error {
 }
 
 func getUserModerations(c *fiber.Ctx) error {
-	return c.SendStatus(501)
+	uid := c.Params("id")
+	ru := models.User{}
+	tx := config.DB.Where("id = ?", uid).
+		Preload("Moderations").
+		Find(&ru)
+
+	if tx.Error != nil {
+		if tx.Error == gorm.ErrRecordNotFound {
+			return c.Status(404).JSON(models.MakeErrorResponse(fmt.Sprintf("User %s not found", uid), 404))
+		}
+	}
+
+	r := []*models.APIModeration{}
+	for _, moderation := range ru.Moderations {
+		if moderation.ExpiresAt == 0 || moderation.ExpiresAt > time.Now().UTC().Unix() {
+			am := moderation.GetAPIModeration(false)
+			am.TargetDisplayName = ru.DisplayName
+			r = append(r, am)
+		}
+	}
+
+	return c.JSON(r)
 }
 
 // TODO: Implement rate-limiter so people can't spam moderation actions
