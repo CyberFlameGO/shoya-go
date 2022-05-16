@@ -331,7 +331,7 @@ func postUserModerations(c *fiber.Ctx) error {
 			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 		}
 
-		if i.OwnerID != u.ID {
+		if i.OwnerID != u.ID && !u.IsStaff() {
 			return c.Status(403).JSON(models.MakeErrorResponse("not authorized to moderate this instance", 403))
 		}
 	}
