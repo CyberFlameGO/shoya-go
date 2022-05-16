@@ -12,11 +12,25 @@ type ModerationType string
 const (
 	ModerationWarn ModerationType = "warn"
 	ModerationKick ModerationType = "kick"
+	ModerationBan  ModerationType = "ban"
 )
 
 type Moderation struct {
 	BaseModel
-	UserID string
+	SourceID   string
+	TargetID   string
+	WorldID    string
+	InstanceID string
+	Type       ModerationType
+	Reason     string
+	ExpiresAt  int64
+}
+
+// BeforeCreate is a hook called before the database entry is created.
+// It generates a UUID for the PlayerModeration.
+func (m *Moderation) BeforeCreate(*gorm.DB) (err error) {
+	m.ID = "mod_" + uuid.New().String() // TODO: Possibly do a database lookup to see whether the UUID already exists.
+	return
 }
 
 type PlayerModerationType string

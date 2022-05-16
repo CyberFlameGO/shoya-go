@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/tj/go-naturaldate"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func usersRoutes(router *fiber.App) {
@@ -338,8 +340,104 @@ func getUserModerations(c *fiber.Ctx) error {
 	return c.SendStatus(501)
 }
 
+// TODO: Implement rate-limiter so people can't spam moderation actions
 func postUserModerations(c *fiber.Ctx) error {
-	return c.SendStatus(501)
+	var mod *models.Moderation
+	var req ModerationRequest
+	var exp time.Time
+	u := c.Locals("user").(*models.User)
+
+	err := c.BodyParser(&req)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     err.Error(),
+				"status_code": 500,
+			},
+		})
+	}
+
+	if (req.Type == models.ModerationBan) && !u.IsStaff() {
+		return c.Status(401).JSON(models.ErrMissingAdminCredentialsResponse)
+	}
+
+	if req.Type == models.ModerationKick || req.Type == models.ModerationWarn {
+		// TODO: Validate whether the instance is actually active (discovery & presence svc required)
+		//       and whether the user is allowed to moderate that instance once
+		//       multi-mod is implemented
+		i, err := models.ParseLocationString(fmt.Sprintf("%s:%s", req.WorldID, req.InstanceID))
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"error": fiber.Map{
+					"message":     err.Error(),
+					"status_code": 500,
+				},
+			})
+		}
+
+		if i.OwnerID != u.ID {
+			return c.Status(403).JSON(fiber.Map{
+				"error": fiber.Map{
+					"message":     "not authorized to moderate in this instance",
+					"status_code": 403,
+				},
+			})
+		}
+	}
+
+	if boolConvert(req.IsPermanent) {
+		if !u.IsStaff() {
+			return c.Status(403).JSON(fiber.Map{
+				"error": fiber.Map{
+					"message":     "not authorized to create permanent moderations",
+					"status_code": 403,
+				},
+			})
+		}
+
+		exp = time.Unix(0, 0) // If expiry is `0`, we'll assume it's permanent.
+	} else {
+		exp, err = naturaldate.Parse(strings.ReplaceAll(req.ExpiresAt, "_", " "), time.Now().UTC())
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"error": fiber.Map{
+					"message":     err.Error(),
+					"status_code": 500,
+				},
+			})
+		}
+
+		if exp.Before(time.Now()) {
+			return c.Status(400).JSON(fiber.Map{
+				"error":       "cannot create moderation in the past",
+				"status_code": 400,
+			})
+		}
+	}
+
+	mod = &models.Moderation{
+		SourceID:   u.ID,
+		TargetID:   req.TargetID,
+		WorldID:    req.WorldID,
+		InstanceID: req.InstanceID,
+		Type:       req.Type,
+		Reason:     req.Reason,
+		ExpiresAt:  exp.Unix(),
+	}
+
+	err = config.DB.Create(mod).Error
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": fiber.Map{
+				"message":     err.Error(),
+				"status_code": 500,
+			},
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"id": mod.ID,
+	})
 }
 
 func getUserFriendStatus(c *fiber.Ctx) error {

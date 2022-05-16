@@ -19,6 +19,17 @@ type RegisterRequest struct {
 	RecaptchaCode      string `json:"recaptchaCode"`
 }
 
+type ModerationRequest struct {
+	CreatedAt   string                `json:"created"`
+	ExpiresAt   string                `json:"expires"`
+	Type        models.ModerationType `json:"type"`
+	Reason      string                `json:"reason"`
+	IsPermanent string                `json:"isPermanent"` // What the fuck, why???
+	TargetID    string                `json:"targetUserId"`
+	WorldID     string                `json:"worldId"`
+	InstanceID  string                `json:"instanceId"`
+}
+
 type PlayerModerationRequest struct {
 	Against string                      `json:"moderated"`
 	Type    models.PlayerModerationType `json:"type"`
