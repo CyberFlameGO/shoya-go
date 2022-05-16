@@ -140,15 +140,15 @@ func (u *User) IsStaff() bool {
 	return false
 }
 
-func (u *User) IsBanned() bool {
+func (u *User) IsBanned() (bool, *Moderation) {
 	checkTime := time.Now().UTC().Unix()
 	for _, mod := range u.Moderations {
 		if (mod.Type == ModerationBan) && (mod.ExpiresAt == 0 || mod.ExpiresAt > checkTime) {
-			return true
+			return true, &mod
 		}
 	}
 
-	return false
+	return false, nil
 }
 
 // GetState returns the state of the user from the presence service.

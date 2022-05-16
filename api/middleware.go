@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/base64"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
@@ -68,6 +69,10 @@ func DoLoginMiddleware(c *fiber.Ctx) error {
 			return c.Status(401).JSON(models.ErrInvalidCredentialsResponse)
 		}
 
+		if banned, moderation := u.IsBanned(); banned {
+			return produceBanResponse(c, &u, moderation)
+		}
+
 		isGameReq := c.Locals("isGameRequest").(bool)
 		t, err := models.CreateAuthCookie(&u, c.IP(), isGameReq)
 		if err != nil {
@@ -112,6 +117,10 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		Where("id = ?", uid).First(&u).Error
 	if err != nil {
 		return c.Status(401).JSON(models.ErrInvalidCredentialsResponse)
+	}
+
+	if banned, moderation := u.IsBanned(); banned {
+		return produceBanResponse(c, &u, moderation)
 	}
 
 	c.Locals("authCookie", authCookie)
@@ -234,4 +243,27 @@ func shouldDoInDepthClientChecks(path string) bool {
 		return false
 	}
 	return true
+}
+
+func produceBanResponse(c *fiber.Ctx, u *models.User, moderation *models.Moderation) error {
+	var r fiber.Map
+	if moderation == nil {
+		return c.Status(403).SendString("Ban") // Not even joking, from what I can recall, this is what Official actually responds with when your moderation can't be found/is cached.
+	}
+
+	if moderation.ExpiresAt == 0 {
+		r = models.MakeErrorResponse(fmt.Sprintf("Account permanently banned: %s", moderation.Reason), 403)
+		r["target"] = u.Username
+		r["reason"] = moderation.Reason
+		r["isPermanent"] = true
+	}
+
+	banExpiresAt := time.Unix(moderation.ExpiresAt, 0)
+	r = models.MakeErrorResponse(fmt.Sprintf("Account temporarily suspended until %s (in %d days): %s", banExpiresAt.Format("Jan 02, 2006 15:04 MST"), banExpiresAt.Sub(time.Now().UTC()).Hours()/24, moderation.Reason), 403)
+	r["target"] = u.Username
+	r["reason"] = moderation.Reason
+	r["expires"] = banExpiresAt.Format(time.RFC3339)
+	r["isPermanent"] = false
+
+	return c.Status(403).JSON(r)
 }

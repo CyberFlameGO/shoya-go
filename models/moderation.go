@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/google/uuid"
+	"gitlab.com/george/shoya-go/config"
 	"gorm.io/gorm"
 	"strings"
 	"time"
@@ -24,6 +25,28 @@ type Moderation struct {
 	Type       ModerationType
 	Reason     string
 	ExpiresAt  int64
+}
+
+func (m *Moderation) GetSource() (*User, error) {
+	var u User
+
+	tx := config.DB.Where("id = ?", m.SourceID).Find(&u)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+
+	return &u, nil
+}
+
+func (m *Moderation) GetTarget() (*User, error) {
+	var u User
+
+	tx := config.DB.Where("id = ?", m.TargetID).Find(&u)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+
+	return &u, nil
 }
 
 // BeforeCreate is a hook called before the database entry is created.
