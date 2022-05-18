@@ -68,6 +68,7 @@ func getTime(c *fiber.Ctx) error {
 }
 
 func getInfoPush(c *fiber.Ctx) error {
+	// TODO: Refactor to fix a whole host of issues (e.g. duplicate entries)
 	//goland:noinspection GoPreferNilSlice
 	toPush := []config.ApiInfoPush{}
 	requiredTags := strings.Split(c.Query("require"), ",")

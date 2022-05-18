@@ -256,10 +256,12 @@ func produceBanResponse(c *fiber.Ctx, u *models.User, moderation *models.Moderat
 		r["target"] = u.Username
 		r["reason"] = moderation.Reason
 		r["isPermanent"] = true
+
+		return c.Status(403).JSON(r)
 	}
 
 	banExpiresAt := time.Unix(moderation.ExpiresAt, 0)
-	r = models.MakeErrorResponse(fmt.Sprintf("Account temporarily suspended until %s (in %d days): %s", banExpiresAt.Format("Jan 02, 2006 15:04 MST"), banExpiresAt.Sub(time.Now().UTC()).Hours()/24, moderation.Reason), 403)
+	r = models.MakeErrorResponse(fmt.Sprintf("Account temporarily suspended until %s (in %d days): %s", banExpiresAt.Format("Jan 02, 2006 15:04 MST"), int(banExpiresAt.Sub(time.Now().UTC()).Hours()/24), moderation.Reason), 403)
 	r["target"] = u.Username
 	r["reason"] = moderation.Reason
 	r["expires"] = banExpiresAt.Format(time.RFC3339)
