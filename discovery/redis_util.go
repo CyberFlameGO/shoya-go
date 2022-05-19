@@ -44,5 +44,5 @@ func parseFtSearch(ms []rueidis.RedisMessage) (int64, []FtSearchResult, error) {
 }
 
 func escapeId(s string) string {
-	return strings.Replace(s, "-", "\\-", -1)
+	return strings.ReplaceAll(s, "-", "\\-")
 }

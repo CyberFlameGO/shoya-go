@@ -103,7 +103,7 @@ func getWorlds(c *fiber.Ctx) error {
 		switch _r {
 		case string(models.ReleaseStatusPublic):
 			searchReleaseStatus = models.ReleaseStatusPublic
-			break
+
 		case string(models.ReleaseStatusPrivate):
 			searchReleaseStatus = models.ReleaseStatusPrivate
 			if !searchSelf {
@@ -112,10 +112,10 @@ func getWorlds(c *fiber.Ctx) error {
 			if searchUser == "" {
 				searchUser = u.ID
 			}
-			break
+
 		case string(models.ReleaseStatusHidden):
 			searchReleaseStatus = models.ReleaseStatusHidden
-			break
+
 		}
 	}
 

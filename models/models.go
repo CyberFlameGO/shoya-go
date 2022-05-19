@@ -188,7 +188,6 @@ func parseInstanceFlags(flags []string, l *Location) error {
 				}
 			}
 
-			break
 		case InstanceFlagTypeRegion:
 			instanceRegion := flagValue.(string)
 			for _, allowedInstanceRegion := range AllowedInstanceRegions {
@@ -198,16 +197,12 @@ func parseInstanceFlags(flags []string, l *Location) error {
 				}
 			}
 
-			break
 		case InstanceFlagTypeNonce:
 			l.Nonce = flagValue.(string)
-			break
 		case InstanceFlagTypeCanReqInvite:
 			l.CanRequestInvite = true // Will always return true if this flag exists
-			break
 		case InstanceFlagTypeStrict:
 			l.IsStrict = true // ^^
-			break
 		}
 	}
 	return nil

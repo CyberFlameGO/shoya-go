@@ -164,7 +164,7 @@ func (r *UpdateUserRequest) TagsChecks(u *models.User) (bool, error) {
 	for _, tag := range r.Tags {
 		if !strings.HasPrefix(tag, "language_") && !u.IsStaff() {
 			continue
-		} else if strings.HasPrefix("language_", tag) {
+		} else if strings.HasPrefix(tag, "language_") {
 			if !isValidLanguageTag(tag) {
 				return false, models.ErrInvalidLanguageTagInUserUpdate
 			}
@@ -211,7 +211,7 @@ func (r *UpdateUserRequest) HomeLocationChecks(u *models.User) (bool, error) {
 }
 
 func isValidLanguageTag(tag string) bool {
-	if !strings.HasPrefix("language_", tag) {
+	if !strings.HasPrefix(tag, "language_") {
 		return false
 	}
 
