@@ -114,7 +114,7 @@ type ApiConfig struct {
 	YoutubeDLVersion                          hsync.String            `seed:"" json:"youtubedl-version" redis:"{config}:youtubedl-version"`                                                     // YoutubeDLVersion is the version of youtube-dl.
 }
 
-func (a *ApiConfig) Update(u map[string]interface{}) error {
+func (*ApiConfig) Update(u map[string]interface{}) error {
 	p := RedisClient.Pipeline()
 
 	for key, value := range u {

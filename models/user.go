@@ -148,15 +148,15 @@ func (u *User) IsBanned() (bool, *Moderation) {
 }
 
 // GetState returns the state of the user from the presence service.
-func (u *User) GetState() UserState {
+func (u *User) GetState() UserState { // WIP -- skipcq
 	return UserStateActive // TODO: Implement presence service.
 }
 
-func (u *User) GetPastDisplayNames() []DisplayNameChangeRecord {
+func (u *User) GetPastDisplayNames() []DisplayNameChangeRecord { // WIP -- skipcq
 	return []DisplayNameChangeRecord{} // TODO: Implement display name history.
 }
 
-func (u *User) GetPresence() *UserPresence {
+func (u *User) GetPresence() *UserPresence { // WIP -- skipcq
 	return &UserPresence{
 		ShouldDisclose: false,
 	}
