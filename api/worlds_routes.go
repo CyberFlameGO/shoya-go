@@ -91,16 +91,12 @@ func getWorlds(c *fiber.Ctx) error {
 
 	if _tags := c.Query("tag"); _tags != "" {
 		tags := strings.Split(_tags, ",")
-		for _, tag := range tags {
-			searchTagsInclude = append(searchTagsInclude, tag)
-		}
+		searchTagsInclude = append(searchTagsInclude, tags...)
 	}
 
 	if _exclTags := c.Query("notag"); _exclTags != "" {
 		tags := strings.Split(_exclTags, ",")
-		for _, tag := range tags {
-			searchTagsExclude = append(searchTagsExclude, tag)
-		}
+		searchTagsExclude = append(searchTagsExclude, tags...)
 	}
 
 	if _r := c.Query("releaseStatus"); _r != "" {
@@ -110,7 +106,7 @@ func getWorlds(c *fiber.Ctx) error {
 			break
 		case string(models.ReleaseStatusPrivate):
 			searchReleaseStatus = models.ReleaseStatusPrivate
-			if searchSelf == false {
+			if !searchSelf {
 				searchSelf = true
 			}
 			if searchUser == "" {
@@ -161,7 +157,7 @@ func getWorlds(c *fiber.Ctx) error {
 		}
 
 		if searchReleaseStatus == models.ReleaseStatusPrivate &&
-			(searchUser != u.ID || searchSelf == false) && u.DeveloperType != "internal" {
+			(searchUser != u.ID || !searchSelf) && u.DeveloperType != "internal" {
 			goto badRequest
 		}
 	}

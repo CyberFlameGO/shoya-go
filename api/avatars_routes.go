@@ -86,16 +86,12 @@ func getAvatars(c *fiber.Ctx) error {
 
 	if c.Query("tag") != "" {
 		tags := strings.Split(c.Query("tag"), ",")
-		for _, tag := range tags {
-			searchTagsInclude = append(searchTagsInclude, tag)
-		}
+		searchTagsInclude = append(searchTagsInclude, tags...)
 	}
 
 	if c.Query("notag") != "" {
 		tags := strings.Split(c.Query("notag"), ",")
-		for _, tag := range tags {
-			searchTagsExclude = append(searchTagsExclude, tag)
-		}
+		searchTagsExclude = append(searchTagsExclude, tags...)
 	}
 
 	if c.Query("releaseStatus") != "" {
@@ -105,7 +101,7 @@ func getAvatars(c *fiber.Ctx) error {
 			break
 		case string(models.ReleaseStatusPrivate):
 			searchReleaseStatus = models.ReleaseStatusPrivate
-			if searchSelf == false {
+			if !searchSelf {
 				searchSelf = true
 			}
 			if searchUser == "" {
@@ -155,7 +151,7 @@ func getAvatars(c *fiber.Ctx) error {
 		}
 
 		if searchReleaseStatus == models.ReleaseStatusPrivate &&
-			(searchUser != u.ID || searchSelf == false) && u.DeveloperType != "internal" {
+			(searchUser != u.ID || !searchSelf) && u.DeveloperType != "internal" {
 			goto badRequest
 		}
 	}

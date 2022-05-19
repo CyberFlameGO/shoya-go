@@ -161,9 +161,5 @@ func initializeApiConfig() {
 
 func boolConvert(s string) bool {
 	s = strings.ToLower(s)
-	if s == "true" {
-		return true
-	}
-
-	return false
+	return s == "true"
 }

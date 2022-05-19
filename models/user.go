@@ -133,11 +133,7 @@ func (u *User) IsStaff() bool {
 		}
 	}
 
-	if u.DeveloperType == "internal" {
-		return true
-	}
-
-	return false
+	return u.DeveloperType == "internal"
 }
 
 func (u *User) IsBanned() (bool, *Moderation) {

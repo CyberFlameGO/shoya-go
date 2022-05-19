@@ -114,7 +114,7 @@ type APIUnityPackage struct {
 	UnitySortNumber int         `json:"unitySortNumber"`
 }
 
-var InstanceFlagRegex = regexp.MustCompile("^(?P<flagName>.*)?\\((?P<flagValue>.*)\\)")
+var InstanceFlagRegex = regexp.MustCompile(`^(?P<flagName>.*)?\((?P<flagValue>.*)\)`)
 
 type InstanceFlagType string
 
@@ -148,7 +148,7 @@ func ParseLocationString(s string) (*Location, error) {
 	var location = Location{}
 	s1 := strings.Split(s, ":")
 	if len(s1) < 2 {
-		return nil, errors.New(fmt.Sprintf("invalid instance id: %s", s1))
+		return nil, fmt.Errorf("invalid instance id: %s", s1)
 	}
 
 	location.ID = s
@@ -224,7 +224,7 @@ func parseInstanceFlag(flag string) (InstanceFlagType, string, interface{}, erro
 
 	m := InstanceFlagRegex.FindStringSubmatch(flag)
 	if len(m) != 3 {
-		return InstanceFlagTypeNone, "", "", errors.New(fmt.Sprintf("could not find 3 matches for match \"%s\" in parseinstanceflag", m[0]))
+		return InstanceFlagTypeNone, "", "", fmt.Errorf("could not find 3 matches for match \"%s\" in parseinstanceflag", m[0])
 	}
 
 	var flagType = InstanceFlagType(m[1])
