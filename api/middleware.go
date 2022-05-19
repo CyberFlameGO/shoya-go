@@ -14,7 +14,7 @@ import (
 )
 
 func AddXPoweredByHeader(c *fiber.Ctx) error {
-	c.Set("X-Powered-By", models.XPoweredByHeaders[rand.Intn(len(models.XPoweredByHeaders))])
+	c.Set("X-Powered-By", models.XPoweredByHeaders[rand.Intn(len(models.XPoweredByHeaders))]) // #nosec skipcq
 	return c.Next()
 }
 
