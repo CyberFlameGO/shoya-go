@@ -74,6 +74,24 @@ func (r *UpdateUserRequest) EmailChecks(u *models.User) (bool, error) {
 	return true, nil
 }
 
+func (r *UpdateUserRequest) PasswordChecks(u *models.User) (bool, error) {
+	if r.Password == "" {
+		return false, nil
+	}
+
+	pwdMatch, err := u.CheckPassword(r.CurrentPassword)
+	if !pwdMatch || err != nil {
+		return false, models.ErrInvalidCredentialsInUserUpdate
+	}
+
+	err = u.ChangePassword(r.Password)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
 func (r *UpdateUserRequest) StatusChecks(u *models.User) (bool, error) {
 	var status models.UserStatus
 	if r.Status == "" {

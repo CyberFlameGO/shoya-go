@@ -173,6 +173,7 @@ func putUser(c *fiber.Ctx) error {
 	var changes = map[string]interface{}{}
 	var bioChanged bool
 	var emailChanged bool
+	var passwordChanged bool
 	var statusChanged bool
 	var statusDescriptionChanged bool
 	var userIconChanged bool
@@ -210,6 +211,11 @@ func putUser(c *fiber.Ctx) error {
 		if err == models.ErrEmailAlreadyExistsInUserUpdate {
 			goto badRequest
 		}
+	}
+
+	passwordChanged, err = r.PasswordChecks(&u)
+	if err != nil {
+		goto badRequest
 	}
 
 	statusChanged, err = r.StatusChecks(&u)
@@ -257,6 +263,10 @@ func putUser(c *fiber.Ctx) error {
 	if emailChanged {
 		changes["pending_email"] = u.Email
 		// TODO: Queue up email verification sending
+	}
+
+	if passwordChanged {
+		changes["password"] = u.Password
 	}
 
 	if statusChanged {

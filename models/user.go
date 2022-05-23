@@ -126,6 +126,16 @@ func (u *User) CheckPassword(password string) (bool, error) {
 	return m, nil
 }
 
+func (u *User) ChangePassword(password string) error {
+	pw, err := argon2id.CreateHash(password, argon2id.DefaultParams)
+	if err != nil {
+		panic(err) // panic when crypto fails; sounds good to me tbh.
+	}
+
+	u.Password = pw
+	return nil
+}
+
 func (u *User) IsStaff() bool {
 	for _, tag := range u.Tags {
 		if tag == "admin_moderator" {
@@ -326,8 +336,8 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 		State:                          u.GetState(),
 		Status:                         u.Status,
 		StatusDescription:              u.StatusDescription,
-		StatusFirstTime:                false,                         // Hardcoded to false. This data won't be collected.
-		StatusHistory:                  []string{u.StatusDescription}, // TODO: Implement status history.
+		StatusFirstTime:                false, // Hardcoded to false. This data won't be collected.
+		StatusHistory:                  []string{u.StatusDescription},
 		Tags:                           u.Tags,
 		TwoFactorAuthEnabled:           u.MfaEnabled,
 		Unsubscribe:                    u.Unsubscribe,

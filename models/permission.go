@@ -5,5 +5,4 @@ type Permission struct {
 	UserID    string
 	Name      string `json:"name"`
 	CreatedBy string
-	// TODO: Implement Gorm-compatible parameters.
 }
