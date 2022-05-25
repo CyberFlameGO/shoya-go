@@ -54,6 +54,10 @@ func vrcpsInit() {
 	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
 		DiscoveryService = discovery_client.NewDiscovery(config.ApiConfiguration.DiscoveryServiceUrl.Get(), config.ApiConfiguration.DiscoveryServiceApiKey.Get())
 	}
+
+	go redisHealthCheck()
+	go harvestRedisHealthCheck()
+	go postgresHealthCheck()
 }
 
 // initializeConfig reads the config.json file and initializes the runtime config
