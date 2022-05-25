@@ -167,6 +167,9 @@ func getSubscription(c *fiber.Ctx) error {
 }
 
 func getPermissions(c *fiber.Ctx) error {
+	if c.Query("condensed") == "true" { // MUST be "true", not True, or TRUE. GG's.
+		return c.JSON(new(interface{})) // In the case of condensed=true, an object is expected.
+	}
 	return c.JSON([]interface{}{})
 }
 
@@ -261,7 +264,16 @@ func putUnPlayerModerate(c *fiber.Ctx) error {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
-	err = config.DB.Unscoped().Where("source_id = ?", u.ID).Where("target_id = ?", req.Against).Where("action = ?", req.Type).Delete(&models.PlayerModeration{}).Error
+	query := config.DB.Unscoped().Where("source_id = ?", u.ID)
+	if req.Against != "" {
+		query.Where("target_id = ?", req.Against)
+	}
+
+	if req.Type != "" {
+		query.Where("action = ?", req.Type)
+	}
+
+	err = query.Delete(&models.PlayerModeration{}).Error
 	if err != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
