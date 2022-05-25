@@ -10,8 +10,8 @@ import (
 	"github.com/gtsatsis/harvester"
 	"github.com/tkanos/gonfig"
 	"gitlab.com/george/shoya-go/config"
-	"gitlab.com/george/shoya-go/discovery/discovery_client"
 	"gitlab.com/george/shoya-go/models"
+	"gitlab.com/george/shoya-go/services/discovery/discovery_client"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
@@ -23,7 +23,7 @@ import (
 var DiscoveryService *discovery_client.Discovery
 
 func main() {
-	vrcpsInit()
+	shoyaInit()
 
 	app := fiber.New(fiber.Config{
 		ProxyHeader:   config.RuntimeConfig.Api.Fiber.ProxyHeader,
@@ -45,7 +45,7 @@ func main() {
 	log.Fatal(app.Listen(config.RuntimeConfig.Api.Fiber.ListenAddress))
 }
 
-func vrcpsInit() {
+func shoyaInit() {
 	initializeConfig()
 	initializeDB()
 	initializeRedis()
@@ -54,6 +54,8 @@ func vrcpsInit() {
 	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
 		DiscoveryService = discovery_client.NewDiscovery(config.ApiConfiguration.DiscoveryServiceUrl.Get(), config.ApiConfiguration.DiscoveryServiceApiKey.Get())
 	}
+
+	initializeHealthChecks()
 }
 
 // initializeConfig reads the config.json file and initializes the runtime config
@@ -157,6 +159,12 @@ func initializeApiConfig() {
 	if err != nil {
 		panic(fmt.Errorf("failed to harvest configuration: %v", err))
 	}
+}
+
+func initializeHealthChecks() {
+	go redisHealthCheck()
+	go harvestRedisHealthCheck()
+	go postgresHealthCheck()
 }
 
 func boolConvert(s string) bool {

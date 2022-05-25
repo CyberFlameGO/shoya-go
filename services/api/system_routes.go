@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
 	"gitlab.com/george/shoya-go/config"
+	"os"
 	"strings"
 	"time"
 )
@@ -25,9 +26,21 @@ func systemRoutes(router *fiber.App) {
 }
 
 func getHealth(c *fiber.Ctx) error {
+	var s = "ok"
+
+	if !healthStatus.Postgres.Ok || !healthStatus.Redis.Ok || !healthStatus.Config.Ok {
+		s = "error"
+	}
+
 	return c.Status(200).JSON(fiber.Map{
-		"status":     "ok",
-		"serverName": config.ApiConfiguration.ServerName.Get(),
+		"status":     s,
+		"serverName": config.ApiConfiguration.ServerName.Get(), // Only here for compatibility.
+		"details":    healthStatus,
+		"serverInfo": fiber.Map{
+			"serverName": config.ApiConfiguration.ServerName.Get(),
+			"core":       os.Getppid(),
+			"fork":       os.Getpid(),
+		},
 	})
 }
 
