@@ -21,6 +21,7 @@ func worldsRoutes(app *fiber.App) {
 	worlds.Get("/:id", ApiKeyMiddleware, AuthMiddleware, getWorld)
 	worlds.Get("/:id/metadata", ApiKeyMiddleware, AuthMiddleware, getWorldMeta)
 	worlds.Get("/:id/publish", ApiKeyMiddleware, AuthMiddleware, getWorldPublish)
+	worlds.Get("/:id/:version/feedback", ApiKeyMiddleware, AuthMiddleware, getWorldFeedback)
 }
 
 // getWorlds | GET /worlds
@@ -291,6 +292,29 @@ func getWorldMeta(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"id":       c.Params("id"),
 		"metadata": fiber.Map{},
+	})
+}
+
+func getWorldFeedback(c *fiber.Ctx) error {
+	var u *models.User
+	var w models.World
+
+	u = c.Locals("user").(*models.User)
+	tx := config.DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&models.World{}).Where("id = ?", c.Params("id")).First(&w)
+	if tx.Error != nil {
+		if tx.Error == gorm.ErrRecordNotFound {
+			return c.Status(404).JSON(models.ErrWorldNotFoundResponse)
+		}
+	}
+
+	if u.ID != w.AuthorID {
+		return c.Status(403).JSON(models.MakeErrorResponse("not allowed to access feedback for this world", 403))
+	}
+
+	return c.JSON(fiber.Map{
+		"reportScore":   0,
+		"reportCount":   0,
+		"reportReasons": []interface{}{},
 	})
 }
 
