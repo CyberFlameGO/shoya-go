@@ -103,6 +103,7 @@ func (w *World) GetAPIWorld() (*APIWorld, error) {
 		Version:             w.Version,
 		UnityPackages:       w.GetUnityPackages(false),
 		Visits:              0, // TODO: Implement metrics.
+		UpdatedAt:           time.Unix(w.UpdatedAt, 0).UTC().Format(time.RFC3339Nano),
 	}, nil
 }
 func (w *World) GetAPIWorldWithPackages() (*APIWorldWithPackages, error) {
@@ -125,9 +126,13 @@ type APIWorld struct {
 	CreatedAt           string            `json:"created_at"`
 	Description         string            `json:"description"`
 	Favorites           int               `json:"favorites"`
+	Featured            bool              `json:"featured"`
+	Namespace           string            `json:"namespace"`
+	Popularity          int               `json:"popularity"`
 	Heat                int               `json:"heat"`
 	ImageUrl            string            `json:"imageUrl"`
 	Instances           [][]string        `json:"instances"`
+	PublicationDate     string            `json:"publicationDate"`
 	LabsPublicationDate string            `json:"labsPublicationDate"`
 	Name                string            `json:"name"`
 	Occupants           int               `json:"occupants"`
@@ -142,6 +147,7 @@ type APIWorld struct {
 	Version             int               `json:"version"`
 	Visits              int               `json:"visits"`
 	UnityPackages       []APIUnityPackage `json:"unityPackages"`
+	UpdatedAt           string            `json:"updated_at"`
 }
 
 type APIWorldWithPackages struct {

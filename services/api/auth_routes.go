@@ -168,7 +168,7 @@ func getSubscription(c *fiber.Ctx) error {
 
 func getPermissions(c *fiber.Ctx) error {
 	if c.Query("condensed") == "true" { // MUST be "true", not True, or TRUE. GG's.
-		return c.JSON(new(interface{})) // In the case of condensed=true, an object is expected.
+		return c.JSON(fiber.Map{}) // In the case of condensed=true, an object is expected.
 	}
 	return c.JSON([]interface{}{})
 }

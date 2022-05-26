@@ -34,16 +34,18 @@ type WorldInstance struct {
 }
 
 type InstanceJoinJWTClaims struct {
-	JoinId          string   `json:"joinId"`
-	UserId          string   `json:"userId"`
-	Session         string   `json:"session"`
-	IP              string   `json:"ip"`
-	Location        string   `json:"location"`
-	WorldAuthorId   string   `json:"worldAuthorId"`
-	WorldCapacity   int      `json:"worldCapacity"`
-	WorldName       string   `json:"worldName"`
-	WorldTags       []string `json:"worldTags"`
-	InstanceOwnerId string   `json:"instanceOwnerId"`
+	JoinId              string   `json:"joinId"`
+	UserId              string   `json:"userId"`
+	Session             string   `json:"session"`
+	IP                  string   `json:"ip"`
+	Platform            Platform `json:"platform"`
+	Location            string   `json:"location"`
+	CanModerateInstance bool     `json:"canModerateInstance"`
+	WorldAuthorId       string   `json:"worldAuthorId"`
+	WorldCapacity       int      `json:"worldCapacity"`
+	WorldName           string   `json:"worldName"`
+	WorldTags           []string `json:"worldTags"`
+	InstanceOwnerId     string   `json:"instanceOwnerId"`
 	jwt.StandardClaims
 }
 

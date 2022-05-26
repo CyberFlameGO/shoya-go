@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"regexp"
@@ -69,9 +70,11 @@ func (u *WorldUnityPackage) GetAPIUnityPackage(withAssetUrl bool) *APIUnityPacka
 		ID:              u.ID,
 		CreatedAt:       time.Unix(u.CreatedAt, 0).UTC().Format(time.RFC3339Nano),
 		AssetUrl:        assetUrl,
+		AssetUrlObject:  fiber.Map{},
 		Platform:        u.Platform,
 		UnityVersion:    u.UnityVersion,
 		UnitySortNumber: u.UnitySortNumber,
+		PluginUrlObject: fiber.Map{},
 	}
 }
 
@@ -106,6 +109,7 @@ type APIUnityPackage struct {
 	ID              string      `json:"id"`
 	AssetUrl        string      `json:"assetUrl"`
 	AssetUrlObject  interface{} `json:"assetUrlObject"`
+	AssetVersion    int         `json:"assetVersion"`
 	CreatedAt       string      `json:"created_at"`
 	Platform        Platform    `json:"platform"`
 	PluginUrl       string      `json:"pluginUrl"`
