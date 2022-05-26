@@ -64,7 +64,7 @@ func (a *Avatar) GetImageUrl() string {
 }
 
 func (a *Avatar) GetThumbnailImageUrl() string {
-	return a.Image.Url // TODO: Thumbnail service?
+	return a.Image.Url
 }
 
 func (a *Avatar) GetAPIAvatar() (*APIAvatar, error) {

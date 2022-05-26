@@ -101,7 +101,7 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		if !ok || authCookie_ == "" {
 			return c.Status(401).JSON(models.ErrMissingCredentialsResponse)
 		}
-		authCookie = authCookie_ // TODO: Look into less hacky solution -- Currently the variable is locally assigned in the if.
+		authCookie = authCookie_
 	}
 
 	isGameReq := c.Locals("isGameRequest").(bool)

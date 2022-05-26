@@ -23,6 +23,9 @@ func usersRoutes(router *fiber.App) {
 	users := router.Group("/users")
 	users.Get("/", ApiKeyMiddleware, AuthMiddleware, getUsers)
 	users.Get("/:id", ApiKeyMiddleware, AuthMiddleware, getUser)
+	users.Post("/:id/addTags", ApiKeyMiddleware, AuthMiddleware, postUserAddTags)
+	users.Post("/:id/removeTags", ApiKeyMiddleware, AuthMiddleware, postUserRemoveTags)
+
 	users.Get("/:username/name", ApiKeyMiddleware, AuthMiddleware, getUserByUsername)
 
 	users.Get("/:id/feedback", ApiKeyMiddleware, AuthMiddleware, getUserFeedback)
@@ -411,4 +414,88 @@ func getUserFriendStatus(c *fiber.Ctx) error {
 		"isFriend":        false,
 		"outgoingRequest": false,
 	})
+}
+
+func postUserAddTags(c *fiber.Ctx) error {
+	var u *models.User
+	var r AddTagsRequest
+
+	var tagsChanged bool
+	var changes = map[string]interface{}{}
+	var err error
+
+	cu := c.Locals("user").(*models.User)
+
+	if c.Params("id") != cu.ID && !cu.IsStaff() {
+		return c.Status(403).JSON(models.MakeErrorResponse("You're not allowed to update another user's profile", 403))
+	}
+
+	if c.Params("id") == cu.ID {
+		u = cu
+	} else {
+		config.DB.Where("id = ?", c.Params("id")).Find(&u)
+	}
+
+	err = c.BodyParser(&r)
+	if err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	tagsChanged, err = r.TagsChecks(u)
+	if err != nil {
+		goto badRequest
+	}
+
+	if tagsChanged {
+		changes["tags"] = u.Tags
+	}
+
+	config.DB.Omit(clause.Associations).Model(&u).Updates(changes)
+
+	return c.Status(fiber.StatusOK).JSON(u.GetAPICurrentUser())
+
+badRequest:
+	return c.Status(400).JSON(models.MakeErrorResponse("Bad request", 400))
+}
+
+func postUserRemoveTags(c *fiber.Ctx) error {
+	var u *models.User
+	var r RemoveTagsRequest
+
+	var tagsChanged bool
+	var changes = map[string]interface{}{}
+	var err error
+
+	cu := c.Locals("user").(*models.User)
+
+	if c.Params("id") != cu.ID && !cu.IsStaff() {
+		return c.Status(403).JSON(models.MakeErrorResponse("You're not allowed to update another user's profile", 403))
+	}
+
+	if c.Params("id") == cu.ID {
+		u = cu
+	} else {
+		config.DB.Where("id = ?", c.Params("id")).Find(&u)
+	}
+
+	err = c.BodyParser(&r)
+	if err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	tagsChanged, err = r.TagsChecks(u)
+	if err != nil {
+		goto badRequest
+	}
+
+	if tagsChanged {
+		changes["tags"] = u.Tags
+	}
+
+	config.DB.Omit(clause.Associations).Model(&u).Updates(changes)
+
+	return c.Status(fiber.StatusOK).JSON(u.GetAPICurrentUser())
+
+badRequest:
+	return c.Status(400).JSON(models.MakeErrorResponse("Bad request", 400))
 }

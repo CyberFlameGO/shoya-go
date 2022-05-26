@@ -247,3 +247,66 @@ func isValidLanguageTag(tag string) bool {
 
 	return false
 }
+
+type AddTagsRequest struct {
+	Tags []string `json:"tags"`
+}
+
+func (r *AddTagsRequest) TagsChecks(u *models.User) (bool, error) {
+	if len(r.Tags) == 0 {
+		return false, nil
+	}
+
+	i := 0
+	var tagsThatWillApply []string
+	for _, tag := range r.Tags {
+		if !strings.HasPrefix(tag, "language_") && !u.IsStaff() {
+			continue
+		} else if strings.HasPrefix(tag, "language_") {
+			if !isValidLanguageTag(tag) {
+				return false, models.ErrInvalidLanguageTagInUserUpdate
+			}
+			// Ensure that we do not add more that a total of 3 language tags to the user.
+			if i++; i > 3 {
+				return false, models.ErrTooManyLanguageTagsInUserUpdate
+			}
+		}
+
+		tagsThatWillApply = append(tagsThatWillApply, tag)
+	}
+
+	for _, tag := range u.Tags {
+		if strings.HasPrefix(tag, "system_") || strings.HasPrefix(tag, "admin_") {
+			tagsThatWillApply = append(tagsThatWillApply, tag)
+		}
+	}
+
+	u.Tags = tagsThatWillApply
+	return true, nil
+}
+
+type RemoveTagsRequest struct {
+	Tags []string `json:"tags"`
+}
+
+func (r *RemoveTagsRequest) TagsChecks(u *models.User) (bool, error) {
+	if len(r.Tags) == 0 {
+		return false, nil
+	}
+
+	var tagsThatWillApply []string
+	for _, tag := range r.Tags {
+		if !strings.HasPrefix(tag, "language_") {
+			continue
+		}
+
+		for _, uTag := range u.Tags {
+			if tag != uTag {
+				tagsThatWillApply = append(tagsThatWillApply, uTag)
+			}
+		}
+	}
+
+	u.Tags = tagsThatWillApply
+	return true, nil
+}

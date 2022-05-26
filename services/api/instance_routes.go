@@ -54,9 +54,9 @@ func getInstance(c *fiber.Ctx) error {
 			"standalonewindows": instance.PlayerCount.PlatformWindows,
 			"android":           instance.PlayerCount.PlatformAndroid,
 		},
-		"secureName":       "",       // unknown
-		"shortName":        "",       // unknown
-		"photonRegion":     i.Region, // todo: api -> photon region conversion -- redis?
+		"secureName":       "", // unknown
+		"shortName":        "", // unknown
+		"photonRegion":     i.Region,
 		"region":           i.Region,
 		"canRequestInvite": i.CanRequestInvite, // todo: presence/friends required
 		"permanent":        true,               // unknown -- whether access link is permanent??
