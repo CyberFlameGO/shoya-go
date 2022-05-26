@@ -41,6 +41,7 @@ func main() {
 	photonRoutes(app)
 	instanceRoutes(app)
 	avatarsRoutes(app)
+	favoriteRoutes(app)
 
 	log.Fatal(app.Listen(config.RuntimeConfig.Api.Fiber.ListenAddress))
 }
