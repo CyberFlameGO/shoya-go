@@ -20,4 +20,4 @@ The following table contains a list of features, their implementation status, an
 
 ---
 
-All realtime features as of build `1192` should be supported. For more information, please look at the [Naoka](https://gitlab.com/george/naoka-ng) repository.
+All realtime features as of build `1202` should be supported. For more information, please look at the [Naoka](https://gitlab.com/george/naoka-ng) repository.
