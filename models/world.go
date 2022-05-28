@@ -90,6 +90,7 @@ func (w *World) GetAPIWorld() (*APIWorld, error) {
 		Heat:                0, // Intentionally hardcoded to zero; Will not implement.
 		ImageUrl:            w.GetImageUrl(),
 		Instances:           [][]string{},
+		PublicationDate:     time.Unix(w.CreatedAt, 0).Format(time.RFC3339),
 		LabsPublicationDate: "", // Intentionally hardcoded to an empty string; Will not implement.
 		Name:                w.Name,
 		Occupants:           0,        // TODO: Implement instances + overall occupancy.
