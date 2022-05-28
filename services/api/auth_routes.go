@@ -11,28 +11,31 @@ import (
 	"time"
 )
 
-func authRoutes(router *fiber.App) {
-	router.Get("/auth", ApiKeyMiddleware, AuthMiddleware, getAuth)
-	router.Get("/auth/exists", ApiKeyMiddleware, getExists)
-	router.Post("/auth/register", ApiKeyMiddleware, postRegister)
-	router.Get("/auth/user", ApiKeyMiddleware, LoginMiddleware, AuthMiddleware, getSelf)
-	router.Get("/auth/user/friends", ApiKeyMiddleware, AuthMiddleware, getFriends)
-	router.Get("/auth/user/moderations", ApiKeyMiddleware, AuthMiddleware, getModerations)
-	router.Get("/auth/user/notifications", ApiKeyMiddleware, AuthMiddleware, getNotifications)
+func authRoutes(r *fiber.App) {
+	auth := r.Group("/auth", ApiKeyMiddleware)
+	auth.Get("/", AuthMiddleware, getAuth)
+	auth.Get("/exists", getExists)
+	auth.Post("/register", postRegister)
 
-	router.Get("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, getPlayerModerations)
-	router.Post("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, postPlayerModerations)
-	router.Delete("/auth/user/playermoderations", ApiKeyMiddleware, AuthMiddleware, deletePlayerModerations)
+	user := auth.Group("/user")
+	user.Get("/", LoginMiddleware, AuthMiddleware, getSelf)
+	user.Get("/friends", AuthMiddleware, getFriends)
+	user.Get("/moderations", AuthMiddleware, getModerations)
+	user.Get("/notifications", AuthMiddleware, getNotifications)
 
-	router.Put("/auth/user/unplayermoderate", ApiKeyMiddleware, AuthMiddleware, putUnPlayerModerate)
+	user.Get("/playermoderations", AuthMiddleware, getPlayerModerations)
+	user.Post("/playermoderations", AuthMiddleware, postPlayerModerations)
+	user.Delete("/playermoderations", AuthMiddleware, deletePlayerModerations)
 
-	router.Get("/auth/user/playermoderations/:id", ApiKeyMiddleware, AuthMiddleware, getPlayerModeration)
-	router.Delete("/auth/user/playermoderations/:id", ApiKeyMiddleware, AuthMiddleware, deletePlayerModeration)
+	user.Get("/playermoderations/:id", AuthMiddleware, getPlayerModeration)
+	user.Delete("/playermoderations/:id", AuthMiddleware, deletePlayerModeration)
 
-	// Stub routes | Will not implement
-	router.Get("/auth/user/subscription", ApiKeyMiddleware, AuthMiddleware, getSubscription)
-	router.Get("/auth/permissions", ApiKeyMiddleware, AuthMiddleware, getPermissions)
-	router.Get("/auth/user/playermoderated", ApiKeyMiddleware, AuthMiddleware, getPlayerModerated)
+	user.Put("/unplayermoderate", AuthMiddleware, putUnPlayerModerate)
+
+	// Stubs
+	auth.Get("/permissions", AuthMiddleware, getPermissions)
+	user.Get("/subscription", AuthMiddleware, getSubscription)
+	user.Get("/playermoderated", AuthMiddleware, getPlayerModerated)
 }
 
 // getAuth | /auth
@@ -70,7 +73,7 @@ func getExists(c *fiber.Ctx) error {
 // Used to register a new user.
 func postRegister(c *fiber.Ctx) error {
 	var r RegisterRequest
-	var _u models.User
+	var u *models.User
 
 	if config.ApiConfiguration.DisableRegistration.Get() {
 		return c.Status(400).JSON(fiber.Map{
@@ -119,7 +122,7 @@ func postRegister(c *fiber.Ctx) error {
 
 	tx := config.DB.Where("username = ?", strings.ToLower(r.Username)).
 		Or("display_name = ?", r.Username).
-		Or("email = ?", strings.ToLower(r.Email)).First(&_u)
+		Or("email = ?", strings.ToLower(r.Email)).First(u)
 
 	if tx.Error != gorm.ErrRecordNotFound {
 		return c.Status(400).JSON(fiber.Map{
@@ -130,8 +133,8 @@ func postRegister(c *fiber.Ctx) error {
 		})
 	}
 
-	u := models.NewUser(r.Username, r.Username, r.Email, r.Password)
-	tx = config.DB.Create(&u)
+	u = models.NewUser(r.Username, r.Username, r.Email, r.Password)
+	tx = config.DB.Create(u)
 	if tx.Error != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"ok": false,
@@ -152,20 +155,28 @@ func getSelf(c *fiber.Ctx) error {
 	return c.Status(200).JSON(u.GetAPICurrentUser())
 }
 
+// getFriends | /auth/user/friends
+// Returns a list of the user's friends.
+// TODO: This requires the implementation of friends.
 func getFriends(c *fiber.Ctx) error {
 	return c.JSON([]fiber.Map{})
 }
 
 // getNotifications | /auth/user/notifications
 // Returns the current user's notifications.
+// TODO: This requires the implementation of presence. (presence has to be built before notifications).
 func getNotifications(c *fiber.Ctx) error {
-	return c.Status(200).JSON([]fiber.Map{}) // TODO: implement
+	return c.Status(200).JSON([]fiber.Map{})
 }
 
+// getSubscription | /auth/user/subscription
+// Stub route which will not receive an implementation.
 func getSubscription(c *fiber.Ctx) error {
 	return c.JSON([]interface{}{})
 }
 
+// getPermissions | /auth/permissions
+// Stub route which will not receive an implementation.
 func getPermissions(c *fiber.Ctx) error {
 	if c.Query("condensed") == "true" { // MUST be "true", not True, or TRUE. GG's.
 		return c.JSON(fiber.Map{}) // In the case of condensed=true, an object is expected.
@@ -189,7 +200,7 @@ func getModerations(c *fiber.Ctx) error {
 
 func getPlayerModerations(c *fiber.Ctx) error {
 	var mods []models.PlayerModeration
-	//goland:noinspection GoPreferNilSlice,GoPreferNilSlice
+	//goland:noinspection GoPreferNilSlice
 	var resp = []*models.APIPlayerModeration{}
 
 	u := c.Locals("user").(*models.User)
