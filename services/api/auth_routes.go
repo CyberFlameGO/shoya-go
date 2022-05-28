@@ -15,7 +15,7 @@ func authRoutes(router *fiber.App) {
 	router.Get("/auth", ApiKeyMiddleware, AuthMiddleware, getAuth)
 	router.Get("/auth/exists", ApiKeyMiddleware, getExists)
 	router.Post("/auth/register", ApiKeyMiddleware, postRegister)
-	router.Get("/auth/user", ApiKeyMiddleware, DoLoginMiddleware, AuthMiddleware, getSelf)
+	router.Get("/auth/user", ApiKeyMiddleware, LoginMiddleware, AuthMiddleware, getSelf)
 	router.Get("/auth/user/friends", ApiKeyMiddleware, AuthMiddleware, getFriends)
 	router.Get("/auth/user/moderations", ApiKeyMiddleware, AuthMiddleware, getModerations)
 	router.Get("/auth/user/notifications", ApiKeyMiddleware, AuthMiddleware, getNotifications)

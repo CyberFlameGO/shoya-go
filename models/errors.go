@@ -95,4 +95,6 @@ var (
 	ErrWorldPrivateNotOwnedByUserInUserUpdate        = errors.New("world is private and not owned by current user")
 
 	ErrInvalidJoinJWT = errors.New("invalid join token")
+
+	ErrUserNotFound = errors.New("user not found")
 )
