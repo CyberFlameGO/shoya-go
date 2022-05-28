@@ -172,7 +172,9 @@ func IsGameRequestMiddleware(c *fiber.Ctx) error {
 		}
 
 		if _, ok := headers["X-Client-Version"]; !ok {
-			goto failedChecks
+			if _, ok = headers["X-Unity-Version"]; !ok {
+				goto failedChecks
+			}
 		}
 
 		if _, ok := headers["X-Platform"]; !ok || (headers["X-Platform"] != "standalonewindows" && headers["X-Platform"] != "android") {
