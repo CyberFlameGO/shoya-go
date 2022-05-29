@@ -82,6 +82,7 @@ var (
 		},
 	}
 
+	ErrPasswordTooSmall                              = errors.New("password too small")
 	ErrInvalidCredentialsInUserUpdate                = errors.New("invalid credentials presented during user update")
 	ErrEmailAlreadyExistsInUserUpdate                = errors.New("user with email already exists")
 	ErrInvalidUserStatusInUserUpdate                 = errors.New("invalid user status")

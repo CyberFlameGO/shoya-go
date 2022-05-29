@@ -15,23 +15,23 @@ import (
 
 func usersRoutes(router *fiber.App) {
 	// VRChat is inconsistent with how the do routing. Some are under /user, others /users.
-	user := router.Group("/user")
-	user.Get("/:id/friendStatus", ApiKeyMiddleware, AuthMiddleware, getUserFriendStatus)
-	user.Get("/:id/moderations", ApiKeyMiddleware, AuthMiddleware, AdminMiddleware, getUserModerations)
-	user.Post("/:id/moderations", ApiKeyMiddleware, AuthMiddleware, postUserModerations)
+	user := router.Group("/user", ApiKeyMiddleware, AuthMiddleware)
+	user.Get("/:id/friendStatus", getUserFriendStatus)
+	user.Get("/:id/moderations", AdminMiddleware, getUserModerations)
+	user.Post("/:id/moderations", postUserModerations)
 
-	users := router.Group("/users")
-	users.Get("/", ApiKeyMiddleware, AuthMiddleware, getUsers)
-	users.Get("/:id", ApiKeyMiddleware, AuthMiddleware, getUser)
-	users.Post("/:id/addTags", ApiKeyMiddleware, AuthMiddleware, postUserAddTags)
-	users.Post("/:id/removeTags", ApiKeyMiddleware, AuthMiddleware, postUserRemoveTags)
+	users := router.Group("/users", ApiKeyMiddleware, AuthMiddleware)
+	users.Get("/", getUsers)
+	users.Get("/:id", getUser)
+	users.Post("/:id/addTags", postUserAddTags)
+	users.Post("/:id/removeTags", postUserRemoveTags)
 
-	users.Get("/:username/name", ApiKeyMiddleware, AuthMiddleware, getUserByUsername)
+	users.Get("/:username/name", getUserByUsername)
 
-	users.Get("/:id/feedback", ApiKeyMiddleware, AuthMiddleware, getUserFeedback)
+	users.Get("/:id/feedback", getUserFeedback)
 
-	users.Put("/:id", ApiKeyMiddleware, AuthMiddleware, putUser)
-	users.Delete("/:id", ApiKeyMiddleware, AuthMiddleware, deleteUser)
+	users.Put("/:id", putUser)
+	users.Delete("/:id", deleteUser)
 }
 
 // getUsers | GET /users
@@ -103,53 +103,47 @@ badRequest:
 	return c.Status(400).JSON(models.MakeErrorResponse("Bad request", 400))
 }
 
+// getUser | GET /users/:id
+// Returns a single user based on id.
 func getUser(c *fiber.Ctx) error {
-	cu, ok := c.Locals("user").(*models.User)
-	if !ok {
-		return c.Status(500).JSON(models.MakeErrorResponse("couldn't retrieve current user", 500))
-	}
+	var cu = c.Locals("user").(*models.User)
+	var ru *models.User
+	var err error
 
 	uid := c.Params("id")
 	if cu.ID == uid {
 		return c.Status(fiber.StatusOK).JSON(cu.GetAPICurrentUser())
 	}
 
-	ru := models.User{}
-	tx := config.DB.Where("id = ?", uid).
-		Preload("CurrentAvatar.Image").
-		Preload("FallbackAvatar").
-		Find(&ru)
-
-	if tx.Error != nil {
-		if tx.Error == gorm.ErrRecordNotFound {
+	if ru, err = models.GetUserById(uid); err != nil {
+		if err == models.ErrUserNotFound {
 			return c.Status(404).JSON(models.MakeErrorResponse(fmt.Sprintf("User %s not found", uid), 404))
 		}
+
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	return c.Status(fiber.StatusOK).JSON(ru.GetAPIUser(false, false)) // TODO: Implement friendship system. Check friendship.
 }
 
+// getUserByUsername | GET /users/:username/name
+// Returns a single user based on username.
 func getUserByUsername(c *fiber.Ctx) error {
-	cu, ok := c.Locals("user").(*models.User)
-	if !ok {
-		return c.Status(500).JSON(models.MakeErrorResponse("couldn't retrieve current user", 500))
-	}
+	var cu = c.Locals("user").(*models.User)
+	var ru *models.User
+	var err error
 
 	username := strings.ToLower(c.Params("username"))
 	if cu.Username == username {
 		return c.Status(fiber.StatusOK).JSON(cu.GetAPICurrentUser())
 	}
 
-	ru := models.User{}
-	tx := config.DB.Where("username = ?", username).
-		Preload("CurrentAvatar.Image").
-		Preload("FallbackAvatar").
-		Find(&ru)
-
-	if tx.Error != nil {
-		if tx.Error == gorm.ErrRecordNotFound {
+	if ru, err = models.GetUserByUsernameOrEmail(username); err != nil {
+		if err == models.ErrUserNotFound {
 			return c.Status(404).JSON(models.MakeErrorResponse(fmt.Sprintf("User %s not found", username), 404))
 		}
+
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	return c.Status(fiber.StatusOK).JSON(ru.GetAPIUser(false, false)) // TODO: Implement friendship system. Check friendship.
@@ -169,10 +163,9 @@ func getUserByUsername(c *fiber.Ctx) error {
 //  - userIcon [Staff-only]
 //  - profilePicOverride [Staff-only]
 func putUser(c *fiber.Ctx) error {
-	// dear client team, why are you sending separate PUT requests for status, statusDescription?
+	var cu = c.Locals("user").(*models.User)
 	var r UpdateUserRequest
 	var u models.User
-	var cu = c.Locals("user").(*models.User)
 	var changes = map[string]interface{}{}
 	var bioChanged bool
 	var emailChanged bool
@@ -307,14 +300,21 @@ badRequest:
 	return c.Status(400).JSON(models.MakeErrorResponse("Bad request", 400))
 }
 
+// deleteUser | DELETE /users/:id
+// Marks a user for deletion.
+// TODO: User deletion.
 func deleteUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(models.User{})
 }
 
+// getUserFeedback | GET /users/:id/feedback
+// Returns the reports created by this user.
 func getUserFeedback(c *fiber.Ctx) error {
 	return c.JSON([]interface{}{})
 }
 
+// getUserModerations | GET /user/:id/moderations
+// Admin-only. Returns the active moderations against this user.
 func getUserModerations(c *fiber.Ctx) error {
 	uid := c.Params("id")
 	ru := models.User{}
@@ -340,12 +340,14 @@ func getUserModerations(c *fiber.Ctx) error {
 	return c.JSON(r)
 }
 
+// postUserModerations | POST /user/:id/moderations
+// Adds a moderation to a user.
 // TODO: Implement rate-limiter so people can't spam moderation actions
 func postUserModerations(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
 	var mod *models.Moderation
 	var req ModerationRequest
 	var exp time.Time
-	u := c.Locals("user").(*models.User)
 
 	err := c.BodyParser(&req)
 	if err != nil {
@@ -407,8 +409,10 @@ func postUserModerations(c *fiber.Ctx) error {
 	})
 }
 
+// getUserFriendStatus | GET /user/:id/friendStatus
+// Gets the status of an incoming or outgoing friend request toward that user (or if they are already friends).
+// TODO: This depends on friendships being implemented.
 func getUserFriendStatus(c *fiber.Ctx) error {
-	// TODO: Implement friendships.
 	return c.JSON(fiber.Map{
 		"incomingRequest": false,
 		"isFriend":        false,
@@ -416,15 +420,16 @@ func getUserFriendStatus(c *fiber.Ctx) error {
 	})
 }
 
+// postUserAddTags | POST /users/:id/addTags
+// Adds tags to a user.
 func postUserAddTags(c *fiber.Ctx) error {
+	var cu = c.Locals("user").(*models.User)
 	var u *models.User
 	var r AddTagsRequest
 
 	var tagsChanged bool
 	var changes = map[string]interface{}{}
 	var err error
-
-	cu := c.Locals("user").(*models.User)
 
 	if c.Params("id") != cu.ID && !cu.IsStaff() {
 		return c.Status(403).JSON(models.MakeErrorResponse("You're not allowed to update another user's profile", 403))
@@ -458,15 +463,16 @@ badRequest:
 	return c.Status(400).JSON(models.MakeErrorResponse("Bad request", 400))
 }
 
+// postUserRemoveTags | POST /users/:id/removeTags
+// Removes tags from a user.
 func postUserRemoveTags(c *fiber.Ctx) error {
+	var cu = c.Locals("user").(*models.User)
 	var u *models.User
 	var r RemoveTagsRequest
 
 	var tagsChanged bool
 	var changes = map[string]interface{}{}
 	var err error
-
-	cu := c.Locals("user").(*models.User)
 
 	if c.Params("id") != cu.ID && !cu.IsStaff() {
 		return c.Status(403).JSON(models.MakeErrorResponse("You're not allowed to update another user's profile", 403))
