@@ -10,19 +10,21 @@ import (
 )
 
 func photonRoutes(router *fiber.App) {
-	photon := router.Group("/photon")
-	photon.Get("/ns", photonSecret, doNsAuth)
-	photon.Get("/validateJoin", photonSecret, doJoinTokenValidation)
-	photon.Get("/user", photonSecret, doPropertyUpdate)
-	photon.Get("/getConfig", photonSecret, getPhotonConfig)
-	photon.Get("/playerLeft", photonSecret, doLeaveCallback)
-	photon.Get("/gameClosed", photonSecret, doGameClose)
+	photon := router.Group("/photon", photonSecret)
+	photon.Get("/ns", doNsAuth)
+	photon.Get("/validateJoin", doJoinTokenValidation)
+	photon.Get("/user", doPropertyUpdate)
+	photon.Get("/getConfig", getPhotonConfig)
+	photon.Get("/playerLeft", doLeaveCallback)
+	photon.Get("/gameClosed", doGameClose)
 }
 
 var PhotonInvalidParametersResponse = fiber.Map{"ResultCode": 3}
 var PhotonCustomAuthFailedResponse = fiber.Map{"ResultCode": 2}
 var PhotonCustomAuthSuccessResponse = fiber.Map{"ResultCode": 1}
 
+// photonSecret | Middleware
+// Ensures that the request is coming from a trusted source based on the `secret` query parameter.
 func photonSecret(c *fiber.Ctx) error {
 	if c.Query("secret") != config.ApiConfiguration.PhotonSecret.Get() {
 		return c.JSON(fiber.Map{"ResultCode": 3})
@@ -30,6 +32,8 @@ func photonSecret(c *fiber.Ctx) error {
 	return c.Next()
 }
 
+// doNsAuth | GET /photon/ns
+// Allows the Photon NameServer to authenticate a user.
 func doNsAuth(c *fiber.Ctx) error {
 	t := c.Query("token")
 	u := c.Query("user")
@@ -45,6 +49,8 @@ func doNsAuth(c *fiber.Ctx) error {
 	return c.JSON(PhotonCustomAuthSuccessResponse)
 }
 
+// doJoinTokenValidation | GET /photon/validateJoin
+// Allows the Naoka plugin to validate whether a user should be able to join a room or not.
 func doJoinTokenValidation(c *fiber.Ctx) error {
 	t := c.Query("jwt")
 	l := c.Query("roomId")
@@ -96,6 +102,8 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 	return c.JSON(r)
 }
 
+// doLeaveCallback | GET /photon/playerLeft
+// Called by the Naoka plugin to make the API aware that a player is no-longer present in a room.
 func doLeaveCallback(c *fiber.Ctx) error {
 	l := c.Query("roomId")
 	u := c.Query("userId")
@@ -106,6 +114,8 @@ func doLeaveCallback(c *fiber.Ctx) error {
 	return c.SendStatus(200)
 }
 
+// doGameClose | GET /photon/gameClosed
+// Called by the Naoka plugin to make the API aware that a room is no-longer active.
 func doGameClose(c *fiber.Ctx) error {
 	l := c.Query("roomId")
 
@@ -115,6 +125,8 @@ func doGameClose(c *fiber.Ctx) error {
 	return c.SendStatus(200)
 }
 
+// doPropertyUpdate | GET /photon/user
+// Allows the Naoka plugin to retrieve the newest information about a user.
 func doPropertyUpdate(c *fiber.Ctx) error {
 	var uid = c.Query("userId")
 	var u models.User
@@ -140,6 +152,8 @@ func doPropertyUpdate(c *fiber.Ctx) error {
 	return c.JSON(r)
 }
 
+// getPhotonConfig | GET /photon/getConfig
+// Configuration endpoint for the Naoka plugin.
 func getPhotonConfig(c *fiber.Ctx) error {
 	return c.JSON(&models.PhotonConfig{
 		MaxAccountsPerIPAddress: int(config.ApiConfiguration.PhotonSettingMaxAccountsPerIpAddress.Get()),
