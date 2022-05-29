@@ -440,7 +440,12 @@ func postUserAddTags(c *fiber.Ctx) error {
 	if c.Params("id") == cu.ID {
 		u = cu
 	} else {
-		config.DB.Where("id = ?", c.Params("id")).Find(&u)
+		if u, err = models.GetUserById(c.Params("id")); err != nil {
+			if err == models.ErrUserNotFound {
+				return c.Status(404).JSON(models.MakeErrorResponse(fmt.Sprintf("User %s not found", c.Params("id")), 404))
+			}
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
 	}
 
 	err = c.BodyParser(&r)
@@ -483,7 +488,12 @@ func postUserRemoveTags(c *fiber.Ctx) error {
 	if c.Params("id") == cu.ID {
 		u = cu
 	} else {
-		config.DB.Where("id = ?", c.Params("id")).Find(&u)
+		if u, err = models.GetUserById(c.Params("id")); err != nil {
+			if err == models.ErrUserNotFound {
+				return c.Status(404).JSON(models.MakeErrorResponse(fmt.Sprintf("User %s not found", c.Params("id")), 404))
+			}
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
 	}
 
 	err = c.BodyParser(&r)
