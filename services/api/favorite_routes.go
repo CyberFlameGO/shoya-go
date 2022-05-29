@@ -9,5 +9,5 @@ func favoriteRoutes(router *fiber.App) {
 }
 
 func getGroups(c *fiber.Ctx) error {
-	return c.JSON([]fiber.Map{})
+	return c.JSON([]struct{}{})
 }

@@ -309,8 +309,9 @@ func deleteUser(c *fiber.Ctx) error {
 
 // getUserFeedback | GET /users/:id/feedback
 // Returns the reports created by this user.
+// TODO: Implement reporting system
 func getUserFeedback(c *fiber.Ctx) error {
-	return c.JSON([]interface{}{})
+	return c.JSON([]struct{}{})
 }
 
 // getUserModerations | GET /user/:id/moderations

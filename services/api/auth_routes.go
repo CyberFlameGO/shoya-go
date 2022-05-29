@@ -159,14 +159,14 @@ func getSelf(c *fiber.Ctx) error {
 // Returns a list of the user's friends.
 // TODO: This requires the implementation of friends.
 func getFriends(c *fiber.Ctx) error {
-	return c.JSON([]fiber.Map{})
+	return c.JSON([]struct{}{})
 }
 
 // getNotifications | GET /auth/user/notifications
 // Returns the current user's notifications.
 // TODO: This requires the implementation of presence. (presence has to be built before notifications).
 func getNotifications(c *fiber.Ctx) error {
-	return c.Status(200).JSON([]fiber.Map{})
+	return c.Status(200).JSON([]struct{}{})
 }
 
 // getModerations | GET /auth/user/moderations
@@ -361,13 +361,13 @@ func deletePlayerModeration(c *fiber.Ctx) error {
 // getPlayerModerated | GET /auth/user/playermoderated
 // Stub route which will not receive an implementation; Circa build 333.
 func getPlayerModerated(c *fiber.Ctx) error {
-	return c.JSON([]interface{}{})
+	return c.JSON([]struct{}{})
 }
 
 // getSubscription | GET /auth/user/subscription
 // Stub route which will not receive an implementation.
 func getSubscription(c *fiber.Ctx) error {
-	return c.JSON([]interface{}{})
+	return c.JSON([]struct{}{})
 }
 
 // getPermissions | GET /auth/permissions
@@ -376,5 +376,5 @@ func getPermissions(c *fiber.Ctx) error {
 	if c.Query("condensed") == "true" { // MUST be "true", not True, or TRUE. GG's.
 		return c.JSON(fiber.Map{}) // In the case of condensed=true, an object is expected.
 	}
-	return c.JSON([]interface{}{})
+	return c.JSON([]struct{}{})
 }

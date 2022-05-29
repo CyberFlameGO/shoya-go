@@ -314,7 +314,7 @@ func getWorldFeedback(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"reportScore":   0,
 		"reportCount":   0,
-		"reportReasons": []interface{}{},
+		"reportReasons": []struct{}{},
 	})
 }
 
