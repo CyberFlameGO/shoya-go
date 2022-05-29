@@ -173,6 +173,7 @@ func getNotifications(c *fiber.Ctx) error {
 // Returns the active moderations against the user.
 func getModerations(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
+	//goland:noinspection GoPreferNilSlice
 	r := []*models.APIModeration{}
 	for _, moderation := range u.Moderations {
 		if moderation.ExpiresAt == 0 || moderation.ExpiresAt > time.Now().UTC().Unix() {

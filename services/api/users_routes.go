@@ -328,6 +328,7 @@ func getUserModerations(c *fiber.Ctx) error {
 		}
 	}
 
+	//goland:noinspection GoPreferNilSlice
 	r := []*models.APIModeration{}
 	for _, moderation := range ru.Moderations {
 		if moderation.ExpiresAt == 0 || moderation.ExpiresAt > time.Now().UTC().Unix() {
