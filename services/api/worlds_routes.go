@@ -13,15 +13,15 @@ import (
 )
 
 func worldsRoutes(app *fiber.App) {
-	worlds := app.Group("/worlds")
-	worlds.Get("/", ApiKeyMiddleware, AuthMiddleware, getWorlds)
-	worlds.Get("/favorites", ApiKeyMiddleware, AuthMiddleware, getWorldFavorites)
-	worlds.Get("/active", ApiKeyMiddleware, AuthMiddleware, getWorldsActive)
-	worlds.Get("/recent", ApiKeyMiddleware, AuthMiddleware, getWorldsRecent)
-	worlds.Get("/:id", ApiKeyMiddleware, AuthMiddleware, getWorld)
-	worlds.Get("/:id/metadata", ApiKeyMiddleware, AuthMiddleware, getWorldMeta)
-	worlds.Get("/:id/publish", ApiKeyMiddleware, AuthMiddleware, getWorldPublish)
-	worlds.Get("/:id/:version/feedback", ApiKeyMiddleware, AuthMiddleware, getWorldFeedback)
+	worlds := app.Group("/worlds", ApiKeyMiddleware, AuthMiddleware)
+	worlds.Get("/", getWorlds)
+	worlds.Get("/favorites", getWorldFavorites)
+	worlds.Get("/active", getWorldsActive)
+	worlds.Get("/recent", getWorldsRecent)
+	worlds.Get("/:id", getWorld)
+	worlds.Get("/:id/metadata", getWorldMeta)
+	worlds.Get("/:id/publish", getWorldPublish)
+	worlds.Get("/:id/:version/feedback", getWorldFeedback)
 }
 
 // getWorlds | GET /worlds
@@ -212,16 +212,25 @@ badRequest:
 	return c.Status(400).JSON(models.MakeErrorResponse("Bad request", 400))
 }
 
+// getWorldFavorites | GET /worlds/favorites
+// Returns the user's favorite worlds.
+// TODO: Implement favorites
 func getWorldFavorites(c *fiber.Ctx) error {
-	return c.Status(501).JSON(models.ErrNotImplementedResponse)
+	return c.JSON([]struct{}{})
 }
 
+// getWorldsActive | GET /worlds/active
+// Returns the most active (in terms of ccu) worlds.
+// TODO: Implement presence & world metrics
 func getWorldsActive(c *fiber.Ctx) error {
-	return c.Status(501).JSON(models.ErrNotImplementedResponse)
+	return c.JSON([]struct{}{})
 }
 
+// getWorldsRecent | GET /worlds/recent
+// Returns the most recent worlds the user has been in.
+// TODO: Implement presence.
 func getWorldsRecent(c *fiber.Ctx) error {
-	return c.Status(501).JSON(models.ErrNotImplementedResponse)
+	return c.JSON([]struct{}{})
 }
 
 // getWorld | GET /worlds/:id
@@ -291,15 +300,16 @@ func getWorld(c *fiber.Ctx) error {
 func getWorldMeta(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"id":       c.Params("id"),
-		"metadata": fiber.Map{},
+		"metadata": struct{}{},
 	})
 }
 
+// getWorldFeedback | GET /worlds/:id/0/feedback
+// Returns the reports created against this world.
+// TODO: Implement reporting system
 func getWorldFeedback(c *fiber.Ctx) error {
-	var u *models.User
+	var u = c.Locals("user").(*models.User)
 	var w models.World
-
-	u = c.Locals("user").(*models.User)
 	tx := config.DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&models.World{}).Where("id = ?", c.Params("id")).First(&w)
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
@@ -314,15 +324,16 @@ func getWorldFeedback(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"reportScore":   0,
 		"reportCount":   0,
-		"reportReasons": []interface{}{},
+		"reportReasons": []struct{}{},
 	})
 }
 
+// getWorldPublish | GET /worlds/:id/publish
+// Returns whether this world can be published to labs(?).
 func getWorldPublish(c *fiber.Ctx) error {
-	var u *models.User
+	var u = c.Locals("user").(*models.User)
 	var w models.World
 
-	u = c.Locals("user").(*models.User)
 	tx := config.DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&models.World{}).Where("id = ?", c.Params("id")).First(&w)
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {

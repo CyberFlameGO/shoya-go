@@ -6,6 +6,7 @@ import (
 	"github.com/lib/pq"
 	"gitlab.com/george/shoya-go/config"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"strings"
 	"time"
 )
@@ -88,6 +89,57 @@ type User struct {
 	ProfilePicOverride            string          `json:"profilePicOverride"`
 	Unsubscribe                   bool            `json:"unsubscribe"`
 	UserIcon                      string          `json:"userIcon"`
+}
+
+func GetUserById(id string) (*User, error) {
+	var u *User
+	var err error
+
+	if err = config.DB.Preload(clause.Associations).
+		Preload("CurrentAvatar.Image").
+		Preload("FallbackAvatar").
+		Where("id = ?", id).First(&u).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return u, nil
+}
+
+func GetUserByUsername(username string) (*User, error) {
+	var u *User
+	var err error
+
+	if err = config.DB.Preload(clause.Associations).
+		Preload("CurrentAvatar.Image").
+		Preload("FallbackAvatar").
+		Where("username = ?", username).First(&u).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return u, nil
+}
+
+func GetUserByUsernameOrEmail(usernameOrEmail string) (*User, error) {
+	var u *User
+	var err error
+
+	if err = config.DB.Preload(clause.Associations).
+		Preload("CurrentAvatar.Image").
+		Preload("FallbackAvatar").
+		Where("username = ? OR email = ?", usernameOrEmail).First(&u).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return u, nil
 }
 
 func NewUser(username, displayName, email, password string) *User {
