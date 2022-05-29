@@ -38,7 +38,7 @@ func authRoutes(r *fiber.App) {
 	user.Get("/playermoderated", AuthMiddleware, getPlayerModerated)
 }
 
-// getAuth | /auth
+// getAuth | GET /auth
 // Returns the current user's auth token (and refreshes it if necessary).
 func getAuth(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{
@@ -47,7 +47,7 @@ func getAuth(c *fiber.Ctx) error {
 	})
 }
 
-// getExists | /auth/exists
+// getExists | GET /auth/exists
 // Used to check whether a user with a given username, display name, or email exists.
 func getExists(c *fiber.Ctx) error {
 	var u *models.User
@@ -69,7 +69,7 @@ func getExists(c *fiber.Ctx) error {
 	})
 }
 
-// postRegister | /auth/register
+// postRegister | POST /auth/register
 // Registers a new user on the platform.
 func postRegister(c *fiber.Ctx) error {
 	var r RegisterRequest
@@ -147,7 +147,7 @@ func postRegister(c *fiber.Ctx) error {
 	return c.Status(200).JSON(u.GetAPICurrentUser())
 }
 
-// getSelf | /auth/user
+// getSelf | GET /auth/user
 // Returns the current user's information.
 func getSelf(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
@@ -155,21 +155,21 @@ func getSelf(c *fiber.Ctx) error {
 	return c.Status(200).JSON(u.GetAPICurrentUser())
 }
 
-// getFriends | /auth/user/friends
+// getFriends | GET /auth/user/friends
 // Returns a list of the user's friends.
 // TODO: This requires the implementation of friends.
 func getFriends(c *fiber.Ctx) error {
 	return c.JSON([]fiber.Map{})
 }
 
-// getNotifications | /auth/user/notifications
+// getNotifications | GET /auth/user/notifications
 // Returns the current user's notifications.
 // TODO: This requires the implementation of presence. (presence has to be built before notifications).
 func getNotifications(c *fiber.Ctx) error {
 	return c.Status(200).JSON([]fiber.Map{})
 }
 
-// getModerations | /auth/user/moderations
+// getModerations | GET /auth/user/moderations
 // Returns the active moderations against the user.
 func getModerations(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
@@ -185,7 +185,7 @@ func getModerations(c *fiber.Ctx) error {
 	return c.JSON(r)
 }
 
-// getPlayerModerations | /auth/user/playermoderations
+// getPlayerModerations | GET /auth/user/playermoderations
 // Returns the player moderations this user has enacted.
 func getPlayerModerations(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
@@ -217,7 +217,7 @@ func getPlayerModerations(c *fiber.Ctx) error {
 	return c.JSON(resp)
 }
 
-// postPlayerModerations | /auth/user/playermoderations
+// postPlayerModerations | POST /auth/user/playermoderations
 // Creates a new player moderation.
 func postPlayerModerations(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
@@ -258,7 +258,7 @@ func postPlayerModerations(c *fiber.Ctx) error {
 	return c.JSON(mod.GetAPIPlayerModeration())
 }
 
-// deletePlayerModerations | /auth/user/playermoderations
+// deletePlayerModerations | DELETE /auth/user/playermoderations
 // Deletes all active player moderations from the user.
 func deletePlayerModerations(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
@@ -274,7 +274,7 @@ func deletePlayerModerations(c *fiber.Ctx) error {
 		}})
 }
 
-// putUnPlayerModerate | /auth/user/unplayermoderate
+// putUnPlayerModerate | PUT /auth/user/unplayermoderate
 // Removes a player moderation against another player (or all of a player moderation type).
 func putUnPlayerModerate(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
@@ -307,7 +307,7 @@ func putUnPlayerModerate(c *fiber.Ctx) error {
 
 }
 
-// getPlayerModeration | /auth/user/playermoderations/:id
+// getPlayerModeration | GET /auth/user/playermoderations/:id
 // Returns a single player moderation.
 func getPlayerModeration(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
@@ -325,7 +325,7 @@ func getPlayerModeration(c *fiber.Ctx) error {
 	return c.JSON(mod.GetAPIPlayerModeration())
 }
 
-// deletePlayerModeration | /auth/user/playermoderations/:id
+// deletePlayerModeration | GET /auth/user/playermoderations/:id
 // Deletes a single player moderation.
 func deletePlayerModeration(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
@@ -357,19 +357,19 @@ func deletePlayerModeration(c *fiber.Ctx) error {
 	})
 }
 
-// getPlayerModerated | /auth/user/playermoderated
+// getPlayerModerated | GET /auth/user/playermoderated
 // Stub route which will not receive an implementation; Circa build 333.
 func getPlayerModerated(c *fiber.Ctx) error {
 	return c.JSON([]interface{}{})
 }
 
-// getSubscription | /auth/user/subscription
+// getSubscription | GET /auth/user/subscription
 // Stub route which will not receive an implementation.
 func getSubscription(c *fiber.Ctx) error {
 	return c.JSON([]interface{}{})
 }
 
-// getPermissions | /auth/permissions
+// getPermissions | GET /auth/permissions
 // Stub route which will not receive an implementation.
 func getPermissions(c *fiber.Ctx) error {
 	if c.Query("condensed") == "true" { // MUST be "true", not True, or TRUE. GG's.
