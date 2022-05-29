@@ -39,7 +39,7 @@ func authRoutes(r *fiber.App) {
 }
 
 // getAuth | /auth
-// Returns the current user's auth token (and refreshes it if necessary)
+// Returns the current user's auth token (and refreshes it if necessary).
 func getAuth(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{
 		"ok":    true,
@@ -50,14 +50,14 @@ func getAuth(c *fiber.Ctx) error {
 // getExists | /auth/exists
 // Used to check whether a user with a given username, display name, or email exists.
 func getExists(c *fiber.Ctx) error {
-	var u models.User
+	var u *models.User
 	var exists = true
 
 	tx := config.DB.Where("username = ?", c.Query("username")).
 		Or("display_name = ?", c.Query("displayName")).
 		Or("email = ?", c.Query("email")).
 		Not("id = ?", c.Query("excludeUserId")). // Exclude the user with the given id if provided.
-		Select("id").First(&u)
+		Select("id").First(u)
 
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
@@ -70,7 +70,7 @@ func getExists(c *fiber.Ctx) error {
 }
 
 // postRegister | /auth/register
-// Used to register a new user.
+// Registers a new user on the platform.
 func postRegister(c *fiber.Ctx) error {
 	var r RegisterRequest
 	var u *models.User
@@ -150,7 +150,7 @@ func postRegister(c *fiber.Ctx) error {
 // getSelf | /auth/user
 // Returns the current user's information.
 func getSelf(c *fiber.Ctx) error {
-	u := c.Locals("user").(*models.User)
+	var u = c.Locals("user").(*models.User)
 
 	return c.Status(200).JSON(u.GetAPICurrentUser())
 }
@@ -169,23 +169,10 @@ func getNotifications(c *fiber.Ctx) error {
 	return c.Status(200).JSON([]fiber.Map{})
 }
 
-// getSubscription | /auth/user/subscription
-// Stub route which will not receive an implementation.
-func getSubscription(c *fiber.Ctx) error {
-	return c.JSON([]interface{}{})
-}
-
-// getPermissions | /auth/permissions
-// Stub route which will not receive an implementation.
-func getPermissions(c *fiber.Ctx) error {
-	if c.Query("condensed") == "true" { // MUST be "true", not True, or TRUE. GG's.
-		return c.JSON(fiber.Map{}) // In the case of condensed=true, an object is expected.
-	}
-	return c.JSON([]interface{}{})
-}
-
+// getModerations | /auth/user/moderations
+// Returns the active moderations against the user.
 func getModerations(c *fiber.Ctx) error {
-	u := c.Locals("user").(*models.User)
+	var u = c.Locals("user").(*models.User)
 	r := []*models.APIModeration{}
 	for _, moderation := range u.Moderations {
 		if moderation.ExpiresAt == 0 || moderation.ExpiresAt > time.Now().UTC().Unix() {
@@ -198,12 +185,14 @@ func getModerations(c *fiber.Ctx) error {
 	return c.JSON(r)
 }
 
+// getPlayerModerations | /auth/user/playermoderations
+// Returns the player moderations this user has enacted.
 func getPlayerModerations(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
 	var mods []models.PlayerModeration
 	//goland:noinspection GoPreferNilSlice
 	var resp = []*models.APIPlayerModeration{}
 
-	u := c.Locals("user").(*models.User)
 	modType := models.PlayerModerationAll
 
 	if t := c.Query("type"); t != "" {
@@ -228,10 +217,12 @@ func getPlayerModerations(c *fiber.Ctx) error {
 	return c.JSON(resp)
 }
 
+// postPlayerModerations | /auth/user/playermoderations
+// Creates a new player moderation.
 func postPlayerModerations(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
 	var mod *models.PlayerModeration
 	var req PlayerModerationRequest
-	u := c.Locals("user").(*models.User)
 	err := c.BodyParser(&req)
 	if err != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
@@ -267,9 +258,27 @@ func postPlayerModerations(c *fiber.Ctx) error {
 	return c.JSON(mod.GetAPIPlayerModeration())
 }
 
+// deletePlayerModerations | /auth/user/playermoderations
+// Deletes all active player moderations from the user.
+func deletePlayerModerations(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+	err := config.DB.Unscoped().Where("source_id = ?", u.ID).Delete(&models.PlayerModeration{}).Error
+	if err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	return c.JSON(fiber.Map{
+		"success": fiber.Map{
+			"message":     "OK",
+			"status_code": 200,
+		}})
+}
+
+// putUnPlayerModerate | /auth/user/unplayermoderate
+// Removes a player moderation against another player (or all of a player moderation type).
 func putUnPlayerModerate(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
 	var req PlayerModerationRequest
-	u := c.Locals("user").(*models.User)
 	err := c.BodyParser(&req)
 	if err != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
@@ -298,25 +307,13 @@ func putUnPlayerModerate(c *fiber.Ctx) error {
 
 }
 
-func deletePlayerModerations(c *fiber.Ctx) error {
-	u := c.Locals("user").(*models.User)
-	err := config.DB.Unscoped().Where("source_id = ?", u.ID).Delete(&models.PlayerModeration{}).Error
-	if err != nil {
-		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
-	}
-
-	return c.JSON(fiber.Map{
-		"success": fiber.Map{
-			"message":     "OK",
-			"status_code": 200,
-		}})
-}
-
+// getPlayerModeration | /auth/user/playermoderations/:id
+// Returns a single player moderation.
 func getPlayerModeration(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
 	var mod *models.PlayerModeration
-	u := c.Locals("user").(*models.User)
 
-	err := config.DB.Preload(clause.Associations).Where("id = ?", c.Params("id")).Where("source_id = ?", u.ID).First(&mod).Error
+	err := config.DB.Preload(clause.Associations).Where("id = ?", c.Params("id")).Where("source_id = ?", u.ID).First(mod).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(404).JSON(models.MakeErrorResponse("can't find playerModeration!", 404))
@@ -328,9 +325,11 @@ func getPlayerModeration(c *fiber.Ctx) error {
 	return c.JSON(mod.GetAPIPlayerModeration())
 }
 
+// deletePlayerModeration | /auth/user/playermoderations/:id
+// Deletes a single player moderation.
 func deletePlayerModeration(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
 	var mod *models.PlayerModeration
-	u := c.Locals("user").(*models.User)
 
 	err := config.DB.Preload(clause.Associations).Where("id = ?", c.Params("id")).First(&mod).Error
 	if err != nil {
@@ -358,7 +357,23 @@ func deletePlayerModeration(c *fiber.Ctx) error {
 	})
 }
 
+// getPlayerModerated | /auth/user/playermoderated
+// Stub route which will not receive an implementation; Circa build 333.
 func getPlayerModerated(c *fiber.Ctx) error {
-	// Stub route. Will likely not be implemented due to it no-longer existing in recent builds of the game.
+	return c.JSON([]interface{}{})
+}
+
+// getSubscription | /auth/user/subscription
+// Stub route which will not receive an implementation.
+func getSubscription(c *fiber.Ctx) error {
+	return c.JSON([]interface{}{})
+}
+
+// getPermissions | /auth/permissions
+// Stub route which will not receive an implementation.
+func getPermissions(c *fiber.Ctx) error {
+	if c.Query("condensed") == "true" { // MUST be "true", not True, or TRUE. GG's.
+		return c.JSON(fiber.Map{}) // In the case of condensed=true, an object is expected.
+	}
 	return c.JSON([]interface{}{})
 }
