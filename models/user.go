@@ -132,7 +132,7 @@ func GetUserByUsernameOrEmail(usernameOrEmail string) (*User, error) {
 	if err = config.DB.Preload(clause.Associations).
 		Preload("CurrentAvatar.Image").
 		Preload("FallbackAvatar").
-		Where("username = ? OR email = ?", usernameOrEmail).First(&u).Error; err != nil {
+		Where("username = ?", usernameOrEmail).Or("email = ?", usernameOrEmail).First(&u).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, ErrUserNotFound
 		}
