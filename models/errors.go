@@ -82,7 +82,6 @@ var (
 		},
 	}
 
-	ErrPasswordTooSmall                              = errors.New("password too small")
 	ErrInvalidCredentialsInUserUpdate                = errors.New("invalid credentials presented during user update")
 	ErrEmailAlreadyExistsInUserUpdate                = errors.New("user with email already exists")
 	ErrInvalidUserStatusInUserUpdate                 = errors.New("invalid user status")
@@ -94,8 +93,8 @@ var (
 	ErrSetProfilePicOverrideWhenNotStaffInUserUpdate = errors.New("tried to set profile pic override without being staff")
 	ErrWorldNotFoundInUserUpdate                     = errors.New("world not found")
 	ErrWorldPrivateNotOwnedByUserInUserUpdate        = errors.New("world is private and not owned by current user")
-
-	ErrInvalidJoinJWT = errors.New("invalid join token")
-
-	ErrUserNotFound = errors.New("user not found")
+	ErrInvalidJoinJWT                                = errors.New("invalid join token")
+	ErrUserNotFound                                  = errors.New("user not found")
+	ErrPasswordTooSmall                              = errors.New("password too small")
+	ErrInvalidAuthCookie                             = errors.New("invalid auth cookie")
 )
