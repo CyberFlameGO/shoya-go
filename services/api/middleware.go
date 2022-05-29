@@ -6,80 +6,81 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
-	"gorm.io/gorm/clause"
 	"math/rand"
 	"net/url"
 	"strings"
 	"time"
 )
 
+// AddXPoweredByHeader adds an `X-Powered-By` header to every response
+// with a randomly-selected string from the models.XPoweredByHeaders slice.
 func AddXPoweredByHeader(c *fiber.Ctx) error {
 	c.Set("X-Powered-By", models.XPoweredByHeaders[rand.Intn(len(models.XPoweredByHeaders))]) // #nosec skipcq
 	return c.Next()
 }
 
 // ApiKeyMiddleware ensures that the request has a valid API key attached.
-// The check order is: query > cookie
-// If the API key is valid, the request is allowed to continue.
-// If the API key is invalid, the request is denied with a 401 ErrMissingCredentialsResponse.
 func ApiKeyMiddleware(c *fiber.Ctx) error {
-	apiKey := c.Query("apiKey")
-	if apiKey == "" {
-		apiKey = c.Cookies("apiKey")
-		if apiKey == "" {
+	var apiKey string
+
+	if apiKey = c.Query("apiKey"); apiKey == "" {
+		if apiKey = c.Cookies("apiKey"); apiKey == "" {
 			return c.Status(401).JSON(models.ErrMissingCredentialsResponse)
 		}
 	}
 
 	if apiKey != config.ApiConfiguration.ApiKey.Get() {
-		// TODO: Check if the API key is valid against the database if it is not the public key.
 		return c.Status(401).JSON(models.ErrInvalidCredentialsResponse)
 	}
 
 	c.Locals("apiKey", apiKey)
-	c.Cookie(&fiber.Cookie{
-		Name:     "apiKey",
-		Value:    apiKey,
-		SameSite: "disabled",
-	})
+	c.Cookie(&fiber.Cookie{Name: "apiKey", Value: apiKey, SameSite: "disabled"})
 	return c.Next()
 }
 
-// DoLoginMiddleware logs the user in if the request contains a valid HTTP Basic Auth header.
-// If the credentials are valid, the request is allowed to continue.
-// If the credentials are invalid, the request is denied with a 401 ErrInvalidCredentialsResponse.
-// If there is no HTTP Basic Auth header, the request is allowed to continue.
-func DoLoginMiddleware(c *fiber.Ctx) error {
+// LoginMiddleware logs a user in if there's an Authorization header present in the request.
+func LoginMiddleware(c *fiber.Ctx) error {
 	authorizationHeader := c.Get("Authorization")
 
 	if authorizationHeader != "" {
-		username, password, err := parseVrchatBasicAuth(authorizationHeader)
+		var username string
+		var password string
+		var err error
+		var u *models.User
+		var m bool // Password matched
+		var banned bool
+		var moderation *models.Moderation
+		var isGameReq bool
+		var ok bool
+		var t string
+
+		username, password, err = parseVrchatBasicAuth(authorizationHeader)
 		if err != nil {
 			return c.Status(401).JSON(models.ErrInvalidCredentialsResponse)
 		}
 
-		u := models.User{}
-		err = config.DB.Preload(clause.Associations).Where("username = ?", username).First(&u).Error
-		if err != nil {
+		if u, err = models.GetUserByUsernameOrEmail(username); err != nil {
 			return c.Status(401).JSON(models.ErrInvalidCredentialsResponse)
 		}
 
-		m, err := u.CheckPassword(password)
+		m, err = u.CheckPassword(password)
 		if !m || err != nil {
 			return c.Status(401).JSON(models.ErrInvalidCredentialsResponse)
 		}
 
-		if banned, moderation := u.IsBanned(); banned {
-			return produceBanResponse(c, &u, moderation)
+		if banned, moderation = u.IsBanned(); banned {
+			return produceBanResponse(c, u, moderation)
 		}
 
-		isGameReq := c.Locals("isGameRequest").(bool)
-		t, err := models.CreateAuthCookie(&u, c.IP(), isGameReq)
-		if err != nil {
+		if isGameReq, ok = c.Locals("isGameRequest").(bool); !ok {
+			isGameReq = false
+		}
+
+		if t, err = models.CreateAuthCookie(u, c.IP(), isGameReq); err != nil {
 			return c.Status(500).JSON(models.MakeErrorResponse("failed to create auth cookie", 500))
 		}
 
-		c.Locals("user", &u)
+		c.Locals("user", u)
 		c.Locals("authCookie", t)
 		c.Cookie(&fiber.Cookie{
 			Name:     "auth",
@@ -91,64 +92,44 @@ func DoLoginMiddleware(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-// AuthMiddleware ensures that a user is logged in.
-// If the user is logged in, the request is allowed to continue.
-// If the user is not logged in, the request is denied with a 401 ErrMissingCredentialsResponse.
 func AuthMiddleware(c *fiber.Ctx) error {
-	authCookie := c.Cookies("auth")
-	if authCookie == "" {
-		authCookie_, ok := c.Locals("authCookie").(string)
-		if !ok || authCookie_ == "" {
+	var authCookie string
+	var ok bool
+	var isGameReq bool
+	var uid string
+	var err error
+	var u *models.User
+	var banned bool
+	var moderation *models.Moderation
+
+	if authCookie = c.Cookies("auth"); authCookie == "" {
+		if authCookie, ok = c.Locals("authCookie").(string); !ok || authCookie == "" {
 			return c.Status(401).JSON(models.ErrMissingCredentialsResponse)
 		}
-		authCookie = authCookie_
 	}
 
-	isGameReq := c.Locals("isGameRequest").(bool)
-	uid, err := models.ValidateAuthCookie(authCookie, c.IP(), isGameReq, false)
-	if err != nil {
+	if isGameReq, ok = c.Locals("isGameRequest").(bool); !ok {
+		isGameReq = false
+	}
+
+	if uid, err = models.ValidateAuthCookie(authCookie, c.IP(), isGameReq, false); err != nil {
 		return c.Status(401).JSON(models.ErrInvalidCredentialsResponse)
 	}
 
-	u := models.User{}
-	err = config.DB.Preload(clause.Associations).
-		Preload("CurrentAvatar.Image").
-		Preload("FallbackAvatar").
-		Where("id = ?", uid).First(&u).Error
-	if err != nil {
+	if u, err = models.GetUserById(uid); err != nil {
 		return c.Status(401).JSON(models.ErrInvalidCredentialsResponse)
 	}
 
-	if banned, moderation := u.IsBanned(); banned {
-		return produceBanResponse(c, &u, moderation)
+	if banned, moderation = u.IsBanned(); banned {
+		return produceBanResponse(c, u, moderation)
 	}
 
 	c.Locals("authCookie", authCookie)
-	c.Locals("user", &u)
+	c.Locals("user", u)
 	return c.Next()
+
 }
-
-// MfaMiddleware ensures that a user has completed MFA before proceeding.
-// If the user has completed MFA (or the user does not have MFA enabled), the request is allowed to continue.
-// If the user has not completed MFA, the request is denied with a 401 ErrTwoFactorAuthenticationRequiredResponse.
-func MfaMiddleware(c *fiber.Ctx) error {
-	if c.Locals("user") == nil {
-		return c.Status(401).JSON(models.ErrMissingCredentialsResponse)
-	}
-
-	user := c.Locals("user").(*models.User)
-	if !user.MfaEnabled {
-		return c.Next()
-	}
-	if c.Cookies("twoFactorAuth") == "" {
-		return c.Status(401).JSON(models.ErrTwoFactorAuthenticationRequiredResponse)
-	}
-
-	// TODO: Check if the cookie is valid. If it is, the request is allowed to continue.
-	//       If the cookie is invalid, return a 401.
-
-	return c.Next()
-}
+func MfaMiddleware() {} // later
 
 // IsGameRequestMiddleware uses the `X-Requested-With`, `X-MacAddress`, `X-Client-Version`, `X-Platform`, and `User-Agent`
 // headers to identify whether a request is coming from the game client or not.
@@ -160,29 +141,31 @@ func MfaMiddleware(c *fiber.Ctx) error {
 //  >X-Platform		must be present and one of ["standalonewindows", "android"]
 //  >User-Agent		must be present and one of ["VRC.Core.BestHTTP", "Transmtn-Pipeline"]
 func IsGameRequestMiddleware(c *fiber.Ctx) error {
+	var ok bool
+
 	headers := c.GetReqHeaders()
 	if shouldDoInDepthClientChecks(c.Path()) {
 		// When the client uses the Transmtn-Pipeline client, the below headers are not guaranteed to exist,
-		if _, ok := headers["X-Requested-With"]; !ok {
+		if _, ok = headers["X-Requested-With"]; !ok {
 			goto failedChecks
 		}
 
-		if _, ok := headers["X-Macaddress"]; !ok {
+		if _, ok = headers["X-Macaddress"]; !ok {
 			goto failedChecks
 		}
 
-		if _, ok := headers["X-Client-Version"]; !ok {
+		if _, ok = headers["X-Client-Version"]; !ok {
 			if _, ok = headers["X-Unity-Version"]; !ok {
 				goto failedChecks
 			}
 		}
 
-		if _, ok := headers["X-Platform"]; !ok || (headers["X-Platform"] != "standalonewindows" && headers["X-Platform"] != "android") {
+		if _, ok = headers["X-Platform"]; !ok || (headers["X-Platform"] != "standalonewindows" && headers["X-Platform"] != "android") {
 			goto failedChecks
 		}
 	}
 
-	if _, ok := headers["User-Agent"]; !ok || (headers["User-Agent"] != "VRC.Core.BestHTTP" && headers["User-Agent"] != "Transmtn-Pipeline") {
+	if _, ok = headers["User-Agent"]; !ok || (headers["User-Agent"] != "VRC.Core.BestHTTP" && headers["User-Agent"] != "Transmtn-Pipeline") {
 		goto failedChecks
 	}
 

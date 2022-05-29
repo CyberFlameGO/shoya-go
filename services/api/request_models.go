@@ -84,6 +84,10 @@ func (r *UpdateUserRequest) PasswordChecks(u *models.User) (bool, error) {
 		return false, models.ErrInvalidCredentialsInUserUpdate
 	}
 
+	if len(r.Password) < 8 {
+		return false, models.ErrPasswordTooSmall
+	}
+
 	err = u.ChangePassword(r.Password)
 	if err != nil {
 		return false, err

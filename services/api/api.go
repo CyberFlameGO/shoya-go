@@ -34,14 +34,7 @@ func main() {
 	app.Use(logger.New())
 	app.Use(AddXPoweredByHeader, IsGameRequestMiddleware)
 
-	systemRoutes(app)
-	authRoutes(app)
-	usersRoutes(app)
-	worldsRoutes(app)
-	photonRoutes(app)
-	instanceRoutes(app)
-	avatarsRoutes(app)
-	favoriteRoutes(app)
+	initializeRoutes(app)
 
 	log.Fatal(app.Listen(config.RuntimeConfig.Api.Fiber.ListenAddress))
 }
@@ -57,6 +50,17 @@ func shoyaInit() {
 	}
 
 	initializeHealthChecks()
+}
+
+func initializeRoutes(app *fiber.App) {
+	systemRoutes(app)
+	authRoutes(app)
+	usersRoutes(app)
+	worldsRoutes(app)
+	photonRoutes(app)
+	instanceRoutes(app)
+	avatarsRoutes(app)
+	favoriteRoutes(app)
 }
 
 // initializeConfig reads the config.json file and initializes the runtime config
@@ -127,7 +131,6 @@ func initializeDB() {
 	if err != nil {
 		fmt.Println(err)
 	}
-
 }
 
 // initializeRedis initializes the redis clients
@@ -156,6 +159,10 @@ func initializeApiConfig() {
 		WithRedisSeed(config.HarvestRedisClient).
 		WithRedisMonitor(config.HarvestRedisClient, time.Duration(config.RuntimeConfig.Api.ApiConfigRefreshRateMs)*time.Millisecond).
 		Create()
+	if err != nil {
+		panic(fmt.Errorf("failed to set up configuration harvester: %v", err))
+	}
+
 	err = h.Harvest(context.Background())
 	if err != nil {
 		panic(fmt.Errorf("failed to harvest configuration: %v", err))

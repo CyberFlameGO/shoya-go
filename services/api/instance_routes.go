@@ -8,11 +8,13 @@ import (
 )
 
 func instanceRoutes(router *fiber.App) {
-	instances := router.Group("/instances")
-	instances.Get("/:instanceId", ApiKeyMiddleware, AuthMiddleware, getInstance)
-	instances.Get("/:instanceId/join", ApiKeyMiddleware, AuthMiddleware, joinInstance)
+	instances := router.Group("/instances", ApiKeyMiddleware, AuthMiddleware)
+	instances.Get("/:instanceId", getInstance)
+	instances.Get("/:instanceId/join", joinInstance)
 }
 
+// getInstance | GET /instances/:instanceId
+// Returns an instance.
 func getInstance(c *fiber.Ctx) error {
 	var instance *models.WorldInstance
 	id := c.Params("instanceId")
@@ -69,6 +71,9 @@ func getInstance(c *fiber.Ctx) error {
 
 	return c.JSON(instanceResp)
 }
+
+// joinInstance | GET /instances/:instanceId/join
+// Generates and returns a room join token.
 func joinInstance(c *fiber.Ctx) error {
 	var w models.World
 

@@ -1,13 +1,10 @@
 package models
 
 import (
-	"errors"
 	"github.com/golang-jwt/jwt"
 	"gitlab.com/george/shoya-go/config"
 	"time"
 )
-
-var ErrInvalidAuthCookie = errors.New("invalid auth cookie")
 
 // AuthCookieClaims is the struct that will be encoded to the JWT
 type AuthCookieClaims struct {

@@ -13,14 +13,16 @@ import (
 )
 
 func avatarsRoutes(router *fiber.App) {
-	avatars := router.Group("/avatars")
-	avatars.Get("/", ApiKeyMiddleware, AuthMiddleware, getAvatars)
-	avatars.Get("/favorites", ApiKeyMiddleware, AuthMiddleware, getAvatarFavorites)
-	avatars.Get("/licensed", ApiKeyMiddleware, AuthMiddleware, getLicensedAvatars)
-	avatars.Get("/:id", ApiKeyMiddleware, AuthMiddleware, getAvatar)
-	avatars.Put("/:id/select", ApiKeyMiddleware, AuthMiddleware, selectAvatar)
+	avatars := router.Group("/avatars", ApiKeyMiddleware, AuthMiddleware)
+	avatars.Get("/", getAvatars)
+	avatars.Get("/favorites", getAvatarFavorites)
+	avatars.Get("/licensed", getLicensedAvatars)
+	avatars.Get("/:id", getAvatar)
+	avatars.Put("/:id/select", selectAvatar)
 }
 
+// getAvatars | GET /avatars
+// This endpoint allows you to discover avatars on the platform.
 func getAvatars(c *fiber.Ctx) error {
 	var isGameRequest = c.Locals("isGameRequest").(bool)
 	var avatars []models.Avatar
@@ -187,14 +189,22 @@ badRequest:
 	return c.Status(400).JSON(models.MakeErrorResponse("Bad request", 400))
 }
 
+// getAvatarFavorites | GET /avatars/favorites
+// Returns a list of the user's favorited avatars.
+// TODO: Implement favorites.
 func getAvatarFavorites(c *fiber.Ctx) error {
-	return c.Status(501).JSON(models.ErrNotImplementedResponse)
+	return c.JSON([]struct{}{})
 }
 
+// getLicensedAvatars | GET /avatars/licensed
+// Returns a list of the user's favorited avatars.
+// Won't do: relates to commerce features.
 func getLicensedAvatars(c *fiber.Ctx) error {
-	return c.Status(501).JSON(models.ErrNotImplementedResponse)
+	return c.JSON([]struct{}{})
 }
 
+// getAvatar | GET /avatars/:id
+// Returns an avatar.
 func getAvatar(c *fiber.Ctx) error {
 	var isGameRequest = c.Locals("isGameRequest").(bool)
 	var a models.Avatar
@@ -225,6 +235,8 @@ func getAvatar(c *fiber.Ctx) error {
 	}
 }
 
+// selectAvatar | PUT /avatars/:id/select
+// Sets the avatar the user is currently in.
 func selectAvatar(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
 	var a models.Avatar
