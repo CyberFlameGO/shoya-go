@@ -41,12 +41,12 @@ func (w *World) GetAuthor() (*User, error) {
 
 // GetImageUrl returns the Url present in the Image field.
 func (w *World) GetImageUrl() string {
-	return w.Image.Url
+	return w.Image.GetLatestVersion().GetFileUrl()
 }
 
 // GetThumbnailImageUrl returns the Url present in the Image field.
 func (w *World) GetThumbnailImageUrl() string {
-	return w.Image.Url
+	return w.Image.GetLatestVersion().GetFileUrl()
 }
 
 // GetLatestAssetUrl iterates through a World's UnityPackages and returns the Url present in the File
@@ -56,7 +56,7 @@ func (w *World) GetLatestAssetUrl() string {
 	maxVersion := 0
 	for _, pkg := range w.UnityPackages {
 		if pkg.Version >= maxVersion {
-			assetUrl = pkg.File.Url
+			assetUrl = pkg.File.GetLatestVersion().GetFileUrl()
 		}
 	}
 

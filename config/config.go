@@ -19,12 +19,17 @@ var DB *gorm.DB
 // ApiConfig holds the dynamic configuration for the API.
 type ApiConfig struct {
 	// Internal Configuration
+	ApiUrl                  hsync.String      `seed:"" json:"apiUrl" redis:"{config}:apiUrl"`
 	InfoPushes              ApiInfoPushesList `seed:"[]" json:"infoPushes" redis:"{config}:infoPushes"`
 	JwtSecret               hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:jwtSecret"`
 	PhotonSecret            hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:photonSecret"`
 	DiscoveryServiceEnabled hsync.Bool        `json:"-" seed:"false" redis:"{config}:discoveryServiceEnabled"`
 	DiscoveryServiceUrl     hsync.String      `json:"-" seed:"http://discovery:9213" redis:"{config}:discoveryServiceUrl"`
 	DiscoveryServiceApiKey  hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:discoveryServiceApiKey"`
+	// WIP: Ignore for now
+	FilesEndpoint  hsync.String `json:"-" seed:"" redis:"{config}:filesEndpoint"`
+	FilesAccessKey hsync.String `json:"-" seed:"" redis:"{config}:filesAccessKey"`
+	FilesSecretKey hsync.Secret `json:"-" seed:"" redis:"{config}:filesSecretKey"`
 	// Photon Room Settings
 	PhotonSettingMaxAccountsPerIpAddress hsync.Int64 `seed:"5" json:"maxAccountsPerIp" redis:"{config}:photonSettingMaxAccountsPerIp"`
 	// Connector Mod AutoConfig Functionality

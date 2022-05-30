@@ -61,6 +61,7 @@ func initializeRoutes(app *fiber.App) {
 	instanceRoutes(app)
 	avatarsRoutes(app)
 	favoriteRoutes(app)
+	fileRoutes(app)
 }
 
 // initializeConfig reads the config.json file and initializes the runtime config
@@ -128,6 +129,21 @@ func initializeDB() {
 		fmt.Println(err)
 	}
 	err = config.DB.AutoMigrate(&models.PlayerModeration{})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = config.DB.AutoMigrate(&models.File{})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = config.DB.AutoMigrate(&models.FileVersion{})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = config.DB.AutoMigrate(&models.FileDescriptor{})
 	if err != nil {
 		fmt.Println(err)
 	}

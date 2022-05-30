@@ -43,7 +43,7 @@ func (a *Avatar) GetAssetUrl() string {
 	maxVersion := 0
 	for _, pkg := range a.UnityPackages {
 		if pkg.Version >= maxVersion {
-			assetUrl = pkg.File.Url
+			assetUrl = pkg.File.GetLatestVersion().GetFileUrl()
 		}
 	}
 
@@ -60,11 +60,11 @@ func (a *Avatar) GetUnityPackages() []APIUnityPackage {
 }
 
 func (a *Avatar) GetImageUrl() string {
-	return a.Image.Url
+	return a.Image.GetLatestVersion().GetFileUrl()
 }
 
 func (a *Avatar) GetThumbnailImageUrl() string {
-	return a.Image.Url
+	return a.Image.GetLatestVersion().GetFileUrl()
 }
 
 func (a *Avatar) GetAPIAvatar() (*APIAvatar, error) {
