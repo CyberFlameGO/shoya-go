@@ -138,7 +138,7 @@ func getUserByUsername(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(cu.GetAPICurrentUser())
 	}
 
-	if ru, err = models.GetUserByUsernameOrEmail(username); err != nil {
+	if ru, err = models.GetUserByUsername(username); err != nil {
 		if err == models.ErrUserNotFound {
 			return c.Status(404).JSON(models.MakeErrorResponse(fmt.Sprintf("User %s not found", username), 404))
 		}
