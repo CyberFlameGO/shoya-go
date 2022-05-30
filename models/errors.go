@@ -97,4 +97,5 @@ var (
 	ErrUserNotFound                                  = errors.New("user not found")
 	ErrPasswordTooSmall                              = errors.New("password too small")
 	ErrInvalidAuthCookie                             = errors.New("invalid auth cookie")
+	ErrFileNotFound                                  = errors.New("file version not found")
 )

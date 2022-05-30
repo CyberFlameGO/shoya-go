@@ -6,6 +6,7 @@ import (
 	"gitlab.com/george/shoya-go/config"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"strings"
 	"time"
 )
 
@@ -64,6 +65,9 @@ func GetFile(id string) (*File, error) {
 		Preload("Versions.DeltaDescriptor").
 		Preload("Versions.SignatureDescriptor").
 		Where("id = ?", id).First(&f).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrFileNotFound
+		}
 		return nil, err
 	}
 
@@ -178,12 +182,13 @@ func (f *File) GetAPIFile() *APIFile {
 		fvs = append(fvs, *fv.GetAPIFileVersion())
 	}
 
+	fn := strings.Split(f.GetLatestVersion().FileDescriptor.FileName, ".")
 	return &APIFile{
 		ID:        f.ID,
 		Name:      f.Name,
 		OwnerID:   f.OwnerID,
 		MimeType:  "",
-		Extension: "",
+		Extension: fmt.Sprintf(".%s", fn[len(fn)-1]),
 		Versions:  fvs,
 		Tags:      []string{},
 	}
