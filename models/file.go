@@ -6,9 +6,10 @@ import (
 	"gitlab.com/george/shoya-go/config"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"strings"
 	"time"
 )
+
+var FileAllowedExtensions = []string{".vrca", ".vrcw", ".png", ".jpg", ".jpeg"}
 
 type FileDescriptorType string
 
@@ -45,10 +46,11 @@ const (
 
 type File struct {
 	BaseModel
-	OwnerID  string        `json:"ownerId"`
-	Name     string        `json:"name"`
-	Type     string        `json:"-"`
-	Versions []FileVersion `json:"versions" gorm:"foreignKey:FileID"`
+	OwnerID   string        `json:"ownerId"`
+	Name      string        `json:"name"`
+	MimeType  string        `json:"mimeType"`
+	Extension string        `json:"extension"`
+	Versions  []FileVersion `json:"versions" gorm:"foreignKey:FileID"`
 }
 
 func (f *File) BeforeCreate(*gorm.DB) (err error) {
@@ -182,13 +184,12 @@ func (f *File) GetAPIFile() *APIFile {
 		fvs = append(fvs, *fv.GetAPIFileVersion())
 	}
 
-	fn := strings.Split(f.GetLatestVersion().FileDescriptor.FileName, ".")
 	return &APIFile{
 		ID:        f.ID,
 		Name:      f.Name,
 		OwnerID:   f.OwnerID,
-		MimeType:  "",
-		Extension: fmt.Sprintf(".%s", fn[len(fn)-1]),
+		MimeType:  f.MimeType,
+		Extension: f.Extension,
 		Versions:  fvs,
 		Tags:      []string{},
 	}

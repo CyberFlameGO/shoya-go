@@ -3,15 +3,16 @@ package main
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
 	"strconv"
-	"strings"
 )
 
 func fileRoutes(router *fiber.App) {
 	file := router.Group("/file")
-	file.Post("/", ApiKeyMiddleware, AuthMiddleware, postFile)
+	file.Post("/", ApiKeyMiddleware, AuthMiddleware, createFile)
 	file.Get("/:id", getFile)
+	file.Post("/:id", ApiKeyMiddleware, AuthMiddleware, postFile)
 	file.Get("/:id/:version", getFileVersion)
 	file.Get("/:id/:version/:descriptor", getFileVersionDescriptor)
 
@@ -20,10 +21,36 @@ func fileRoutes(router *fiber.App) {
 	file.Put("/:id/:version/:descriptor/finish", ApiKeyMiddleware, AuthMiddleware, putFileVersionDescriptorFinish)
 }
 
-// postFile | POST /file
+// createFile | POST /file
 // Creates a file record with version 0.
-func postFile(c *fiber.Ctx) error {
-	return c.JSON(struct{}{})
+func createFile(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+	var r CreateFileRequest
+	var f models.File
+	var fv models.FileVersion
+	var err error
+
+	if err = c.BodyParser(&r); err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse("failed to parse request body", 500))
+	}
+
+	f = models.File{
+		OwnerID:   u.ID,
+		Name:      r.Name,
+		MimeType:  r.MimeType,
+		Extension: r.Extension,
+	}
+	config.DB.Create(&f)
+
+	fv = models.FileVersion{
+		FileID:  f.ID,
+		Version: 0,
+		Status:  models.FileUploadStatusComplete,
+	}
+	config.DB.Create(&fv)
+
+	f.Versions = []models.FileVersion{fv}
+	return c.JSON(f.GetAPIFile())
 }
 
 // getFile | GET /file/:id
@@ -40,6 +67,12 @@ func getFile(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(f.GetAPIFile())
+}
+
+// postFile | POST /file/:id
+// Creates a new file version.
+func postFile(c *fiber.Ctx) error {
+	return c.Next()
 }
 
 // getFileVersion | GET /file/:id/:version
@@ -95,11 +128,10 @@ func getFileVersionDescriptor(c *fiber.Ctx) error {
 		}
 	}
 
-	fn := strings.Split(v.FileDescriptor.FileName, ".")
 	return c.JSON(fiber.Map{ // If a file descriptor url doesn't actually exist, this is a generic "404".
 		"fileName":  v.FileDescriptor.FileName,
-		"mimeType":  "",
-		"extension": fmt.Sprintf(".%s", fn[len(fn)-1]),
+		"mimeType":  f.MimeType,
+		"extension": f.Extension,
 		"ownerId":   f.OwnerID,
 	})
 }

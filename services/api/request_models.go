@@ -314,3 +314,10 @@ func (r *RemoveTagsRequest) TagsChecks(u *models.User) (bool, error) {
 	u.Tags = tagsThatWillApply
 	return true, nil
 }
+
+type CreateFileRequest struct {
+	Name      string     `json:"name"`
+	Extension string     `json:"extension"`
+	MimeType  string     `json:"mimeType"`
+	Versions  []struct{} `json:"versions"`
+}
