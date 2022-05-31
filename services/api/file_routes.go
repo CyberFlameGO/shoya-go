@@ -201,6 +201,7 @@ func deleteFile(c *fiber.Ctx) error {
 func getFileVersion(c *fiber.Ctx) error {
 	var id = c.Params("id")
 	var ver, err = strconv.Atoi(c.Params("version"))
+	var v *models.FileVersion
 	if err != nil {
 		return c.Status(400).JSON(models.MakeErrorResponse("invalid file version", 400))
 	}
@@ -213,7 +214,17 @@ func getFileVersion(c *fiber.Ctx) error {
 		return c.JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
-	return c.Redirect(f.GetVersion(ver).FileDescriptor.Url)
+	v = f.GetVersion(ver)
+	if v.FileDescriptor.Url != "" {
+		return c.Redirect(v.FileDescriptor.Url)
+	}
+
+	return c.JSON(fiber.Map{ // If a file descriptor url doesn't actually exist, this is a generic "404".
+		"fileName":  v.FileDescriptor.FileName,
+		"mimeType":  f.MimeType,
+		"extension": f.Extension,
+		"ownerId":   f.OwnerID,
+	})
 }
 
 // getFileVersionDescriptor | GET /file/:id/:version/:descriptor
@@ -257,24 +268,26 @@ func getFileVersionDescriptor(c *fiber.Ctx) error {
 	})
 }
 
+// getFileVersionDescriptorStatus | GET /file/:id/:version/:descriptor/status
 func getFileVersionDescriptorStatus(c *fiber.Ctx) error {
-	var u = c.Locals("user").(*models.User)
 	var f = c.Locals("file").(*models.File)
+	var v int
 	var err error
 
-	if u.ID == "" {
-		return c.Next()
+	if v, err = strconv.Atoi(c.Params("version")); v < 0 || err != nil {
+		return c.Status(400).JSON(models.MakeErrorResponse("could not parse version", 400))
 	}
 
-	if f.ID == "" {
-		return c.Next()
+	switch models.FileDescriptorType(c.Params("descriptor")) {
+	case models.FileDescriptorTypeFile:
+		return c.JSON(f.GetVersion(v).GetAPIFileVersion().File)
+	case models.FileDescriptorTypeDelta:
+		return c.JSON(f.GetVersion(v).GetAPIFileVersion().Delta)
+	case models.FileDescriptorTypeSignature:
+		return c.JSON(f.GetVersion(v).GetAPIFileVersion().Signature)
+	default:
+		return c.Status(400).JSON(models.MakeErrorResponse("invalid file descriptor type", 400))
 	}
-
-	if err != nil {
-		return c.Next()
-	}
-
-	return c.Next()
 }
 
 func putFileVersionDescriptorStart(c *fiber.Ctx) error {

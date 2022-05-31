@@ -223,7 +223,7 @@ func (f *FileVersion) GetAPIFileVersion() *APIFileVersion {
 
 func (f *FileDescriptor) GetAPIFileDescriptor() *APIFileDescriptor {
 	if f.FileName == "" { // If URL is empty, we'll assume this descriptor does not exist.
-		return nil
+		return &APIFileDescriptor{}
 	}
 
 	return &APIFileDescriptor{
