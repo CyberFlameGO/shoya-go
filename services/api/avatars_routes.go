@@ -211,7 +211,7 @@ func getAvatar(c *fiber.Ctx) error {
 	tx := config.DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&models.Avatar{}).Where("id = ?", c.Params("id")).First(&a)
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
-			return c.Status(404).JSON(models.ErrWorldNotFoundResponse)
+			return c.Status(404).JSON(models.ErrAvatarNotFoundResponse)
 		}
 	}
 

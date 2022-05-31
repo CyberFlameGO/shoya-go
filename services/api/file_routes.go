@@ -12,13 +12,13 @@ func fileRoutes(router *fiber.App) {
 	file := router.Group("/file")
 	file.Post("/", ApiKeyMiddleware, AuthMiddleware, createFile)
 	file.Get("/:id", getFile)
-	file.Post("/:id", ApiKeyMiddleware, AuthMiddleware, postFile)
+	file.Post("/:id", ApiKeyMiddleware, AuthMiddleware, IsFileOwnerMiddleware, postFile)
 	file.Get("/:id/:version", getFileVersion)
 	file.Get("/:id/:version/:descriptor", getFileVersionDescriptor)
 
-	file.Get("/:id/:version/:descriptor/status", ApiKeyMiddleware, AuthMiddleware, getFileVersionDescriptorStatus)
-	file.Put("/:id/:version/:descriptor/start", ApiKeyMiddleware, AuthMiddleware, putFileVersionDescriptorStart)
-	file.Put("/:id/:version/:descriptor/finish", ApiKeyMiddleware, AuthMiddleware, putFileVersionDescriptorFinish)
+	file.Get("/:id/:version/:descriptor/status", ApiKeyMiddleware, AuthMiddleware, IsFileOwnerMiddleware, getFileVersionDescriptorStatus)
+	file.Put("/:id/:version/:descriptor/start", ApiKeyMiddleware, AuthMiddleware, IsFileOwnerMiddleware, putFileVersionDescriptorStart)
+	file.Put("/:id/:version/:descriptor/finish", ApiKeyMiddleware, AuthMiddleware, IsFileOwnerMiddleware, putFileVersionDescriptorFinish)
 }
 
 // createFile | POST /file
@@ -72,6 +72,22 @@ func getFile(c *fiber.Ctx) error {
 // postFile | POST /file/:id
 // Creates a new file version.
 func postFile(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+	var f = c.Locals("file").(*models.File)
+	var err error
+
+	if u.ID == "" {
+		return c.Next()
+	}
+
+	if f.ID == "" {
+		return c.Next()
+	}
+
+	if err != nil {
+		return c.Next()
+	}
+
 	return c.Next()
 }
 
@@ -137,13 +153,82 @@ func getFileVersionDescriptor(c *fiber.Ctx) error {
 }
 
 func getFileVersionDescriptorStatus(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+	var f = c.Locals("file").(*models.File)
+	var err error
+
+	if u.ID == "" {
+		return c.Next()
+	}
+
+	if f.ID == "" {
+		return c.Next()
+	}
+
+	if err != nil {
+		return c.Next()
+	}
+
 	return c.Next()
 }
 
 func putFileVersionDescriptorStart(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+	var f = c.Locals("file").(*models.File)
+	var err error
+
+	if u.ID == "" {
+		return c.Next()
+	}
+
+	if f.ID == "" {
+		return c.Next()
+	}
+
+	if err != nil {
+		return c.Next()
+	}
+
 	return c.Next()
 }
 
 func putFileVersionDescriptorFinish(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+	var f = c.Locals("file").(*models.File)
+	var err error
+
+	if u.ID == "" {
+		return c.Next()
+	}
+
+	if f.ID == "" {
+		return c.Next()
+	}
+
+	if err != nil {
+		return c.Next()
+	}
+	return c.Next()
+}
+
+func IsFileOwnerMiddleware(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+	var fid = c.Params("id")
+	var f *models.File
+	var err error
+
+	if f, err = models.GetFile(fid); err != nil {
+		if err == models.ErrFileNotFound {
+			return c.Status(404).JSON(models.MakeErrorResponse(fmt.Sprintf("file %s not found", fid), 500))
+		}
+		return c.JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	if f.OwnerID != u.ID && !u.IsStaff() {
+		return c.Status(403).JSON(models.MakeErrorResponse("not allowed to update another user's file", 403))
+	}
+
+	c.Locals("file", f)
+
 	return c.Next()
 }
