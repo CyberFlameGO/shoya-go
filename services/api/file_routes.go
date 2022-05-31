@@ -1,11 +1,14 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
+	"gorm.io/gorm/clause"
 	"strconv"
+	"strings"
 )
 
 func fileRoutes(router *fiber.App) {
@@ -13,6 +16,7 @@ func fileRoutes(router *fiber.App) {
 	file.Post("/", ApiKeyMiddleware, AuthMiddleware, createFile)
 	file.Get("/:id", getFile)
 	file.Post("/:id", ApiKeyMiddleware, AuthMiddleware, IsFileOwnerMiddleware, postFile)
+	file.Delete("/:id", ApiKeyMiddleware, AuthMiddleware, IsFileOwnerMiddleware, deleteFile)
 	file.Get("/:id/:version", getFileVersion)
 	file.Get("/:id/:version/:descriptor", getFileVersionDescriptor)
 
@@ -72,23 +76,124 @@ func getFile(c *fiber.Ctx) error {
 // postFile | POST /file/:id
 // Creates a new file version.
 func postFile(c *fiber.Ctx) error {
-	var u = c.Locals("user").(*models.User)
 	var f = c.Locals("file").(*models.File)
+	var r CreateFileVersionRequest
+	var fileMd5Hash []byte
+	var signatureMd5Hash []byte
+	var fileDescriptor = &models.FileDescriptor{
+		FileID:      f.ID,
+		Type:        models.FileDescriptorTypeFile,
+		Status:      models.FileUploadStatusNone,
+		Category:    models.FileUploadCategoryQueued,
+		SizeInBytes: 0,
+		FileName:    fmt.Sprintf("%s.%s%s", strings.ReplaceAll(f.Name, " ", "-")[:32], f.ID, f.Extension),
+		Url:         "",
+		Md5:         "",
+		UploadId:    "",
+	}
+	var deltaDescriptor = &models.FileDescriptor{
+		FileID:      f.ID,
+		Type:        models.FileDescriptorTypeSignature,
+		Status:      models.FileUploadStatusNone,
+		Category:    models.FileUploadCategoryQueued,
+		SizeInBytes: 0,
+		FileName:    fmt.Sprintf("%s.%s%s.signature", strings.ReplaceAll(f.Name, " ", "-")[:32], f.ID, f.Extension),
+		Url:         "",
+		Md5:         "",
+		UploadId:    "",
+	}
+	var signatureDescriptor = &models.FileDescriptor{
+		FileID:      f.ID,
+		Type:        models.FileDescriptorTypeDelta,
+		Status:      models.FileUploadStatusNone,
+		Category:    models.FileUploadCategorySimple,
+		SizeInBytes: 0,
+		FileName:    fmt.Sprintf("%s.%s%s.delta", strings.ReplaceAll(f.Name, " ", "-")[:32], f.ID, f.Extension),
+		Url:         "",
+		Md5:         "",
+		UploadId:    "",
+	}
+	var fileVersion = &models.FileVersion{
+		FileID:  f.ID,
+		Version: f.GetLatestVersion().Version + 1,
+		Status:  models.FileUploadStatusWaiting,
+	}
 	var err error
 
-	if u.ID == "" {
-		return c.Next()
+	if err = c.BodyParser(&r); err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse("failed to parse request body", 500))
 	}
 
-	if f.ID == "" {
-		return c.Next()
+	if r.FileMd5 != "" {
+		fileMd5Hash, err = base64.StdEncoding.DecodeString(r.FileMd5)
+		if err != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse("file md5 invalid", 500))
+		}
 	}
 
+	signatureMd5Hash, err = base64.StdEncoding.DecodeString(r.SignatureMd5)
 	if err != nil {
-		return c.Next()
+		return c.Status(500).JSON(models.MakeErrorResponse("signature md5 invalid", 500))
 	}
 
-	return c.Next()
+	if len(fileMd5Hash) != 16 || len(signatureMd5Hash) != 16 {
+		return c.Status(500).JSON(models.MakeErrorResponse("file or signature md5 invalid", 500))
+	}
+
+	if r.FileMd5 != "" && r.FileSizeInBytes != 0 {
+		fileDescriptor.Status = models.FileUploadStatusWaiting
+		fileDescriptor.Category = models.FileUploadCategorySimple
+		fileDescriptor.Md5 = r.FileMd5
+		fileDescriptor.SizeInBytes = r.FileSizeInBytes
+	}
+
+	if r.DeltaMd5 != "" && r.DeltaSizeInBytes != 0 {
+		deltaDescriptor.Status = models.FileUploadStatusWaiting
+		deltaDescriptor.Category = models.FileUploadCategorySimple
+		deltaDescriptor.Md5 = r.DeltaMd5
+		deltaDescriptor.SizeInBytes = r.DeltaSizeInBytes
+	}
+
+	if r.SignatureMd5 != "" && r.SignatureSizeInBytes != 0 {
+		signatureDescriptor.Status = models.FileUploadStatusWaiting
+		signatureDescriptor.Category = models.FileUploadCategorySimple
+		signatureDescriptor.Md5 = r.SignatureMd5
+		signatureDescriptor.SizeInBytes = r.SignatureSizeInBytes
+	}
+
+	err = config.DB.Create(&fileDescriptor).Error
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = config.DB.Create(&deltaDescriptor).Error
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = config.DB.Create(&signatureDescriptor).Error
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fileVersion.FileDescriptorID = fileDescriptor.ID
+	fileVersion.DeltaDescriptorID = deltaDescriptor.ID
+	fileVersion.SignatureDescriptorID = signatureDescriptor.ID
+
+	config.DB.Omit(clause.Associations).Create(&fileVersion)
+
+	fileVersion.FileDescriptor = *fileDescriptor
+	fileVersion.DeltaDescriptor = *deltaDescriptor
+	fileVersion.SignatureDescriptor = *signatureDescriptor
+
+	f.Versions = append(f.Versions, *fileVersion)
+
+	return c.JSON(f.GetAPIFile())
+}
+
+func deleteFile(c *fiber.Ctx) error {
+	var f = c.Locals("file").(*models.File)
+	config.DB.Unscoped().Delete(&f)
+
+	return c.JSON(fiber.Map{"ok": true})
 }
 
 // getFileVersion | GET /file/:id/:version

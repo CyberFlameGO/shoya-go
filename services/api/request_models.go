@@ -321,3 +321,12 @@ type CreateFileRequest struct {
 	MimeType  string     `json:"mimeType"`
 	Versions  []struct{} `json:"versions"`
 }
+
+type CreateFileVersionRequest struct {
+	FileMd5              string `json:"fileMd5"`
+	FileSizeInBytes      int    `json:"fileSizeInBytes"`
+	DeltaMd5             string `json:"deltaMd5"`
+	DeltaSizeInBytes     int    `json:"deltaSizeInBytes"`
+	SignatureMd5         string `json:"signatureMd5"`
+	SignatureSizeInBytes int    `json:"signatureSizeInBytes"`
+}
