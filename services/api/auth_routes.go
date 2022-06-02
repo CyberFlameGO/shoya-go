@@ -57,7 +57,7 @@ func getExists(c *fiber.Ctx) error {
 		Or("display_name = ?", c.Query("displayName")).
 		Or("email = ?", c.Query("email")).
 		Not("id = ?", c.Query("excludeUserId")). // Exclude the user with the given id if provided.
-		Select("id").First(u)
+		Select("id").First(&u)
 
 	if tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
@@ -122,7 +122,7 @@ func postRegister(c *fiber.Ctx) error {
 
 	tx := config.DB.Where("username = ?", strings.ToLower(r.Username)).
 		Or("display_name = ?", r.Username).
-		Or("email = ?", strings.ToLower(r.Email)).First(u)
+		Or("email = ?", strings.ToLower(r.Email)).First(&u)
 
 	if tx.Error != gorm.ErrRecordNotFound {
 		return c.Status(400).JSON(fiber.Map{
