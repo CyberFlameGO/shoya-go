@@ -197,7 +197,7 @@ func initializeHealthChecks() {
 }
 
 func initializeFilesClient() {
-	conn, err := grpc.Dial("10.10.0.228:1321", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(config.ApiConfiguration.FilesEndpoint.Get(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}

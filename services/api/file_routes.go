@@ -83,13 +83,18 @@ func postFile(c *fiber.Ctx) error {
 	var r CreateFileVersionRequest
 	var fileMd5Hash []byte
 	var signatureMd5Hash []byte
+	var fileVersion = &models.FileVersion{
+		FileID:  f.ID,
+		Version: f.GetLatestVersion().Version + 1,
+		Status:  models.FileUploadStatusWaiting,
+	}
 	var fileDescriptor = &models.FileDescriptor{
 		FileID:      f.ID,
 		Type:        models.FileDescriptorTypeFile,
 		Status:      models.FileUploadStatusNone,
 		Category:    models.FileUploadCategoryQueued,
 		SizeInBytes: 0,
-		FileName:    fmt.Sprintf("%s.%s%s", strings.ReplaceAll(f.Name, " ", "-")[:32], f.ID, f.Extension),
+		FileName:    fmt.Sprintf("%s.%s.%d%s", strings.ReplaceAll(f.Name, " ", "-")[:32], f.ID, fileVersion.Version, f.Extension),
 		Url:         "",
 		Md5:         "",
 		UploadId:    "",
@@ -100,7 +105,7 @@ func postFile(c *fiber.Ctx) error {
 		Status:      models.FileUploadStatusNone,
 		Category:    models.FileUploadCategoryQueued,
 		SizeInBytes: 0,
-		FileName:    fmt.Sprintf("%s.%s%s.signature", strings.ReplaceAll(f.Name, " ", "-")[:32], f.ID, f.Extension),
+		FileName:    fmt.Sprintf("%s.%s.%d%s.delta", strings.ReplaceAll(f.Name, " ", "-")[:32], f.ID, fileVersion.Version, f.Extension),
 		Url:         "",
 		Md5:         "",
 		UploadId:    "",
@@ -111,15 +116,10 @@ func postFile(c *fiber.Ctx) error {
 		Status:      models.FileUploadStatusNone,
 		Category:    models.FileUploadCategorySimple,
 		SizeInBytes: 0,
-		FileName:    fmt.Sprintf("%s.%s%s.delta", strings.ReplaceAll(f.Name, " ", "-")[:32], f.ID, f.Extension),
+		FileName:    fmt.Sprintf("%s.%s.%d%s.signature", strings.ReplaceAll(f.Name, " ", "-")[:32], f.ID, fileVersion.Version, f.Extension),
 		Url:         "",
 		Md5:         "",
 		UploadId:    "",
-	}
-	var fileVersion = &models.FileVersion{
-		FileID:  f.ID,
-		Version: f.GetLatestVersion().Version + 1,
-		Status:  models.FileUploadStatusWaiting,
 	}
 	var err error
 
@@ -194,7 +194,10 @@ func postFile(c *fiber.Ctx) error {
 
 func deleteFile(c *fiber.Ctx) error {
 	var f = c.Locals("file").(*models.File)
-	config.DB.Unscoped().Delete(&f)
+	tx := config.DB.Unscoped().Delete(&f)
+	if tx.Error != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(tx.Error.Error(), 500))
+	}
 
 	return c.JSON(fiber.Map{"ok": true})
 }
@@ -205,6 +208,7 @@ func getFileVersion(c *fiber.Ctx) error {
 	var id = c.Params("id")
 	var ver, err = strconv.Atoi(c.Params("version"))
 	var v *models.FileVersion
+	var r *pb.GetFileResponse
 	if err != nil {
 		return c.Status(400).JSON(models.MakeErrorResponse("invalid file version", 400))
 	}
@@ -218,8 +222,17 @@ func getFileVersion(c *fiber.Ctx) error {
 	}
 
 	v = f.GetVersion(ver)
-	if v.FileDescriptor.Url != "" {
-		return c.Redirect(v.FileDescriptor.Url)
+	if v.FileDescriptor.Status == models.FileUploadStatusComplete {
+		if v.FileDescriptor.Status == models.FileUploadStatusComplete {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			r, err = FilesService.GetFile(ctx, &pb.GetFileRequest{Name: &v.FileDescriptor.FileName})
+			if err != nil {
+				return c.Status(500).JSON(models.MakeErrorResponse("failed to generate file url", 500))
+			}
+
+			return c.Redirect(r.GetUrl())
+		}
 	}
 
 	return c.JSON(fiber.Map{ // If a file descriptor url doesn't actually exist, this is a generic "404".
@@ -238,6 +251,7 @@ func getFileVersionDescriptor(c *fiber.Ctx) error {
 	var id = c.Params("id")
 	var descriptor = c.Params("descriptor")
 	var ver, err = strconv.Atoi(c.Params("version"))
+	var r *pb.GetFileResponse
 	if err != nil {
 		return c.Status(400).JSON(models.MakeErrorResponse("invalid file version", 400))
 	}
@@ -250,16 +264,37 @@ func getFileVersionDescriptor(c *fiber.Ctx) error {
 	v := f.GetVersion(ver)
 	switch models.FileDescriptorType(descriptor) {
 	case models.FileDescriptorTypeFile:
-		if v.FileDescriptor.Url != "" {
-			return c.Redirect(v.FileDescriptor.Url)
+		if v.FileDescriptor.Status == models.FileUploadStatusComplete {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			r, err = FilesService.GetFile(ctx, &pb.GetFileRequest{Name: &v.FileDescriptor.FileName})
+			if err != nil {
+				return c.Status(500).JSON(models.MakeErrorResponse("failed to generate file url", 500))
+			}
+
+			return c.Redirect(r.GetUrl())
 		}
 	case models.FileDescriptorTypeDelta:
-		if v.DeltaDescriptor.Url != "" {
-			return c.Redirect(v.DeltaDescriptor.Url)
+		if v.DeltaDescriptor.Status == models.FileUploadStatusComplete {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			r, err = FilesService.GetFile(ctx, &pb.GetFileRequest{Name: &v.DeltaDescriptor.FileName})
+			if err != nil {
+				return c.Status(500).JSON(models.MakeErrorResponse("failed to generate file url", 500))
+			}
+
+			return c.Redirect(r.GetUrl())
 		}
 	case models.FileDescriptorTypeSignature:
-		if v.SignatureDescriptor.Url != "" {
-			return c.Redirect(v.SignatureDescriptor.Url)
+		if v.SignatureDescriptor.Status == models.FileUploadStatusComplete {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			r, err = FilesService.GetFile(ctx, &pb.GetFileRequest{Name: &v.SignatureDescriptor.FileName})
+			if err != nil {
+				return c.Status(500).JSON(models.MakeErrorResponse("failed to generate file url", 500))
+			}
+
+			return c.Redirect(r.GetUrl())
 		}
 	}
 
@@ -342,22 +377,55 @@ func putFileVersionDescriptorStart(c *fiber.Ctx) error {
 }
 
 func putFileVersionDescriptorFinish(c *fiber.Ctx) error {
-	var u = c.Locals("user").(*models.User)
 	var f = c.Locals("file").(*models.File)
+	var v int
+	var ver *models.FileVersion
+	var fd *models.FileDescriptor
 	var err error
 
-	if u.ID == "" {
-		return c.Next()
+	if v, err = strconv.Atoi(c.Params("version")); v < 0 || err != nil {
+		return c.Status(400).JSON(models.MakeErrorResponse("could not parse version", 400))
+	}
+	ver = f.GetVersion(v)
+
+	switch models.FileDescriptorType(c.Params("descriptor")) {
+	case models.FileDescriptorTypeFile:
+		if ver.FileDescriptor.Status == models.FileUploadStatusComplete {
+			return c.Status(400).JSON(models.MakeErrorResponse("already completed", 400))
+		}
+		tx := config.DB.Where("id = ?", ver.FileDescriptorID).First(&fd)
+		if tx.Error != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse("error getting file descriptor", 500))
+		}
+		ver.FileDescriptor.Status = models.FileUploadStatusComplete
+	case models.FileDescriptorTypeDelta:
+		if ver.DeltaDescriptor.Status == models.FileUploadStatusComplete {
+			return c.Status(400).JSON(models.MakeErrorResponse("already completed", 400))
+		}
+		tx := config.DB.Where("id = ?", ver.DeltaDescriptorID).First(&fd)
+		if tx.Error != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse("error getting file descriptor", 500))
+		}
+		ver.DeltaDescriptor.Status = models.FileUploadStatusComplete
+	case models.FileDescriptorTypeSignature:
+		if ver.SignatureDescriptor.Status == models.FileUploadStatusComplete {
+			return c.Status(400).JSON(models.MakeErrorResponse("already completed", 400))
+		}
+		tx := config.DB.Where("id = ?", ver.SignatureDescriptorID).First(&fd)
+		if tx.Error != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse("error getting file descriptor", 500))
+		}
+		ver.SignatureDescriptor.Status = models.FileUploadStatusComplete
+	default:
+		return c.Status(400).JSON(models.MakeErrorResponse("invalid descriptor", 400))
 	}
 
-	if f.ID == "" {
-		return c.Next()
+	fd.Status = models.FileUploadStatusComplete
+	if config.DB.Omit(clause.Associations).Updates(fd).Error != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse("could not update database object", 500))
 	}
 
-	if err != nil {
-		return c.Next()
-	}
-	return c.Next()
+	return c.JSON(ver.GetAPIFileVersion())
 }
 
 func IsFileOwnerMiddleware(c *fiber.Ctx) error {

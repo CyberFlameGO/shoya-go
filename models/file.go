@@ -204,8 +204,6 @@ func (f *FileVersion) GetAPIFileVersion() *APIFileVersion {
 		Signature: f.SignatureDescriptor.GetAPIFileDescriptor(),
 	}
 
-	fmt.Printf("File Descriptor of version %d is %+v", f.Version, f.FileDescriptor)
-
 	if fv.File != nil {
 		fv.File.Url = f.GetFileUrl()
 	}
@@ -222,8 +220,8 @@ func (f *FileVersion) GetAPIFileVersion() *APIFileVersion {
 }
 
 func (f *FileDescriptor) GetAPIFileDescriptor() *APIFileDescriptor {
-	if f.FileName == "" { // If URL is empty, we'll assume this descriptor does not exist.
-		return &APIFileDescriptor{}
+	if f.FileName == "" { // If filename is empty, we'll assume this descriptor does not exist.
+		return nil
 	}
 
 	return &APIFileDescriptor{

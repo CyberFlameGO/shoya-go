@@ -7,7 +7,7 @@ type SvcConfig struct {
 	Api       *ApiSvcConfig       `json:"api,omitempty"`
 	Ws        *WsSvcConfig        `json:"ws,omitempty"`
 	Discovery *DiscoverySvcConfig `json:"discovery,omitempty"`
-	Analytics *AnalyticsSvcConfig `json:"analytics,omitempty"`
+	Files     *FilesSvcConfig     `json:"analytics,omitempty"`
 }
 
 // ApiSvcConfig is the configuration struct used by the `api` service.
@@ -27,9 +27,8 @@ type DiscoverySvcConfig struct {
 	DiscoveryApiKey string `json:"discoveryApiKey"` // The API key that is authorized to contact the Discovery service.
 }
 
-// AnalyticsSvcConfig is the configuration struct used by the `analytics` service.
-type AnalyticsSvcConfig struct {
-	WebSvcConfig
+type FilesSvcConfig struct {
+	GrpcSvcConfig
 }
 
 type WebSvcConfig struct {
@@ -56,4 +55,8 @@ type PostgresSvcConfig struct {
 	User     string `json:"user"`
 	Password string `json:"password"`
 	Database string `json:"db"`
+}
+
+type GrpcSvcConfig struct {
+	ListenAddress string `json:"listen_address"`
 }
