@@ -7,7 +7,7 @@ type SvcConfig struct {
 	Api       *ApiSvcConfig       `json:"api,omitempty"`
 	Ws        *WsSvcConfig        `json:"ws,omitempty"`
 	Discovery *DiscoverySvcConfig `json:"discovery,omitempty"`
-	Files     *FilesSvcConfig     `json:"analytics,omitempty"`
+	Files     *FilesSvcConfig     `json:"files,omitempty"`
 }
 
 // ApiSvcConfig is the configuration struct used by the `api` service.
