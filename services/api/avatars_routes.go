@@ -1,12 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lib/pq"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strconv"
 	"strings"
@@ -15,6 +13,7 @@ import (
 func avatarsRoutes(router *fiber.App) {
 	avatars := router.Group("/avatars", ApiKeyMiddleware, AuthMiddleware)
 	avatars.Get("/", getAvatars)
+	avatars.Post("/", postAvatars)
 	avatars.Get("/favorites", getAvatarFavorites)
 	avatars.Get("/licensed", getLicensedAvatars)
 	avatars.Get("/:id", getAvatar)
@@ -189,6 +188,75 @@ badRequest:
 	return c.Status(400).JSON(models.MakeErrorResponse("Bad request", 400))
 }
 
+func postAvatars(c *fiber.Ctx) error {
+	var r *CreateAvatarRequest
+	var u = c.Locals("user").(*models.User)
+	var fileId string
+	var imageId string
+	var aa *models.APIAvatarWithPackages
+	var err error
+
+	if !u.CanUploadAvatars() {
+		return c.Status(403).JSON(models.MakeErrorResponse("cannot upload avatars at this time", 403))
+	}
+
+	if err = c.BodyParser(&r); err != nil {
+		return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
+	}
+
+	if !r.HasValidUrls() {
+		return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
+	}
+
+	if fileId, err = r.GetFileID(); err != nil {
+		return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
+	}
+
+	if imageId, err = r.GetImageID(); err != nil {
+		return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
+	}
+	a := &models.Avatar{
+		AuthorID:      u.ID,
+		Name:          r.Name,
+		Description:   r.Description,
+		ImageID:       imageId,
+		ReleaseStatus: r.ReleaseStatus,
+		Tags:          r.ParseTags(),
+		Version:       0,
+	}
+
+	if tx := config.DB.Create(&a); tx.Error != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(tx.Error.Error(), 500))
+	}
+
+	unp := &models.AvatarUnityPackage{
+		BelongsToAssetID: a.ID,
+		FileID:           fileId,
+		Version:          1,
+		Platform:         r.Platform,
+		UnityVersion:     r.UnityVersion,
+		UnitySortNumber:  0,
+	}
+
+	if tx := config.DB.Create(&unp); tx.Error != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(tx.Error.Error(), 500))
+	}
+
+	a, err = models.GetAvatarById(a.ID)
+	if err != nil {
+		if err == models.ErrAvatarNotFound {
+			return c.Status(404).JSON(models.ErrAvatarNotFoundResponse)
+		}
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	if aa, err = a.GetAPIAvatarWithPackages(); err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	return c.JSON(aa)
+}
+
 // getAvatarFavorites | GET /avatars/favorites
 // Returns a list of the user's favorited avatars.
 // TODO: Implement favorites.
@@ -207,17 +275,18 @@ func getLicensedAvatars(c *fiber.Ctx) error {
 // Returns an avatar.
 func getAvatar(c *fiber.Ctx) error {
 	var isGameRequest = c.Locals("isGameRequest").(bool)
-	var a models.Avatar
-	tx := config.DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&models.Avatar{}).Where("id = ?", c.Params("id")).First(&a)
-	if tx.Error != nil {
-		if tx.Error == gorm.ErrRecordNotFound {
-			return c.Status(404).JSON(models.ErrAvatarNotFoundResponse)
-		}
-	}
-
+	var a *models.Avatar
 	var aa *models.APIAvatar
 	var aap *models.APIAvatarWithPackages
 	var err error
+
+	if a, err = models.GetAvatarById(c.Params("id")); err != nil {
+		if err == models.ErrAvatarNotFound {
+			return c.Status(404).JSON(models.ErrAvatarNotFoundResponse)
+		}
+
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
 
 	if isGameRequest {
 		aap, err = a.GetAPIAvatarWithPackages()
@@ -239,14 +308,16 @@ func getAvatar(c *fiber.Ctx) error {
 // Sets the avatar the user is currently in.
 func selectAvatar(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
-	var a models.Avatar
+	var a *models.Avatar
 	var changes = map[string]interface{}{}
+	var err error
 
-	tx := config.DB.Preload(clause.Associations).Preload("UnityPackages.File").Model(&models.Avatar{}).Where("id = ?", c.Params("id")).First(&a)
-	if tx.Error != nil {
-		if tx.Error == gorm.ErrRecordNotFound {
+	if a, err = models.GetAvatarById(c.Params("id")); err != nil {
+		if err == models.ErrAvatarNotFound {
 			return c.Status(404).JSON(models.ErrAvatarNotFoundResponse)
 		}
+
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
 	if !u.IsStaff() && a.ReleaseStatus != models.ReleaseStatusPublic && u.ID != a.AuthorID {
@@ -256,13 +327,12 @@ func selectAvatar(c *fiber.Ctx) error {
 	changes["current_avatar_id"] = a.ID
 	changes["fallback_avatar_id"] = a.ID
 
-	tx = config.DB.Omit(clause.Associations).Model(&u).Updates(changes)
-	fmt.Println(tx.Error)
+	config.DB.Omit(clause.Associations).Model(&u).Updates(changes)
 
 	u.CurrentAvatarID = a.ID
-	u.CurrentAvatar = a
+	u.CurrentAvatar = *a
 
 	u.FallbackAvatarID = a.ID
-	u.FallbackAvatar = a
+	u.FallbackAvatar = *a
 	return c.JSON(u.GetAPICurrentUser())
 }

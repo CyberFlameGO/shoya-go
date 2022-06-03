@@ -5,6 +5,7 @@ import (
 	"github.com/lib/pq"
 	"gitlab.com/george/shoya-go/config"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"time"
 )
 
@@ -24,6 +25,24 @@ type Avatar struct {
 func (a *Avatar) BeforeCreate(*gorm.DB) (err error) {
 	a.ID = "avtr_" + uuid.New().String()
 	return
+}
+
+func GetAvatarById(id string) (*Avatar, error) {
+	var a *Avatar
+	tx := config.DB.Preload(clause.Associations).
+		Preload("UnityPackages.File").
+		Preload("UnityPackages.File.Versions.FileDescriptor").
+		Preload("UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("UnityPackages.File.Versions.SignatureDescriptor").
+		Where("id = ?", id).First(&a)
+	if tx.Error != nil {
+		if tx.Error == gorm.ErrRecordNotFound {
+			return nil, ErrAvatarNotFound
+		}
+		return nil, tx.Error
+	}
+
+	return a, nil
 }
 
 // GetAuthor returns the author of the avatar

@@ -209,6 +209,26 @@ func (u *User) IsBanned() (bool, *Moderation) {
 	return false, nil
 }
 
+func (u *User) CanUploadAvatars() bool {
+	for _, tag := range u.Tags {
+		if tag == "system_avatar_access" || tag == "admin_avatar_access" {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (u *User) CanUploadWorlds() bool {
+	for _, tag := range u.Tags {
+		if tag == "system_avatar_access" || tag == "admin_avatar_access" {
+			return true
+		}
+	}
+
+	return false
+}
+
 // GetState returns the state of the user from the presence service.
 func (u *User) GetState() UserState { // WIP -- skipcq
 	return UserStateActive // TODO: Implement presence service.
