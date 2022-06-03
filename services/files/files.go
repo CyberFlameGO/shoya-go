@@ -49,7 +49,7 @@ func initializeConfig() {
 		panic("error reading config file")
 	}
 
-	if config.RuntimeConfig.Api == nil {
+	if config.RuntimeConfig.Files == nil {
 		panic("error reading config file: RuntimeConfig.Api was nil")
 	}
 }
@@ -57,14 +57,13 @@ func initializeConfig() {
 // initializeRedis initializes the redis clients
 func initializeRedis() {
 	config.HarvestRedisClient = redis.NewClient(&redis.Options{
-		Addr:     config.RuntimeConfig.Api.Redis.Host,
-		Password: config.RuntimeConfig.Api.Redis.Password,
-		DB:       config.RuntimeConfig.Api.Redis.Database,
+		Addr:     config.RuntimeConfig.Files.Redis.Host,
+		Password: config.RuntimeConfig.Files.Redis.Password,
+		DB:       config.RuntimeConfig.Files.Redis.Database,
 	})
 
-	_, err := config.RedisClient.Ping(context.Background()).Result()
-	_, err2 := config.HarvestRedisClient.Ping(context.Background()).Result()
-	if err != nil || err2 != nil {
+	_, err := config.HarvestRedisClient.Ping(context.Background()).Result()
+	if err != nil {
 		panic(err)
 	}
 }

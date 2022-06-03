@@ -29,6 +29,7 @@ type DiscoverySvcConfig struct {
 
 type FilesSvcConfig struct {
 	GrpcSvcConfig
+	Redis RedisSvcConfig `json:"redis"`
 }
 
 type WebSvcConfig struct {
