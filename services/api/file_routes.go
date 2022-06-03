@@ -1,14 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"gitlab.com/george/shoya-go/config"
+	pb "gitlab.com/george/shoya-go/gen/v1/proto"
 	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm/clause"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func fileRoutes(router *fiber.App) {
@@ -291,23 +294,51 @@ func getFileVersionDescriptorStatus(c *fiber.Ctx) error {
 }
 
 func putFileVersionDescriptorStart(c *fiber.Ctx) error {
-	var u = c.Locals("user").(*models.User)
 	var f = c.Locals("file").(*models.File)
+	var v int
+	var ver *models.FileVersion
+	var fileName string
+	var fileMd5 string
 	var err error
 
-	if u.ID == "" {
-		return c.Next()
+	if v, err = strconv.Atoi(c.Params("version")); v < 0 || err != nil {
+		return c.Status(400).JSON(models.MakeErrorResponse("could not parse version", 400))
+	}
+	ver = f.GetVersion(v)
+
+	switch models.FileDescriptorType(c.Params("descriptor")) {
+	case models.FileDescriptorTypeFile:
+		if ver.FileDescriptor.Status == models.FileUploadStatusComplete {
+			return c.Status(400).JSON(models.MakeErrorResponse("already completed", 400))
+		}
+		fileName = ver.FileDescriptor.FileName
+		fileMd5 = ver.FileDescriptor.Md5
+	case models.FileDescriptorTypeDelta:
+		if ver.DeltaDescriptor.Status == models.FileUploadStatusComplete {
+			return c.Status(400).JSON(models.MakeErrorResponse("already completed", 400))
+		}
+		fileName = ver.DeltaDescriptor.FileName
+		fileMd5 = ver.DeltaDescriptor.Md5
+	case models.FileDescriptorTypeSignature:
+		if ver.SignatureDescriptor.Status == models.FileUploadStatusComplete {
+			return c.Status(400).JSON(models.MakeErrorResponse("already completed", 400))
+		}
+		fileName = ver.SignatureDescriptor.FileName
+		fileMd5 = ver.SignatureDescriptor.Md5
+	default:
+		return c.Status(400).JSON(models.MakeErrorResponse("invalid descriptor", 400))
 	}
 
-	if f.ID == "" {
-		return c.Next()
-	}
-
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	r, err := FilesService.CreateFile(ctx, &pb.CreateFileRequest{Name: &fileName, Md5: &fileMd5})
 	if err != nil {
-		return c.Next()
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
-	return c.Next()
+	return c.JSON(fiber.Map{
+		"url": r.GetUrl(),
+	})
 }
 
 func putFileVersionDescriptorFinish(c *fiber.Ctx) error {

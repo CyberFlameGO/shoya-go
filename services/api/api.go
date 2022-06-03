@@ -10,8 +10,11 @@ import (
 	"github.com/gtsatsis/harvester"
 	"github.com/tkanos/gonfig"
 	"gitlab.com/george/shoya-go/config"
+	pb "gitlab.com/george/shoya-go/gen/v1/proto"
 	"gitlab.com/george/shoya-go/models"
 	"gitlab.com/george/shoya-go/services/discovery/discovery_client"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
@@ -21,6 +24,7 @@ import (
 )
 
 var DiscoveryService *discovery_client.Discovery
+var FilesService pb.FileClient
 
 func main() {
 	shoyaInit()
@@ -48,6 +52,7 @@ func shoyaInit() {
 	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
 		DiscoveryService = discovery_client.NewDiscovery(config.ApiConfiguration.DiscoveryServiceUrl.Get(), config.ApiConfiguration.DiscoveryServiceApiKey.Get())
 	}
+	initializeFilesClient()
 
 	initializeHealthChecks()
 }
@@ -189,6 +194,14 @@ func initializeHealthChecks() {
 	go redisHealthCheck()
 	go harvestRedisHealthCheck()
 	go postgresHealthCheck()
+}
+
+func initializeFilesClient() {
+	conn, err := grpc.Dial("10.10.0.228:1321", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	FilesService = pb.NewFileClient(conn)
 }
 
 func boolConvert(s string) bool {
