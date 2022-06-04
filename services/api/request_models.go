@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm"
@@ -334,8 +335,9 @@ type CreateFileVersionRequest struct {
 }
 
 type CreateAvatarRequest struct {
+	ID            string               `json:"id"`
 	AssetUrl      string               `json:"assetUrl"`
-	AssetVersion  string               `json:"assetVersion"` // WHY IS THIS A STRING?
+	AssetVersion  string               `json:"assetVersion"`
 	AuthorId      string               `json:"authorId"`
 	AuthorName    string               `json:"authorName"`
 	CreatedAt     string               `json:"created_at"`
@@ -359,24 +361,30 @@ func (r *CreateAvatarRequest) HasValidUrls() bool {
 
 	apiUrl, err = url.Parse(config.ApiConfiguration.ApiUrl.Get())
 	if err != nil {
+		fmt.Println("Internal api url was invalid:", err)
 		return false
 	}
 
 	assetUrl, err = url.Parse(r.AssetUrl)
 	if err != nil {
+		fmt.Println("Asset url was invalid:", err)
 		return false
 	}
 
 	imageUrl, err = url.Parse(r.AssetUrl)
 	if err != nil {
+		fmt.Println("Image url was invalid:", err)
 		return false
 	}
 
 	if apiUrl.Host != assetUrl.Host || apiUrl.Host != imageUrl.Host {
+		fmt.Printf("%s != %s || %s != %s\n", apiUrl.Host, assetUrl.Host, apiUrl.Host, imageUrl.Host)
 		return false
 	}
 
 	if !strings.HasPrefix(assetUrl.Path, "/api/1/file/") || !strings.HasPrefix(imageUrl.Path, "/api/1/file/") {
+		fmt.Println("Prefix did not match /api/1/file/, Asset url path was:", assetUrl.Path)
+		fmt.Println("Prefix did not match /api/1/file/, Image url path was:", imageUrl.Path)
 		return false
 	}
 
@@ -395,19 +403,19 @@ func (r *CreateAvatarRequest) ParseTags() []string {
 }
 
 func (r *CreateAvatarRequest) GetFileID() (string, error) {
-	re := regexp.MustCompile(`\/api\/1\/file\/(file_[\dA-F]{8}-[\dA-F]{4}-4[\dA-F]{3}-[89AB][\dA-F]{3}-[\dA-F]{12})`)
+	re := regexp.MustCompile(`(?i)\/api\/1\/file\/(file_[\dA-F]{8}-[\dA-F]{4}-4[\dA-F]{3}-[89AB][\dA-F]{3}-[\dA-F]{12})`)
 	val := re.FindStringSubmatch(r.AssetUrl)
 	if val == nil {
 		return "", models.ErrUrlParseFailed
 	}
-	return val[0], nil
+	return val[1], nil
 }
 
 func (r *CreateAvatarRequest) GetImageID() (string, error) {
-	re := regexp.MustCompile(`\/api\/1\/file\/(file_[\dA-F]{8}-[\dA-F]{4}-4[\dA-F]{3}-[89AB][\dA-F]{3}-[\dA-F]{12})`)
+	re := regexp.MustCompile(`(?i)\/api\/1\/file\/(file_[\dA-F]{8}-[\dA-F]{4}-4[\dA-F]{3}-[89AB][\dA-F]{3}-[\dA-F]{12})`)
 	val := re.FindStringSubmatch(r.ImageUrl)
 	if val == nil {
 		return "", models.ErrUrlParseFailed
 	}
-	return val[0], nil
+	return val[1], nil
 }

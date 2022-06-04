@@ -18,6 +18,7 @@ message GetFileResponse {
 message CreateFileRequest {
     required string name = 1;
     required string md5 = 2;
+    required string content_type = 3;
 }
 
 message CreateFileResponse {

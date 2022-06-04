@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lib/pq"
 	"gitlab.com/george/shoya-go/config"
@@ -191,6 +192,7 @@ badRequest:
 func postAvatars(c *fiber.Ctx) error {
 	var r *CreateAvatarRequest
 	var u = c.Locals("user").(*models.User)
+	var a *models.Avatar
 	var fileId string
 	var imageId string
 	var aa *models.APIAvatarWithPackages
@@ -204,18 +206,27 @@ func postAvatars(c *fiber.Ctx) error {
 		return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
 	}
 
+	if a, err = models.GetAvatarById(r.ID); a != nil || err == nil {
+		return c.Status(403).JSON(models.MakeErrorResponse("not allowed to overwrite an already-existing avatar", 403))
+	}
+
 	if !r.HasValidUrls() {
 		return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
 	}
 
 	if fileId, err = r.GetFileID(); err != nil {
+		fmt.Println("Could not get file ID from request:", err)
 		return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
 	}
 
 	if imageId, err = r.GetImageID(); err != nil {
+		fmt.Println("Could not get image ID from request:", err)
 		return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
 	}
-	a := &models.Avatar{
+
+	fmt.Println("File ID:", fileId)
+	fmt.Println("Image ID:", imageId)
+	a = &models.Avatar{
 		AuthorID:      u.ID,
 		Name:          r.Name,
 		Description:   r.Description,
@@ -224,8 +235,9 @@ func postAvatars(c *fiber.Ctx) error {
 		Tags:          r.ParseTags(),
 		Version:       0,
 	}
+	a.ID = r.ID
 
-	if tx := config.DB.Create(&a); tx.Error != nil {
+	if tx := config.DB.Omit(clause.Associations).Create(&a); tx.Error != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(tx.Error.Error(), 500))
 	}
 
@@ -288,6 +300,7 @@ func getAvatar(c *fiber.Ctx) error {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
+	fmt.Printf("Avatar: %+v\n", a)
 	if isGameRequest {
 		aap, err = a.GetAPIAvatarWithPackages()
 	} else {

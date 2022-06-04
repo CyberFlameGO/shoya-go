@@ -366,7 +366,7 @@ func putFileVersionDescriptorStart(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := FilesService.CreateFile(ctx, &pb.CreateFileRequest{Name: &fileName, Md5: &fileMd5})
+	r, err := FilesService.CreateFile(ctx, &pb.CreateFileRequest{Name: &fileName, Md5: &fileMd5, ContentType: &f.MimeType})
 	if err != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
@@ -423,6 +423,18 @@ func putFileVersionDescriptorFinish(c *fiber.Ctx) error {
 	fd.Status = models.FileUploadStatusComplete
 	if config.DB.Omit(clause.Associations).Updates(fd).Error != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse("could not update database object", 500))
+	}
+
+	if ver.FileDescriptor.Status == models.FileUploadStatusComplete && ver.SignatureDescriptor.Status == models.FileUploadStatusComplete {
+		ver.Status = models.FileUploadStatusComplete
+		if config.DB.Omit(clause.Associations).Updates(ver).Error != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse("could not update database object", 500))
+		}
+	} else if ver.DeltaDescriptor.Status == models.FileUploadStatusComplete && ver.SignatureDescriptor.Status == models.FileUploadStatusComplete {
+		ver.Status = models.FileUploadStatusComplete
+		if config.DB.Omit(clause.Associations).Updates(ver).Error != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse("could not update database object", 500))
+		}
 	}
 
 	return c.JSON(ver.GetAPIFileVersion())

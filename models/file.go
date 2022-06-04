@@ -49,7 +49,7 @@ type File struct {
 	Name      string        `json:"name"`
 	MimeType  string        `json:"mimeType"`
 	Extension string        `json:"extension"`
-	Versions  []FileVersion `json:"versions" gorm:"foreignKey:FileID"`
+	Versions  []FileVersion `json:"versions" gorm:"foreignKey:FileID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (f *File) BeforeCreate(*gorm.DB) (err error) {

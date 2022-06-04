@@ -13,11 +13,12 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
+	"net/http"
 	"net/url"
 	"time"
 )
 
-var MinioClient *minio.Client
+var MinioClient *minio.Core
 
 type server struct {
 	pb.UnimplementedFileServer
@@ -72,7 +73,7 @@ func initializeRedis() {
 func initializeApiConfig() {
 	h, err := harvester.New(&config.ApiConfiguration).
 		WithRedisSeed(config.HarvestRedisClient).
-		WithRedisMonitor(config.HarvestRedisClient, time.Duration(config.RuntimeConfig.Api.ApiConfigRefreshRateMs)*time.Millisecond).
+		WithRedisMonitor(config.HarvestRedisClient, 50*time.Millisecond).
 		Create()
 	if err != nil {
 		panic(fmt.Errorf("failed to set up configuration harvester: %v", err))
@@ -96,8 +97,9 @@ func (s *server) GetFile(ctx context.Context, in *pb.GetFileRequest) (*pb.GetFil
 }
 
 func (s *server) CreateFile(ctx context.Context, in *pb.CreateFileRequest) (*pb.CreateFileResponse, error) {
-	log.Printf("Received: %v", in.GetName())
-	u, err := MinioClient.PresignedPutObject(context.TODO(), "shoya-test", in.GetName(), time.Hour*3)
+	headers := http.Header{}
+	headers.Add("Content-MD5", in.GetMd5())
+	u, err := MinioClient.PresignHeader(context.TODO(), http.MethodPut, config.ApiConfiguration.FilesBucket.Get(), in.GetName(), time.Hour*3, url.Values{}, headers)
 	if err != nil {
 		log.Printf("[%v] [CreateFile] [ERROR]: %v", time.Now(), err)
 		return nil, err
@@ -109,7 +111,7 @@ func (s *server) CreateFile(ctx context.Context, in *pb.CreateFileRequest) (*pb.
 func initMinioClient() {
 	var err error
 	// Initialize minio client object.
-	MinioClient, err = minio.New(config.ApiConfiguration.FilesS3Endpoint.Get(), &minio.Options{
+	MinioClient, err = minio.NewCore(config.ApiConfiguration.FilesS3Endpoint.Get(), &minio.Options{
 		Creds:  credentials.NewStaticV4(config.ApiConfiguration.FilesAccessKey.Get(), config.ApiConfiguration.FilesSecretKey.Get(), ""),
 		Secure: false,
 	})

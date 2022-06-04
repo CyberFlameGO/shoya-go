@@ -31,6 +31,7 @@ type ApiConfig struct {
 	FilesS3Endpoint hsync.String `json:"-" seed:"" redis:"{config}:filesS3Endpoint"`
 	FilesAccessKey  hsync.String `json:"-" seed:"" redis:"{config}:filesAccessKey"`
 	FilesSecretKey  hsync.Secret `json:"-" seed:"" redis:"{config}:filesSecretKey"`
+	FilesBucket     hsync.String `json:"-" seed:"" redis:"{config}:filesBucket"`
 	// Photon Room Settings
 	PhotonSettingMaxAccountsPerIpAddress hsync.Int64 `seed:"5" json:"maxAccountsPerIp" redis:"{config}:photonSettingMaxAccountsPerIp"`
 	// Connector Mod AutoConfig Functionality

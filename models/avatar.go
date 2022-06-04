@@ -23,14 +23,22 @@ type Avatar struct {
 }
 
 func (a *Avatar) BeforeCreate(*gorm.DB) (err error) {
-	a.ID = "avtr_" + uuid.New().String()
+	if a.ID != "" {
+		a.ID = "avtr_" + uuid.New().String()
+	}
 	return
 }
 
 func GetAvatarById(id string) (*Avatar, error) {
 	var a *Avatar
 	tx := config.DB.Preload(clause.Associations).
+		Preload("Image").
+		Preload("Image.Versions").
+		Preload("Image.Versions.FileDescriptor").
+		Preload("Image.Versions.DeltaDescriptor").
+		Preload("Image.Versions.SignatureDescriptor").
 		Preload("UnityPackages.File").
+		Preload("UnityPackages.File.Versions").
 		Preload("UnityPackages.File.Versions.FileDescriptor").
 		Preload("UnityPackages.File.Versions.DeltaDescriptor").
 		Preload("UnityPackages.File.Versions.SignatureDescriptor").
