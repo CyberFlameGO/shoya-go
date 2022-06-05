@@ -49,7 +49,15 @@ func getWorlds(c *fiber.Ctx) error {
 	// Query preparation
 	var tx = config.DB.Model(&models.World{}).
 		Preload("Image").
-		Preload("UnityPackages.File")
+		Preload("Image.Versions").
+		Preload("Image.Versions.FileDescriptor").
+		Preload("Image.Versions.DeltaDescriptor").
+		Preload("Image.Versions.SignatureDescriptor").
+		Preload("UnityPackages.File").
+		Preload("UnityPackages.File.Versions").
+		Preload("UnityPackages.File.Versions.FileDescriptor").
+		Preload("UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("UnityPackages.File.Versions.SignatureDescriptor")
 
 	// Query parameter setup
 	if _n := c.Query("n"); _n != "" {

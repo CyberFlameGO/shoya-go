@@ -42,7 +42,15 @@ func getAvatars(c *fiber.Ctx) error {
 
 	var tx = config.DB.Model(&models.Avatar{}).
 		Preload("Image").
-		Preload("UnityPackages.File")
+		Preload("Image.Versions").
+		Preload("Image.Versions.FileDescriptor").
+		Preload("Image.Versions.DeltaDescriptor").
+		Preload("Image.Versions.SignatureDescriptor").
+		Preload("UnityPackages.File").
+		Preload("UnityPackages.File.Versions").
+		Preload("UnityPackages.File.Versions.FileDescriptor").
+		Preload("UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("UnityPackages.File.Versions.SignatureDescriptor")
 
 	if c.Query("n") != "" {
 		atoi, err := strconv.Atoi(c.Query("n"))
@@ -224,8 +232,6 @@ func postAvatars(c *fiber.Ctx) error {
 		return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
 	}
 
-	fmt.Println("File ID:", fileId)
-	fmt.Println("Image ID:", imageId)
 	a = &models.Avatar{
 		AuthorID:      u.ID,
 		Name:          r.Name,
