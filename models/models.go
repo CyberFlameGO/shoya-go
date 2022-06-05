@@ -98,7 +98,8 @@ func (u *AvatarUnityPackage) GetAPIUnityPackage() *APIUnityPackage {
 	return &APIUnityPackage{
 		ID:              u.ID,
 		CreatedAt:       time.Unix(u.CreatedAt, 0).UTC().Format(time.RFC3339Nano),
-		AssetUrl:        u.File.GetLatestVersion().GetFileUrl(),
+		AssetUrl:        u.File.GetVersion(u.Version).GetFileUrl(),
+		AssetVersion:    u.Version,
 		Platform:        u.Platform,
 		UnityVersion:    u.UnityVersion,
 		UnitySortNumber: u.UnitySortNumber,

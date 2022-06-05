@@ -178,7 +178,11 @@ func postFile(c *fiber.Ctx) error {
 
 func deleteFile(c *fiber.Ctx) error {
 	var f = c.Locals("file").(*models.File)
-	tx := config.DB.Unscoped().Delete(&f)
+	tx := config.DB.Unscoped().Preload(clause.Associations).
+		Preload("Versions.FileDescriptor").
+		Preload("Versions.DeltaDescriptor").
+		Preload("Versions.SignatureDescriptor").
+		Delete(&f)
 	if tx.Error != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(tx.Error.Error(), 500))
 	}

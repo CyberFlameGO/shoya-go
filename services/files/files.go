@@ -15,6 +15,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -86,7 +87,8 @@ func initializeApiConfig() {
 }
 
 func (s *server) GetFile(ctx context.Context, in *pb.GetFileRequest) (*pb.GetFileResponse, error) {
-	f, err := MinioClient.PresignedGetObject(context.TODO(), config.ApiConfiguration.FilesBucket.Get(), in.GetName(), time.Minute*5, make(url.Values))
+	headers := http.Header{}
+	f, err := MinioClient.PresignHeader(context.TODO(), http.MethodGet, config.ApiConfiguration.FilesS3Bucket.Get(), in.GetName(), time.Minute*5, make(url.Values), headers)
 	if err != nil {
 		log.Printf("[%v] [GetFile] [ERROR]: %v", time.Now(), err)
 		return nil, err
@@ -99,7 +101,7 @@ func (s *server) GetFile(ctx context.Context, in *pb.GetFileRequest) (*pb.GetFil
 func (s *server) CreateFile(ctx context.Context, in *pb.CreateFileRequest) (*pb.CreateFileResponse, error) {
 	headers := http.Header{}
 	headers.Add("Content-MD5", in.GetMd5())
-	u, err := MinioClient.PresignHeader(context.TODO(), http.MethodPut, config.ApiConfiguration.FilesBucket.Get(), in.GetName(), time.Hour*3, url.Values{}, headers)
+	u, err := MinioClient.PresignHeader(context.TODO(), http.MethodPut, config.ApiConfiguration.FilesS3Bucket.Get(), in.GetName(), time.Hour*3, url.Values{}, headers)
 	if err != nil {
 		log.Printf("[%v] [CreateFile] [ERROR]: %v", time.Now(), err)
 		return nil, err
@@ -114,11 +116,14 @@ func (s *server) HealthCheck(ctx context.Context, in *pb.HealthCheckRequest) (*p
 }
 
 func initMinioClient() {
+	var endpointUrl = config.ApiConfiguration.FilesS3Endpoint.Get()
+	var endpointIsSecure = strings.Contains(endpointUrl, "https://")
+	var endpoint = strings.ReplaceAll(strings.ReplaceAll(endpointUrl, "https://", ""), "http://", "")
 	var err error
 	// Initialize minio client object.
-	MinioClient, err = minio.NewCore(config.ApiConfiguration.FilesS3Endpoint.Get(), &minio.Options{
-		Creds:  credentials.NewStaticV4(config.ApiConfiguration.FilesAccessKey.Get(), config.ApiConfiguration.FilesSecretKey.Get(), ""),
-		Secure: false,
+	MinioClient, err = minio.NewCore(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(config.ApiConfiguration.FilesS3AccessKey.Get(), config.ApiConfiguration.FilesS3SecretKey.Get(), ""),
+		Secure: endpointIsSecure,
 	})
 	if err != nil {
 		log.Fatalln(err)

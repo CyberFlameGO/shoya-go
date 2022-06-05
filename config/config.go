@@ -27,11 +27,11 @@ type ApiConfig struct {
 	DiscoveryServiceUrl     hsync.String      `json:"-" seed:"http://discovery:9213" redis:"{config}:discoveryServiceUrl"`
 	DiscoveryServiceApiKey  hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:discoveryServiceApiKey"`
 	// Files service
-	FilesEndpoint   hsync.String `json:"-" seed:"" redis:"{config}:filesEndpoint"`
-	FilesS3Endpoint hsync.String `json:"-" seed:"" redis:"{config}:filesS3Endpoint"`
-	FilesAccessKey  hsync.String `json:"-" seed:"" redis:"{config}:filesAccessKey"`
-	FilesSecretKey  hsync.Secret `json:"-" seed:"" redis:"{config}:filesSecretKey"`
-	FilesBucket     hsync.String `json:"-" seed:"" redis:"{config}:filesBucket"`
+	FilesEndpoint    hsync.String `json:"-" seed:"" redis:"{config}:filesEndpoint"`
+	FilesS3Endpoint  hsync.String `json:"-" seed:"" redis:"{config}:filesS3Endpoint"`
+	FilesS3AccessKey hsync.String `json:"-" seed:"" redis:"{config}:filesS3AccessKey"`
+	FilesS3SecretKey hsync.Secret `json:"-" seed:"" redis:"{config}:filesS3SecretKey"`
+	FilesS3Bucket    hsync.String `json:"-" seed:"" redis:"{config}:filesS3Bucket"`
 	// Photon Room Settings
 	PhotonSettingMaxAccountsPerIpAddress hsync.Int64 `seed:"5" json:"maxAccountsPerIp" redis:"{config}:photonSettingMaxAccountsPerIp"`
 	// Connector Mod AutoConfig Functionality

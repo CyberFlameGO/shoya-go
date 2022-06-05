@@ -18,6 +18,7 @@ func avatarsRoutes(router *fiber.App) {
 	avatars.Get("/favorites", getAvatarFavorites)
 	avatars.Get("/licensed", getLicensedAvatars)
 	avatars.Get("/:id", getAvatar)
+	avatars.Put("/:id", putAvatar)
 	avatars.Put("/:id/select", selectAvatar)
 }
 
@@ -223,12 +224,10 @@ func postAvatars(c *fiber.Ctx) error {
 	}
 
 	if fileId, err = r.GetFileID(); err != nil {
-		fmt.Println("Could not get file ID from request:", err)
 		return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
 	}
 
 	if imageId, err = r.GetImageID(); err != nil {
-		fmt.Println("Could not get image ID from request:", err)
 		return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
 	}
 
@@ -272,6 +271,112 @@ func postAvatars(c *fiber.Ctx) error {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
+	return c.JSON(aa)
+}
+
+func putAvatar(c *fiber.Ctx) error {
+	var r *CreateAvatarRequest
+	var u = c.Locals("user").(*models.User)
+	var a *models.Avatar
+	var fileId string
+	var imageId string
+	var changes = map[string]interface{}{}
+	var aa *models.APIAvatarWithPackages
+	var unp *models.AvatarUnityPackage
+	var lunp *models.APIUnityPackage
+	var fv int
+	var err error
+
+	if !u.CanUploadAvatars() {
+		return c.Status(403).JSON(models.MakeErrorResponse("cannot upload avatars at this time", 403))
+	}
+
+	if err = c.BodyParser(&r); err != nil {
+		return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
+	}
+
+	if a, err = models.GetAvatarById(c.Params("id")); a == nil || err != nil {
+		if err == models.ErrAvatarNotFound {
+			return c.Status(404).JSON(models.ErrAvatarNotFoundResponse)
+		}
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	if a.AuthorID != u.ID {
+		return c.Status(403).JSON(models.MakeErrorResponse("not authorized to update this avatar", 403))
+	}
+
+	if r.AssetUrl != "" || r.ImageUrl != "" {
+		if !r.HasValidUrls() {
+			return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
+		}
+
+		if r.AssetUrl != "" {
+			if fileId, err = r.GetFileID(); err != nil {
+				return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
+			}
+		}
+
+		if r.ImageUrl != "" {
+			if imageId, err = r.GetImageID(); err != nil {
+				return c.Status(400).JSON(models.MakeErrorResponse("bad request", 400))
+			}
+		}
+	}
+
+	if fileId != "" {
+		lv := 0
+		lvidx := 0
+		for idx, vunp := range a.GetUnityPackages() {
+			if vunp.AssetVersion > lv {
+				lv = vunp.AssetVersion
+				lvidx = idx
+			}
+		}
+
+		lunp = &a.GetUnityPackages()[lvidx]
+		if r.UnityVersion == "" {
+			r.UnityVersion = lunp.UnityVersion
+		}
+
+		fv, err = r.GetFileVersion()
+		if err != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
+		unp = &models.AvatarUnityPackage{
+			BelongsToAssetID: a.ID,
+			FileID:           fileId,
+			Version:          fv,
+			Platform:         "standalonewindows",
+			UnityVersion:     r.UnityVersion,
+		}
+
+		config.DB.Create(&unp)
+		a, err = models.GetAvatarById(a.ID)
+		if err != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
+	}
+
+	if imageId != "" {
+		changes["image_id"] = imageId
+	}
+
+	if r.Name != "" {
+		changes["name"] = r.Name
+	}
+
+	if r.Description != "" {
+		changes["description"] = r.Description
+	}
+
+	if err = config.DB.Omit(clause.Associations).Model(&a).Updates(changes).Error; err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	if aa, err = a.GetAPIAvatarWithPackages(); err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
 	return c.JSON(aa)
 }
 
