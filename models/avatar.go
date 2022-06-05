@@ -23,7 +23,7 @@ type Avatar struct {
 }
 
 func (a *Avatar) BeforeCreate(*gorm.DB) (err error) {
-	if a.ID != "" {
+	if a.ID == "" {
 		a.ID = "avtr_" + uuid.New().String()
 	}
 	return
