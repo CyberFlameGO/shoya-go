@@ -33,30 +33,14 @@ func fileRoutes(router *fiber.App) {
 func createFile(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
 	var r CreateFileRequest
-	var f models.File
-	var fv models.FileVersion
+	var f *models.File
 	var err error
 
 	if err = c.BodyParser(&r); err != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse("failed to parse request body", 500))
 	}
 
-	f = models.File{
-		OwnerID:   u.ID,
-		Name:      r.Name,
-		MimeType:  r.MimeType,
-		Extension: r.Extension,
-	}
-	config.DB.Create(&f)
-
-	fv = models.FileVersion{
-		FileID:  f.ID,
-		Version: 0,
-		Status:  models.FileUploadStatusComplete,
-	}
-	config.DB.Create(&fv)
-
-	f.Versions = []models.FileVersion{fv}
+	f = models.NewFile(r.Name, u.ID, r.MimeType, r.Extension)
 	return c.JSON(f.GetAPIFile())
 }
 

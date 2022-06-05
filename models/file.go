@@ -57,6 +57,27 @@ func (f *File) BeforeCreate(*gorm.DB) (err error) {
 	return
 }
 
+func NewFile(fileName, ownerId, mimeType, extension string) *File {
+	f := File{
+		OwnerID:   ownerId,
+		Name:      fileName,
+		MimeType:  mimeType,
+		Extension: extension,
+	}
+	config.DB.Create(&f)
+
+	fv := FileVersion{
+		FileID:  f.ID,
+		Version: 0,
+		Status:  FileUploadStatusComplete,
+	}
+	config.DB.Create(&fv)
+
+	f.Versions = []FileVersion{fv}
+
+	return &f
+}
+
 func GetFile(id string) (*File, error) {
 	var f *File
 	var err error
