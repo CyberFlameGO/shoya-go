@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lib/pq"
 	"gitlab.com/george/shoya-go/config"
@@ -411,7 +410,6 @@ func getAvatar(c *fiber.Ctx) error {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
-	fmt.Printf("Avatar: %+v\n", a)
 	if isGameRequest {
 		aap, err = a.GetAPIAvatarWithPackages()
 	} else {
