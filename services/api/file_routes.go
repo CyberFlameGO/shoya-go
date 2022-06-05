@@ -15,7 +15,7 @@ import (
 )
 
 func fileRoutes(router *fiber.App) {
-	file := router.Group("/file")
+	file := router.Group("/file", filesServiceHealthMiddleware)
 	file.Post("/", ApiKeyMiddleware, AuthMiddleware, createFile)
 	file.Get("/:id", getFile)
 	file.Post("/:id", ApiKeyMiddleware, AuthMiddleware, IsFileOwnerMiddleware, postFile)
@@ -458,6 +458,14 @@ func IsFileOwnerMiddleware(c *fiber.Ctx) error {
 	}
 
 	c.Locals("file", f)
+
+	return c.Next()
+}
+
+func filesServiceHealthMiddleware(c *fiber.Ctx) error {
+	if !healthStatus.Files.Ok {
+		return c.Status(503).JSON(models.MakeErrorResponse(fmt.Sprintf("files service failed with err: %s", healthStatus.Files.Error), 503))
+	}
 
 	return c.Next()
 }

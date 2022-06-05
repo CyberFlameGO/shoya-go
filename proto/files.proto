@@ -3,8 +3,14 @@ syntax = "proto2";
 option go_package = "gitlab.com/george/shoya-go/gen/v1/proto";
 
 service File {
+    rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse) {}
     rpc CreateFile (CreateFileRequest) returns (CreateFileResponse) {}
     rpc GetFile (GetFileRequest) returns (GetFileResponse) {}
+}
+
+message HealthCheckRequest {}
+message HealthCheckResponse {
+    required bool ok = 1;
 }
 
 message GetFileRequest {

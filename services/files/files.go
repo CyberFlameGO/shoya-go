@@ -86,7 +86,7 @@ func initializeApiConfig() {
 }
 
 func (s *server) GetFile(ctx context.Context, in *pb.GetFileRequest) (*pb.GetFileResponse, error) {
-	f, err := MinioClient.PresignedGetObject(context.TODO(), "shoya-test", in.GetName(), time.Minute*5, make(url.Values))
+	f, err := MinioClient.PresignedGetObject(context.TODO(), config.ApiConfiguration.FilesBucket.Get(), in.GetName(), time.Minute*5, make(url.Values))
 	if err != nil {
 		log.Printf("[%v] [GetFile] [ERROR]: %v", time.Now(), err)
 		return nil, err
@@ -106,6 +106,11 @@ func (s *server) CreateFile(ctx context.Context, in *pb.CreateFileRequest) (*pb.
 	}
 	uploadUrl := u.String()
 	return &pb.CreateFileResponse{Url: &uploadUrl}, nil
+}
+
+func (s *server) HealthCheck(ctx context.Context, in *pb.HealthCheckRequest) (*pb.HealthCheckResponse, error) {
+	ok := true
+	return &pb.HealthCheckResponse{Ok: &ok}, nil
 }
 
 func initMinioClient() {

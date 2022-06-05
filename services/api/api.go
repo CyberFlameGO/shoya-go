@@ -194,6 +194,7 @@ func initializeHealthChecks() {
 	go redisHealthCheck()
 	go harvestRedisHealthCheck()
 	go postgresHealthCheck()
+	go filesHealthCheck()
 }
 
 func initializeFilesClient() {
