@@ -155,12 +155,12 @@ func getAvatars(c *fiber.Ctx) error {
 	}
 
 	if searchReleaseStatus != models.ReleaseStatusPublic {
-		if searchReleaseStatus == models.ReleaseStatusHidden && u.DeveloperType != "internal" {
+		if searchReleaseStatus == models.ReleaseStatusHidden && !u.IsStaff() {
 			goto badRequest
 		}
 
 		if searchReleaseStatus == models.ReleaseStatusPrivate &&
-			(searchUser != u.ID || !searchSelf) && u.DeveloperType != "internal" {
+			(searchUser != u.ID || !searchSelf) && !u.IsStaff() {
 			goto badRequest
 		}
 	}
@@ -235,11 +235,23 @@ func postAvatars(c *fiber.Ctx) error {
 		Name:          r.Name,
 		Description:   r.Description,
 		ImageID:       imageId,
-		ReleaseStatus: r.ReleaseStatus,
+		ReleaseStatus: models.ReleaseStatusPrivate,
 		Tags:          r.ParseTags(),
 		Version:       0,
 	}
 	a.ID = r.ID
+	if r.ReleaseStatus != "" {
+		switch models.ReleaseStatus(r.ReleaseStatus) {
+		case models.ReleaseStatusPrivate:
+			a.ReleaseStatus = models.ReleaseStatusPrivate
+		case models.ReleaseStatusPublic:
+			a.ReleaseStatus = models.ReleaseStatusPublic
+		case models.ReleaseStatusHidden:
+			if u.IsStaff() {
+				a.ReleaseStatus = models.ReleaseStatusHidden
+			}
+		}
+	}
 
 	if tx := config.DB.Omit(clause.Associations).Create(&a); tx.Error != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(tx.Error.Error(), 500))
@@ -369,6 +381,19 @@ func putAvatar(c *fiber.Ctx) error {
 		changes["description"] = r.Description
 	}
 
+	if r.ReleaseStatus != "" {
+		switch models.ReleaseStatus(r.ReleaseStatus) {
+		case models.ReleaseStatusPrivate:
+			changes["release_status"] = models.ReleaseStatusPrivate
+		case models.ReleaseStatusPublic:
+			changes["release_status"] = models.ReleaseStatusPublic
+		case models.ReleaseStatusHidden:
+			if u.IsStaff() {
+				changes["release_status"] = models.ReleaseStatusHidden
+			}
+		}
+	}
+
 	if err = config.DB.Omit(clause.Associations).Model(&a).Updates(changes).Error; err != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
@@ -396,6 +421,7 @@ func getLicensedAvatars(c *fiber.Ctx) error {
 // getAvatar | GET /avatars/:id
 // Returns an avatar.
 func getAvatar(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
 	var isGameRequest = c.Locals("isGameRequest").(bool)
 	var a *models.Avatar
 	var aa *models.APIAvatar
@@ -408,6 +434,10 @@ func getAvatar(c *fiber.Ctx) error {
 		}
 
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	if a.ReleaseStatus == models.ReleaseStatusHidden && !u.IsStaff() {
+		return c.Status(404).JSON(models.ErrAvatarNotFoundResponse)
 	}
 
 	if isGameRequest {
@@ -440,6 +470,10 @@ func selectAvatar(c *fiber.Ctx) error {
 		}
 
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	if a.ReleaseStatus == models.ReleaseStatusHidden && !u.IsStaff() {
+		return c.Status(404).JSON(models.ErrAvatarNotFoundResponse)
 	}
 
 	if !u.IsStaff() && a.ReleaseStatus != models.ReleaseStatusPublic && u.ID != a.AuthorID {
