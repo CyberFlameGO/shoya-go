@@ -72,9 +72,25 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 	var u models.User
 	tx := config.DB.Model(&models.User{}).Preload(clause.Associations).
 		Preload("CurrentAvatar.Image").
-		Preload("FallbackAvatar.Image").
+		Preload("CurrentAvatar.Image.Versions").
+		Preload("CurrentAvatar.Image.Versions.FileDescriptor").
+		Preload("CurrentAvatar.Image.Versions.DeltaDescriptor").
+		Preload("CurrentAvatar.Image.Versions.SignatureDescriptor").
 		Preload("CurrentAvatar.UnityPackages.File").
+		Preload("CurrentAvatar.UnityPackages.File.Versions").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.FileDescriptor").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.SignatureDescriptor").
+		Preload("FallbackAvatar.Image").
+		Preload("FallbackAvatar.Image.Versions").
+		Preload("FallbackAvatar.Image.Versions.FileDescriptor").
+		Preload("FallbackAvatar.Image.Versions.DeltaDescriptor").
+		Preload("FallbackAvatar.Image.Versions.SignatureDescriptor").
 		Preload("FallbackAvatar.UnityPackages.File").
+		Preload("FallbackAvatar.UnityPackages.File.Versions").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.FileDescriptor").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.SignatureDescriptor").
 		Where("id = ?", claims.UserId).First(&u)
 	if tx.Error != nil {
 		return c.JSON(models.PhotonValidateJoinJWTResponse{Valid: false})
@@ -99,6 +115,7 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
 		DiscoveryService.AddPlayerToInstance(u.ID, l)
 	}
+
 	return c.JSON(r)
 }
 
@@ -132,9 +149,25 @@ func doPropertyUpdate(c *fiber.Ctx) error {
 	var u models.User
 	tx := config.DB.Model(&models.User{}).Preload(clause.Associations).
 		Preload("CurrentAvatar.Image").
-		Preload("FallbackAvatar.Image").
+		Preload("CurrentAvatar.Image.Versions").
+		Preload("CurrentAvatar.Image.Versions.FileDescriptor").
+		Preload("CurrentAvatar.Image.Versions.DeltaDescriptor").
+		Preload("CurrentAvatar.Image.Versions.SignatureDescriptor").
 		Preload("CurrentAvatar.UnityPackages.File").
+		Preload("CurrentAvatar.UnityPackages.File.Versions").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.FileDescriptor").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.SignatureDescriptor").
+		Preload("FallbackAvatar.Image").
+		Preload("FallbackAvatar.Image.Versions").
+		Preload("FallbackAvatar.Image.Versions.FileDescriptor").
+		Preload("FallbackAvatar.Image.Versions.DeltaDescriptor").
+		Preload("FallbackAvatar.Image.Versions.SignatureDescriptor").
 		Preload("FallbackAvatar.UnityPackages.File").
+		Preload("FallbackAvatar.UnityPackages.File.Versions").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.FileDescriptor").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.SignatureDescriptor").
 		Where("id = ?", uid).First(&u)
 	if tx.Error != nil {
 		return c.JSON(models.PhotonValidateJoinJWTResponse{Valid: false})

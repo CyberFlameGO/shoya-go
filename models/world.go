@@ -5,6 +5,7 @@ import (
 	"github.com/lib/pq"
 	"gitlab.com/george/shoya-go/config"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"time"
 )
 
@@ -25,6 +26,30 @@ type World struct {
 func (w *World) BeforeCreate(*gorm.DB) (err error) {
 	w.ID = "wrld_" + uuid.New().String()
 	return
+}
+
+func GetWorldById(id string) (*World, error) {
+	var w *World
+	tx := config.DB.Preload(clause.Associations).
+		Preload("Image").
+		Preload("Image.Versions").
+		Preload("Image.Versions.FileDescriptor").
+		Preload("Image.Versions.DeltaDescriptor").
+		Preload("Image.Versions.SignatureDescriptor").
+		Preload("UnityPackages.File").
+		Preload("UnityPackages.File.Versions").
+		Preload("UnityPackages.File.Versions.FileDescriptor").
+		Preload("UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("UnityPackages.File.Versions.SignatureDescriptor").
+		Where("id = ?", id).First(&w)
+	if tx.Error != nil {
+		if tx.Error == gorm.ErrRecordNotFound {
+			return nil, ErrWorldNotFound
+		}
+		return nil, tx.Error
+	}
+
+	return w, nil
 }
 
 // GetAuthor returns a pointer to the world author's User.

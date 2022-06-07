@@ -96,6 +96,7 @@ var (
 	ErrInvalidJoinJWT                                = errors.New("invalid join token")
 	ErrUserNotFound                                  = errors.New("user not found")
 	ErrAvatarNotFound                                = errors.New("avatar not found")
+	ErrWorldNotFound                                 = errors.New("world not found")
 	ErrPasswordTooSmall                              = errors.New("password too small")
 	ErrInvalidAuthCookie                             = errors.New("invalid auth cookie")
 	ErrFileNotFound                                  = errors.New("file version not found")

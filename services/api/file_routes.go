@@ -15,6 +15,9 @@ import (
 )
 
 func fileRoutes(router *fiber.App) {
+	image := router.Group("/image", filesServiceHealthMiddleware)
+	image.Get("/:id/:version/:size", getFileVersion) // TODO: I guess we're making that cancelled thumbnail service at some point
+
 	file := router.Group("/file", filesServiceHealthMiddleware)
 	file.Post("/", ApiKeyMiddleware, AuthMiddleware, createFile)
 	file.Get("/:id", getFile)

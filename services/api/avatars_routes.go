@@ -204,6 +204,8 @@ func postAvatars(c *fiber.Ctx) error {
 	var fileId string
 	var imageId string
 	var aa *models.APIAvatarWithPackages
+	var av int
+	var fv int
 	var err error
 
 	if !u.CanUploadAvatars() {
@@ -257,10 +259,18 @@ func postAvatars(c *fiber.Ctx) error {
 		return c.Status(500).JSON(models.MakeErrorResponse(tx.Error.Error(), 500))
 	}
 
+	if av, err = strconv.Atoi(r.AssetVersion); err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+	if fv, err = r.GetFileVersion(); err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
 	unp := &models.AvatarUnityPackage{
 		BelongsToAssetID: a.ID,
 		FileID:           fileId,
-		Version:          1,
+		FileVersion:      fv,
+		Version:          av,
 		Platform:         r.Platform,
 		UnityVersion:     r.UnityVersion,
 		UnitySortNumber:  0,
@@ -295,6 +305,7 @@ func putAvatar(c *fiber.Ctx) error {
 	var aa *models.APIAvatarWithPackages
 	var unp *models.AvatarUnityPackage
 	var lunp *models.APIUnityPackage
+	var av int
 	var fv int
 	var err error
 
@@ -350,14 +361,18 @@ func putAvatar(c *fiber.Ctx) error {
 			r.UnityVersion = lunp.UnityVersion
 		}
 
-		fv, err = r.GetFileVersion()
-		if err != nil {
+		if av, err = strconv.Atoi(r.AssetVersion); err != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
+
+		if fv, err = r.GetFileVersion(); err != nil {
 			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 		}
 		unp = &models.AvatarUnityPackage{
 			BelongsToAssetID: a.ID,
 			FileID:           fileId,
-			Version:          fv,
+			FileVersion:      fv,
+			Version:          av,
 			Platform:         "standalonewindows",
 			UnityVersion:     r.UnityVersion,
 		}

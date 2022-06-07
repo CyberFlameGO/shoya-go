@@ -46,7 +46,11 @@ func getUsers(c *fiber.Ctx) error {
 	var numberOfUsersToSearch = 60
 
 	tx := config.DB.Model(models.User{}).
-		Preload("CurrentAvatar.Image")
+		Preload("CurrentAvatar.Image").
+		Preload("CurrentAvatar.Image.Versions").
+		Preload("CurrentAvatar.Image.Versions.FileDescriptor").
+		Preload("CurrentAvatar.Image.Versions.SignatureDescriptor").
+		Preload("CurrentAvatar.Image.Versions.DeltaDescriptor")
 
 	// Query parameter setup
 	if _n := c.Query("n"); _n != "" {
