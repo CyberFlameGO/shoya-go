@@ -97,7 +97,25 @@ func GetUserById(id string) (*User, error) {
 
 	if err = config.DB.Preload(clause.Associations).
 		Preload("CurrentAvatar.Image").
-		Preload("FallbackAvatar").
+		Preload("CurrentAvatar.Image.Versions").
+		Preload("CurrentAvatar.Image.Versions.FileDescriptor").
+		Preload("CurrentAvatar.Image.Versions.DeltaDescriptor").
+		Preload("CurrentAvatar.Image.Versions.SignatureDescriptor").
+		Preload("CurrentAvatar.UnityPackages.File").
+		Preload("CurrentAvatar.UnityPackages.File.Versions").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.FileDescriptor").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.SignatureDescriptor").
+		Preload("FallbackAvatar.Image").
+		Preload("FallbackAvatar.Image.Versions").
+		Preload("FallbackAvatar.Image.Versions.FileDescriptor").
+		Preload("FallbackAvatar.Image.Versions.DeltaDescriptor").
+		Preload("FallbackAvatar.Image.Versions.SignatureDescriptor").
+		Preload("FallbackAvatar.UnityPackages.File").
+		Preload("FallbackAvatar.UnityPackages.File.Versions").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.FileDescriptor").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.SignatureDescriptor").
 		Where("id = ?", id).First(&u).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, ErrUserNotFound
@@ -114,7 +132,25 @@ func GetUserByUsername(username string) (*User, error) {
 
 	if err = config.DB.Preload(clause.Associations).
 		Preload("CurrentAvatar.Image").
-		Preload("FallbackAvatar").
+		Preload("CurrentAvatar.Image.Versions").
+		Preload("CurrentAvatar.Image.Versions.FileDescriptor").
+		Preload("CurrentAvatar.Image.Versions.DeltaDescriptor").
+		Preload("CurrentAvatar.Image.Versions.SignatureDescriptor").
+		Preload("CurrentAvatar.UnityPackages.File").
+		Preload("CurrentAvatar.UnityPackages.File.Versions").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.FileDescriptor").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.SignatureDescriptor").
+		Preload("FallbackAvatar.Image").
+		Preload("FallbackAvatar.Image.Versions").
+		Preload("FallbackAvatar.Image.Versions.FileDescriptor").
+		Preload("FallbackAvatar.Image.Versions.DeltaDescriptor").
+		Preload("FallbackAvatar.Image.Versions.SignatureDescriptor").
+		Preload("FallbackAvatar.UnityPackages.File").
+		Preload("FallbackAvatar.UnityPackages.File.Versions").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.FileDescriptor").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.SignatureDescriptor").
 		Where("username = ?", username).First(&u).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, ErrUserNotFound

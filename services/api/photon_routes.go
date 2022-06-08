@@ -4,7 +4,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
-	"gorm.io/gorm/clause"
 	"strconv"
 	"time"
 )
@@ -69,30 +68,8 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 		return c.JSON(models.PhotonValidateJoinJWTResponse{Valid: false})
 	}
 
-	var u models.User
-	tx := config.DB.Model(&models.User{}).Preload(clause.Associations).
-		Preload("CurrentAvatar.Image").
-		Preload("CurrentAvatar.Image.Versions").
-		Preload("CurrentAvatar.Image.Versions.FileDescriptor").
-		Preload("CurrentAvatar.Image.Versions.DeltaDescriptor").
-		Preload("CurrentAvatar.Image.Versions.SignatureDescriptor").
-		Preload("CurrentAvatar.UnityPackages.File").
-		Preload("CurrentAvatar.UnityPackages.File.Versions").
-		Preload("CurrentAvatar.UnityPackages.File.Versions.FileDescriptor").
-		Preload("CurrentAvatar.UnityPackages.File.Versions.DeltaDescriptor").
-		Preload("CurrentAvatar.UnityPackages.File.Versions.SignatureDescriptor").
-		Preload("FallbackAvatar.Image").
-		Preload("FallbackAvatar.Image.Versions").
-		Preload("FallbackAvatar.Image.Versions.FileDescriptor").
-		Preload("FallbackAvatar.Image.Versions.DeltaDescriptor").
-		Preload("FallbackAvatar.Image.Versions.SignatureDescriptor").
-		Preload("FallbackAvatar.UnityPackages.File").
-		Preload("FallbackAvatar.UnityPackages.File.Versions").
-		Preload("FallbackAvatar.UnityPackages.File.Versions.FileDescriptor").
-		Preload("FallbackAvatar.UnityPackages.File.Versions.DeltaDescriptor").
-		Preload("FallbackAvatar.UnityPackages.File.Versions.SignatureDescriptor").
-		Where("id = ?", claims.UserId).First(&u)
-	if tx.Error != nil {
+	var u *models.User
+	if u, err = models.GetUserById(claims.UserId); err != nil {
 		return c.JSON(models.PhotonValidateJoinJWTResponse{Valid: false})
 	}
 
@@ -101,8 +78,7 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 		Valid: true,
 		IP:    claims.IP,
 	}
-	err = r.FillFromUser(&u)
-	if err != nil {
+	if err = r.FillFromUser(u); err != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
@@ -146,30 +122,9 @@ func doGameClose(c *fiber.Ctx) error {
 // Allows the Naoka plugin to retrieve the newest information about a user.
 func doPropertyUpdate(c *fiber.Ctx) error {
 	var uid = c.Query("userId")
-	var u models.User
-	tx := config.DB.Model(&models.User{}).Preload(clause.Associations).
-		Preload("CurrentAvatar.Image").
-		Preload("CurrentAvatar.Image.Versions").
-		Preload("CurrentAvatar.Image.Versions.FileDescriptor").
-		Preload("CurrentAvatar.Image.Versions.DeltaDescriptor").
-		Preload("CurrentAvatar.Image.Versions.SignatureDescriptor").
-		Preload("CurrentAvatar.UnityPackages.File").
-		Preload("CurrentAvatar.UnityPackages.File.Versions").
-		Preload("CurrentAvatar.UnityPackages.File.Versions.FileDescriptor").
-		Preload("CurrentAvatar.UnityPackages.File.Versions.DeltaDescriptor").
-		Preload("CurrentAvatar.UnityPackages.File.Versions.SignatureDescriptor").
-		Preload("FallbackAvatar.Image").
-		Preload("FallbackAvatar.Image.Versions").
-		Preload("FallbackAvatar.Image.Versions.FileDescriptor").
-		Preload("FallbackAvatar.Image.Versions.DeltaDescriptor").
-		Preload("FallbackAvatar.Image.Versions.SignatureDescriptor").
-		Preload("FallbackAvatar.UnityPackages.File").
-		Preload("FallbackAvatar.UnityPackages.File.Versions").
-		Preload("FallbackAvatar.UnityPackages.File.Versions.FileDescriptor").
-		Preload("FallbackAvatar.UnityPackages.File.Versions.DeltaDescriptor").
-		Preload("FallbackAvatar.UnityPackages.File.Versions.SignatureDescriptor").
-		Where("id = ?", uid).First(&u)
-	if tx.Error != nil {
+	var u *models.User
+	var err error
+	if u, err = models.GetUserById(uid); err != nil {
 		return c.JSON(models.PhotonValidateJoinJWTResponse{Valid: false})
 	}
 
@@ -178,8 +133,7 @@ func doPropertyUpdate(c *fiber.Ctx) error {
 		Valid: true,
 		IP:    "notset",
 	}
-	err := r.FillFromUser(&u)
-	if err != nil {
+	if err = r.FillFromUser(u); err != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 	return c.JSON(r)
