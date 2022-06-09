@@ -11,6 +11,7 @@ import (
 func systemRoutes(router *fiber.App) {
 	router.Get("/ping", getPing)
 	router.Get("/health", getHealth)
+	router.Get("/pigascii", getPig)
 	router.Get("/time", getTime)
 	router.Get("/config", getConfig)
 
@@ -149,4 +150,8 @@ func getAutoConfig(c *fiber.Ctx) error {
 		"websocketUrl":   config.ApiConfiguration.AutoConfigWebsocketUrl.Get(),
 		"nameServerHost": config.ApiConfiguration.AutoConfigNameServerHost.Get(),
 	})
+}
+
+func getPig(c *fiber.Ctx) error {
+	return c.SendString("{\"pig\":\"\\n             __,---.__\\n        __,-'         `-.\\n       /_ /_,'           \\\\&\\n       _,''               \\\\\\n      (\\\")            .    |\\n pig   ``--|__|--..-'`.__|\\n\"}\n")
 }
