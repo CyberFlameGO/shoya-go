@@ -92,6 +92,7 @@ docker_api:
         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
 
     script:
+        - mkdir ./.docker/api/bin -p
         - cp ./bin/api/api_amd64 ./.docker/api/bin/api
         - cd ./.docker/api/
         - docker build -t registry.gitlab.com/george/shoya-go/api:latest .
@@ -108,6 +109,7 @@ docker_discovery:
         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
 
     script:
+        - mkdir ./.docker/discovery/bin -p
         - cp ./bin/discovery/discovery_amd64 ./.docker/discovery/bin/discovery
         - cd ./.docker/discovery/
         - docker build -t registry.gitlab.com/george/shoya-go/discovery:latest .
@@ -124,6 +126,7 @@ docker_files:
         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
 
     script:
+        - mkdir ./.docker/files/bin -p
         - cp ./bin/files/files_amd64 ./.docker/files/bin/files
         - cd ./.docker/discovery/
         - docker build -t registry.gitlab.com/george/shoya-go/files:latest .
