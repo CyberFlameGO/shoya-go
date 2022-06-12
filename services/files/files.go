@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/gtsatsis/harvester"
@@ -15,6 +16,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -48,7 +50,15 @@ func main() {
 func initializeConfig() {
 	err := gonfig.GetConf("config.json", &config.RuntimeConfig)
 	if err != nil {
-		panic("error reading config file")
+		envJson := os.Getenv("SHOYA_CONFIG_JSON")
+		if envJson == "" {
+			panic("error reading config file or environment variable")
+		}
+
+		err = json.Unmarshal([]byte(envJson), &config.RuntimeConfig)
+		if err != nil {
+			panic("could not unmarshal config from environment")
+		}
 	}
 
 	if config.RuntimeConfig.Files == nil {

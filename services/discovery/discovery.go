@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -10,6 +11,7 @@ import (
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
 	"log"
+	"os"
 	"strconv"
 	"time"
 )
@@ -189,7 +191,15 @@ func main() {
 func initializeConfig() {
 	err := gonfig.GetConf("config.json", &config.RuntimeConfig)
 	if err != nil {
-		panic("error reading config file")
+		envJson := os.Getenv("SHOYA_CONFIG_JSON")
+		if envJson == "" {
+			panic("error reading config file or environment variable")
+		}
+
+		err = json.Unmarshal([]byte(envJson), &config.RuntimeConfig)
+		if err != nil {
+			panic("could not unmarshal config from environment")
+		}
 	}
 }
 
