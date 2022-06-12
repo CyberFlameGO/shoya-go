@@ -3,6 +3,7 @@ default:
 
 stages:
     - build
+    - docker-build
 
 build-api:
     stage: build
@@ -60,3 +61,45 @@ build-discovery:
         expose_as: discovery
         untracked: false
         expire_in: 7 days
+
+docker_api:
+    image: docker:latest
+    stage: docker-build
+    services:
+        - docker:dind
+    before_script:
+        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+    script:
+        - cp ./bin/api/api ./.docker/api/bin/api
+        - cd ./.docker/api/
+        - docker build -t registry.gitlab.com/george/shoya-go/api:latest .
+        - docker push registry.gitlab.com/george/shoya-go/api:latest
+
+docker_discovery:
+    image: docker:latest
+    stage: docker-build
+    services:
+        - docker:dind
+    before_script:
+        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+    script:
+        - cp ./bin/discovery/discovery ./.docker/discovery/bin/discovery
+        - cd ./.docker/discovery/
+        - docker build -t registry.gitlab.com/george/shoya-go/discovery:latest .
+        - docker push registry.gitlab.com/george/shoya-go/discovery:latest
+
+docker_files:
+    image: docker:latest
+    stage: docker-build
+    services:
+        - docker:dind
+    before_script:
+        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+    script:
+        - cp ./bin/files/files ./.docker/files/bin/files
+        - cd ./.docker/discovery/
+        - docker build -t registry.gitlab.com/george/shoya-go/files:latest .
+        - docker push registry.gitlab.com/george/shoya-go/files:latest
