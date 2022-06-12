@@ -128,6 +128,6 @@ docker_files:
     script:
         - mkdir ./.docker/files/bin -p
         - cp ./bin/files/files_amd64 ./.docker/files/bin/files
-        - cd ./.docker/discovery/
+        - cd ./.docker/files/
         - docker build -t registry.gitlab.com/george/shoya-go/files:latest .
         - docker push registry.gitlab.com/george/shoya-go/files:latest
