@@ -72,7 +72,7 @@ build-files:
         - mkdir -p ./bin/files
         - go mod download
         - go mod vendor
-        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/files/files_amd64 ./services/discovery
+        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/files/files_amd64 ./services/files
     artifacts:
         name: files
         paths:
