@@ -1,37 +1,57 @@
 version: "3.9"
 services:
+  proxy:
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - "./proxy/api.conf:/etc/nginx/conf.d/default.conf:ro"
+
   api:
-    image: registry.gitlab.com/george/shoya-go/api
+    image: registry.gitlab.com/george/shoya-go/api:latest
     restart: unless-stopped
     ports:
       - "9000:9000"
     environment:
-      - SHOYA_CONFIG_JSON={"api":{"fiber":{"listen_address":"0.0.0.0:9000","proxy_header":"","prefork":false},"redis":{"host":"redis:6379","password":"","db":0},"postgres":{"host":"postgres","port":5432,"user":"shoya","password":"change_me","db":"shoya"},"apiConfigRefreshRateMs":10}}
+      - SHOYA_CONFIG_JSON={"api":{"fiber":{"listen_address":"0.0.0.0:9000","proxy_header":"","prefork":false},"redis":{"host":"redis:6379","password":"change_me","db":0},"postgres":{"host":"postgres","port":5432,"user":"shoya","password":"change_me","db":"shoya"},"apiConfigRefreshRateMs":10}}
 
   discovery:
-    image: registry.gitlab.com/george/shoya-go/discovery
+    image: registry.gitlab.com/george/shoya-go/discovery:latest
     restart: unless-stopped
+    environment:
+      - SHOYA_CONFIG_JSON={"discovery":{"database":{"host":"postgres","port":5432,"username":"shoya","password":"change_me","database":"shoya"},"redis":{"host":"redis:6379","password":"change_me","database":0},"server":{"address":"0.0.0.0:9000"},"apiConfigRefreshRateMs":10,"discoveryApiKey":"change_me"}}
 
   files:
-    image: registry.gitlab.com/george/shoya-go/files
+    image: registry.gitlab.com/george/shoya-go/files:latest
     restart: unless-stopped
+    environment:
+      - SHOYA_CONFIG_JSON={"files":{"listen_address":"0.0.0.0:9000","redis":{"host":"redis:6379","password":"change_me","db":0},"apiConfigRefreshRateMs":10}}
+
 
   redis:
     image: redis/redis-stack-server
     restart: unless-stopped
+    volumes:
+      - "redis_data:/data"
     ports:
       - "6379:6379"
+    environment:
+      - REDIS_ARGS=--requirepass change_me
+
   postgres:
     image: postgres
     restart: unless-stopped
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_USER=shoya
       - POSTGRES_PASSWORD=change_me
-    ports:
-      - "5432:5432"
-    volumes:
-      - pg_data:/var/lib/postgresql/data
 
 volumes:
   pg_data:
+    driver: local
+  redis_data:
     driver: local
