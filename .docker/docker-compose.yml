@@ -5,18 +5,16 @@ services:
     restart: unless-stopped
     ports:
       - "9000:9000"
+    environment:
+      - SHOYA_CONFIG_JSON={"api":{"fiber":{"listen_address":"0.0.0.0:9000","proxy_header":"","prefork":false},"redis":{"host":"redis:6379","password":"","db":0},"postgres":{"host":"postgres","port":5432,"user":"shoya","password":"change_me","db":"shoya"},"apiConfigRefreshRateMs":10}}
 
   discovery:
     image: registry.gitlab.com/george/shoya-go/discovery
     restart: unless-stopped
-    ports:
-      - "9001:9000"
 
   files:
     image: registry.gitlab.com/george/shoya-go/files
     restart: unless-stopped
-    ports:
-      - "9001:9000"
 
   redis:
     image: redis/redis-stack-server
