@@ -62,16 +62,37 @@ build-discovery:
         untracked: false
         expire_in: 7 days
 
+build-files:
+    stage: build
+    cache:
+        key: "$CI_COMMIT_REF_SLUG"
+        paths:
+            - vendor/
+    script:
+        - mkdir -p ./bin/files
+        - go mod download
+        - go mod vendor
+        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/files/files_amd64 ./services/discovery
+    artifacts:
+        name: files
+        paths:
+            - bin/files
+        expose_as: files
+        untracked: false
+        expire_in: 7 days
+
 docker_api:
     image: docker:latest
     stage: docker-build
+    dependencies:
+        - build-api
     services:
         - docker:dind
     before_script:
         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
 
     script:
-        - cp ./bin/api/api ./.docker/api/bin/api
+        - cp ./bin/api/api_amd64 ./.docker/api/bin/api
         - cd ./.docker/api/
         - docker build -t registry.gitlab.com/george/shoya-go/api:latest .
         - docker push registry.gitlab.com/george/shoya-go/api:latest
@@ -79,13 +100,15 @@ docker_api:
 docker_discovery:
     image: docker:latest
     stage: docker-build
+    dependencies:
+        - build-discovery
     services:
         - docker:dind
     before_script:
         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
 
     script:
-        - cp ./bin/discovery/discovery ./.docker/discovery/bin/discovery
+        - cp ./bin/discovery/discovery_amd64 ./.docker/discovery/bin/discovery
         - cd ./.docker/discovery/
         - docker build -t registry.gitlab.com/george/shoya-go/discovery:latest .
         - docker push registry.gitlab.com/george/shoya-go/discovery:latest
@@ -93,13 +116,15 @@ docker_discovery:
 docker_files:
     image: docker:latest
     stage: docker-build
+    dependencies:
+        - build-files
     services:
         - docker:dind
     before_script:
         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
 
     script:
-        - cp ./bin/files/files ./.docker/files/bin/files
+        - cp ./bin/files/files_amd64 ./.docker/files/bin/files
         - cd ./.docker/discovery/
         - docker build -t registry.gitlab.com/george/shoya-go/files:latest .
         - docker push registry.gitlab.com/george/shoya-go/files:latest
