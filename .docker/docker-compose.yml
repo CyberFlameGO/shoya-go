@@ -1,0 +1,39 @@
+version: "3.9"
+services:
+  api:
+    image: registry.gitlab.com/george/shoya-go/api
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+
+  discovery:
+    image: registry.gitlab.com/george/shoya-go/discovery
+    restart: unless-stopped
+    ports:
+      - "9001:9000"
+
+  files:
+    image: registry.gitlab.com/george/shoya-go/files
+    restart: unless-stopped
+    ports:
+      - "9001:9000"
+
+  redis:
+    image: redis/redis-stack-server
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+  postgres:
+    image: postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=shoya
+      - POSTGRES_PASSWORD=change_me
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+volumes:
+  pg_data:
+    driver: local
