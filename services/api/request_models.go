@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"gitlab.com/george/shoya-go/config"

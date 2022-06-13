@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 var DiscoveryService *discovery_client.Discovery
 var FilesService pb.FileClient
 
-func main() {
+func Main() {
 	shoyaInit()
 
 	app := fiber.New(fiber.Config{
