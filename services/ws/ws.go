@@ -1,4 +1,4 @@
-package main
+package ws
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ import (
 	"os"
 )
 
-func main() {
+func Main() {
 	initializeConfig()
 	app := fiber.New(fiber.Config{
 		ProxyHeader: config.RuntimeConfig.Ws.Fiber.ProxyHeader,
