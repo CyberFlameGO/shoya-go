@@ -5,79 +5,22 @@ stages:
     - build
     - docker-build
 
-build-api:
+build:
     stage: build
     cache:
         key: "$CI_COMMIT_REF_SLUG"
         paths:
             - vendor/
     script:
-        - mkdir -p ./bin/api
+        - mkdir -p ./bin
         - go mod download
         - go mod vendor
-        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/api/api_amd64 ./services/api
+        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/shoya_amd64 .
     artifacts:
-        name: api
+        name: shoya
         paths:
-            - bin/api
-        expose_as: api
-        untracked: false
-        expire_in: 7 days
-
-build-ws:
-    stage: build
-    cache:
-        key: "$CI_COMMIT_REF_SLUG"
-        paths:
-            - vendor/
-    script:
-        - mkdir -p ./bin/ws
-        - go mod download
-        - go mod vendor
-        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/ws/ws_amd64 ./services/ws
-    artifacts:
-        name: ws
-        paths:
-            - bin/ws
-        expose_as: ws
-        untracked: false
-        expire_in: 7 days
-
-build-discovery:
-    stage: build
-    cache:
-        key: "$CI_COMMIT_REF_SLUG"
-        paths:
-            - vendor/
-    script:
-        - mkdir -p ./bin/discovery
-        - go mod download
-        - go mod vendor
-        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/discovery/discovery_amd64 ./services/discovery
-    artifacts:
-        name: discovery
-        paths:
-            - bin/discovery
-        expose_as: discovery
-        untracked: false
-        expire_in: 7 days
-
-build-files:
-    stage: build
-    cache:
-        key: "$CI_COMMIT_REF_SLUG"
-        paths:
-            - vendor/
-    script:
-        - mkdir -p ./bin/files
-        - go mod download
-        - go mod vendor
-        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/files/files_amd64 ./services/files
-    artifacts:
-        name: files
-        paths:
-            - bin/files
-        expose_as: files
+            - bin/shoya
+        expose_as: shoya
         untracked: false
         expire_in: 7 days
 
@@ -85,7 +28,7 @@ docker_api:
     image: docker:latest
     stage: docker-build
     dependencies:
-        - build-api
+        - build
     services:
         - docker:dind
     before_script:
@@ -93,7 +36,7 @@ docker_api:
 
     script:
         - mkdir ./.docker/api/bin -p
-        - cp ./bin/api/api_amd64 ./.docker/api/bin/api
+        - cp ./bin/shoya ./.docker/api/bin/shoya
         - cd ./.docker/api/
         - docker build -t registry.gitlab.com/george/shoya-go/api:latest .
         - docker push registry.gitlab.com/george/shoya-go/api:latest
@@ -102,7 +45,7 @@ docker_discovery:
     image: docker:latest
     stage: docker-build
     dependencies:
-        - build-discovery
+        - build
     services:
         - docker:dind
     before_script:
@@ -110,7 +53,7 @@ docker_discovery:
 
     script:
         - mkdir ./.docker/discovery/bin -p
-        - cp ./bin/discovery/discovery_amd64 ./.docker/discovery/bin/discovery
+        - cp ./bin/shoya ./.docker/discovery/bin/shoya
         - cd ./.docker/discovery/
         - docker build -t registry.gitlab.com/george/shoya-go/discovery:latest .
         - docker push registry.gitlab.com/george/shoya-go/discovery:latest
@@ -119,7 +62,7 @@ docker_files:
     image: docker:latest
     stage: docker-build
     dependencies:
-        - build-files
+        - build
     services:
         - docker:dind
     before_script:
@@ -127,7 +70,7 @@ docker_files:
 
     script:
         - mkdir ./.docker/files/bin -p
-        - cp ./bin/files/files_amd64 ./.docker/files/bin/files
+        - cp ./bin/shoya ./.docker/files/bin/shoya
         - cd ./.docker/files/
         - docker build -t registry.gitlab.com/george/shoya-go/files:latest .
         - docker push registry.gitlab.com/george/shoya-go/files:latest

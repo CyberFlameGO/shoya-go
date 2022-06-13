@@ -4,7 +4,7 @@ RUN apk add libc6-compat && addgroup -S shoya && adduser -S shoya -G shoya && ch
 
 USER shoya
 WORKDIR /home/shoya
-COPY --chown=shoya:shoya ./bin/discovery /home/shoya/discovery
-RUN chmod +x /home/shoya/discovery
+COPY --chown=shoya:shoya ./bin/shoya /home/shoya/shoya
+RUN chmod +x /home/shoya/shoya
 
-CMD ["/home/shoya/discovery"]
+CMD ["/home/shoya/shoya", "discovery", "serve"]

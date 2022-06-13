@@ -4,7 +4,7 @@ RUN apk add libc6-compat && addgroup -S shoya && adduser -S shoya -G shoya && ch
 
 USER shoya
 WORKDIR /home/shoya
-COPY --chown=shoya:shoya ./bin/api /home/shoya/api
-RUN chmod +x /home/shoya/api
+COPY --chown=shoya:shoya ./bin/shoya /home/shoya/shoya
+RUN chmod +x /home/shoya/shoya
 
-CMD ["/home/shoya/api"]
+CMD ["/home/shoya/api", "api", "serve"]
