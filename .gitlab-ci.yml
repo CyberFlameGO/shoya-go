@@ -17,10 +17,10 @@ build:
         - go mod vendor
         - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/shoya_amd64 .
     artifacts:
-        name: shoya
+        name: shoya_amd64
         paths:
-            - bin/shoya
-        expose_as: shoya
+            - bin/shoya_amd64
+        expose_as: shoya_amd64
         untracked: false
         expire_in: 7 days
 
@@ -36,7 +36,7 @@ docker_api:
 
     script:
         - mkdir ./.docker/api/bin -p
-        - cp ./bin/shoya ./.docker/api/bin/shoya
+        - cp ./bin/shoya_amd64 ./.docker/api/bin/shoya
         - cd ./.docker/api/
         - docker build -t registry.gitlab.com/george/shoya-go/api:latest .
         - docker push registry.gitlab.com/george/shoya-go/api:latest
@@ -53,7 +53,7 @@ docker_discovery:
 
     script:
         - mkdir ./.docker/discovery/bin -p
-        - cp ./bin/shoya ./.docker/discovery/bin/shoya
+        - cp ./bin/shoya_amd64 ./.docker/discovery/bin/shoya
         - cd ./.docker/discovery/
         - docker build -t registry.gitlab.com/george/shoya-go/discovery:latest .
         - docker push registry.gitlab.com/george/shoya-go/discovery:latest
@@ -70,7 +70,7 @@ docker_files:
 
     script:
         - mkdir ./.docker/files/bin -p
-        - cp ./bin/shoya ./.docker/files/bin/shoya
+        - cp ./bin/shoya_amd64 ./.docker/files/bin/shoya
         - cd ./.docker/files/
         - docker build -t registry.gitlab.com/george/shoya-go/files:latest .
         - docker push registry.gitlab.com/george/shoya-go/files:latest
