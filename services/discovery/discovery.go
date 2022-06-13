@@ -1,4 +1,4 @@
-package main
+package discovery
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 var RedisClient rueidis.Client
 var RedisCtx = context.Background()
 
-func main() {
+func Main() {
 	initializeConfig()
 	initializeRedis()
 
