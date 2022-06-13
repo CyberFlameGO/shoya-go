@@ -14,7 +14,7 @@ services:
     ports:
       - "9000:9000"
     environment:
-      - SHOYA_CONFIG_JSON={"api":{"fiber":{"listen_address":"0.0.0.0:9000","proxy_header":"","prefork":false},"redis":{"host":"redis:6379","password":"change_me","db":0},"postgres":{"host":"postgres","port":5432,"user":"shoya","password":"change_me","db":"shoya"},"apiConfigRefreshRateMs":10}}
+      - SHOYA_CONFIG_JSON={"api":{"fiber":{"listen_address":"0.0.0.0:9000","proxy_header":"X-Shoya-Real-IP","prefork":false},"redis":{"host":"redis:6379","password":"change_me","db":0},"postgres":{"host":"postgres","port":5432,"user":"shoya","password":"change_me","db":"shoya"},"apiConfigRefreshRateMs":10}}
 
   discovery:
     image: registry.gitlab.com/george/shoya-go/discovery:latest
@@ -50,7 +50,19 @@ services:
       - POSTGRES_USER=shoya
       - POSTGRES_PASSWORD=change_me
 
+  minio:
+    image: quay.io/minio/minio:RELEASE.2022-06-11T19-55-32Z
+    restart: unless-stopped
+    command: server --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: change_me
+
 volumes:
+  minio_data:
+    driver: local
   pg_data:
     driver: local
   redis_data:
