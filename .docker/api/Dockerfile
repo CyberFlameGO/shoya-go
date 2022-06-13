@@ -7,4 +7,4 @@ WORKDIR /home/shoya
 COPY --chown=shoya:shoya ./bin/shoya /home/shoya/shoya
 RUN chmod +x /home/shoya/shoya
 
-CMD ["/home/shoya/api", "api", "serve"]
+CMD ["/home/shoya/shoya", "api", "serve"]
