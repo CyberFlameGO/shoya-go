@@ -1,4 +1,4 @@
-package main
+package files
 
 import (
 	"context"
@@ -27,7 +27,7 @@ type server struct {
 	pb.UnimplementedFileServer
 }
 
-func main() {
+func Main() {
 	initializeConfig()
 	initializeRedis()
 	initializeApiConfig()
