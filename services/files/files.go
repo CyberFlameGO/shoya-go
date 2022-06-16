@@ -2,13 +2,11 @@ package files
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/gtsatsis/harvester"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/tkanos/gonfig"
 	"gitlab.com/george/shoya-go/config"
 	pb "gitlab.com/george/shoya-go/gen/v1/proto"
 	"google.golang.org/grpc"
@@ -16,7 +14,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 )
@@ -28,10 +25,13 @@ type server struct {
 }
 
 func Main() {
-	initializeConfig()
 	initializeRedis()
 	initializeApiConfig()
 	initMinioClient()
+
+	if config.RuntimeConfig.Files == nil {
+		log.Fatalf("error reading config: RuntimeConfig.Files was nil")
+	}
 
 	lis, err := net.Listen("tcp", config.RuntimeConfig.Files.ListenAddress)
 	if err != nil {
@@ -43,26 +43,6 @@ func Main() {
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
-	}
-}
-
-// initializeConfig reads the config.json file and initializes the runtime config
-func initializeConfig() {
-	err := gonfig.GetConf("config.json", &config.RuntimeConfig)
-	if err != nil {
-		envJson := os.Getenv("SHOYA_CONFIG_JSON")
-		if envJson == "" {
-			panic("error reading config file or environment variable")
-		}
-
-		err = json.Unmarshal([]byte(envJson), &config.RuntimeConfig)
-		if err != nil {
-			panic("could not unmarshal config from environment")
-		}
-	}
-
-	if config.RuntimeConfig.Files == nil {
-		panic("error reading config file: RuntimeConfig.Api was nil")
 	}
 }
 

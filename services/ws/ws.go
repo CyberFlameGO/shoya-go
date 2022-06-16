@@ -14,7 +14,9 @@ import (
 )
 
 func Main() {
-	initializeConfig()
+	if config.RuntimeConfig.Ws == nil {
+		log.Fatalf("error reading config: RuntimeConfig.Ws was nil")
+	}
 	app := fiber.New(fiber.Config{
 		ProxyHeader: config.RuntimeConfig.Ws.Fiber.ProxyHeader,
 		Prefork:     false,

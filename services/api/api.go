@@ -2,14 +2,12 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gtsatsis/harvester"
-	"github.com/tkanos/gonfig"
 	"gitlab.com/george/shoya-go/config"
 	pb "gitlab.com/george/shoya-go/gen/v1/proto"
 	"gitlab.com/george/shoya-go/models"
@@ -20,7 +18,6 @@ import (
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
 	"log"
-	"os"
 	"strings"
 	"time"
 )
@@ -46,7 +43,10 @@ func Main() {
 }
 
 func shoyaInit() {
-	initializeConfig()
+	if config.RuntimeConfig.Api == nil {
+		log.Fatalf("error reading config: RuntimeConfig.Api was nil")
+	}
+
 	initializeDB()
 	initializeRedis()
 	initializeApiConfig()
@@ -69,26 +69,6 @@ func initializeRoutes(app *fiber.App) {
 	avatarsRoutes(app)
 	favoriteRoutes(app)
 	fileRoutes(app)
-}
-
-// initializeConfig reads the config.json file and initializes the runtime config
-func initializeConfig() {
-	err := gonfig.GetConf("config.json", &config.RuntimeConfig)
-	if err != nil {
-		envJson := os.Getenv("SHOYA_CONFIG_JSON")
-		if envJson == "" {
-			panic("error reading config file or environment variable")
-		}
-
-		err = json.Unmarshal([]byte(envJson), &config.RuntimeConfig)
-		if err != nil {
-			panic("could not unmarshal config from environment")
-		}
-	}
-
-	if config.RuntimeConfig.Api == nil {
-		panic("error reading config file: RuntimeConfig.Api was nil")
-	}
 }
 
 // initializeDB initializes the database connection (and runs migrations)

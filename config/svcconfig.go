@@ -1,6 +1,67 @@
 package config
 
+import (
+	"encoding/json"
+	"errors"
+	"io/ioutil"
+	"os"
+	"path"
+)
+
 var RuntimeConfig SvcConfig
+
+func LoadConfig(config ...string) error {
+	var configPath string
+	var configInEnv string
+	var err error
+
+	if len(config) == 0 {
+		var ok bool
+		if configInEnv, ok = os.LookupEnv("SHOYA_CONFIG_JSON"); !ok {
+			configPath = "./config.json"
+		}
+	}
+
+	if configPath == "" && configInEnv == "" {
+		for _, p := range config {
+			p = path.Clean(p)
+			if _, err := os.Stat(p); !os.IsNotExist(err) {
+				configPath = p
+				break
+			}
+		}
+
+		if configPath == "" {
+			return errors.New("no config found")
+		}
+	}
+
+	if configInEnv != "" {
+		err = json.Unmarshal([]byte(configInEnv), &RuntimeConfig)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	if configPath != "" {
+		var f []byte
+		f, err = ioutil.ReadFile(configPath)
+		if err != nil {
+			return err
+		}
+
+		err = json.Unmarshal(f, &RuntimeConfig)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return nil
+}
 
 // SvcConfig is the root configuration struct used for all core services.
 type SvcConfig struct {

@@ -2,16 +2,13 @@ package discovery
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/rueian/rueidis"
-	"github.com/tkanos/gonfig"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
 	"log"
-	"os"
 	"strconv"
 	"time"
 )
@@ -20,7 +17,10 @@ var RedisClient rueidis.Client
 var RedisCtx = context.Background()
 
 func Main() {
-	initializeConfig()
+	if config.RuntimeConfig.Discovery == nil {
+		log.Fatalf("error reading config: RuntimeConfig.Discovery was nil")
+	}
+
 	initializeRedis()
 
 	go instanceCleanup()
@@ -187,22 +187,6 @@ func Main() {
 	log.Fatal(app.Listen(config.RuntimeConfig.Discovery.Fiber.ListenAddress))
 }
 
-// initializeConfig reads the config.json file and initializes the runtime config
-func initializeConfig() {
-	err := gonfig.GetConf("config.json", &config.RuntimeConfig)
-	if err != nil {
-		envJson := os.Getenv("SHOYA_CONFIG_JSON")
-		if envJson == "" {
-			panic("error reading config file or environment variable")
-		}
-
-		err = json.Unmarshal([]byte(envJson), &config.RuntimeConfig)
-		if err != nil {
-			panic("could not unmarshal config from environment")
-		}
-	}
-}
-
 func initializeRedis() {
 	redisClient, err := rueidis.NewClient(rueidis.ClientOption{
 		Username:    "default",
@@ -222,7 +206,7 @@ func instanceCleanup() {
 	for {
 		currentTime = time.Now().UTC().Unix()
 
-		arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instancePingTimeIdx").Query(fmt.Sprintf("@lastPing:[(%d -inf]", currentTime-3600)).Build()).ToArray()
+		arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instancePingTimeIdx").Query(fmt.Sprintf("@lastPing:[(-inf %d]", currentTime-3600)).Build()).ToArray()
 		if err != nil {
 			fmt.Println(err)
 		}
