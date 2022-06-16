@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
 	"gitlab.com/george/shoya-go/config"
@@ -12,6 +13,7 @@ import (
 func init() {
 	configCmd.AddCommand(configLsCmd)
 	configCmd.AddCommand(configGetCmd)
+	configCmd.AddCommand(configSetCmd)
 
 	rootCmd.AddCommand(configCmd)
 }
@@ -34,10 +36,20 @@ var configGetCmd = &cobra.Command{
 	Short: "retrieves a configuration value from Redis",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		initializeConfig()
 		initializeRedis()
 		initializeApiConfig()
 		configGet(args)
+	},
+}
+
+var configSetCmd = &cobra.Command{
+	Use:   "set",
+	Short: "sets a configuration value in Redis",
+	Args:  cobra.ExactArgs(2),
+	Run: func(cmd *cobra.Command, args []string) {
+		initializeRedis()
+		initializeApiConfig()
+		configSet(args)
 	},
 }
 
@@ -83,4 +95,26 @@ func configGet(args []string) {
 		tb.AppendRow(table.Row{arg, getMethod.Func.Call([]reflect.Value{valueField.Addr()})})
 	}
 	tb.Render()
+}
+
+func configSet(args []string) {
+	t := reflect.ValueOf(config.ApiConfiguration)
+
+	var typeField reflect.StructField
+	var ok bool
+	if typeField, ok = t.Type().FieldByName(args[0]); !ok {
+		log.Fatalf("Invalid key: %s", args[0])
+	}
+
+	var redisTag string
+	if redisTag, ok = typeField.Tag.Lookup("redis"); !ok {
+		log.Fatalf("Key %s cannot be set as it has no redis tag", args[0])
+	}
+
+	do := config.RedisClient.Set(context.Background(), redisTag, args[1], 0)
+	if do.Err() != nil {
+		log.Fatalf(do.Err().Error())
+	}
+
+	log.Printf("Key %s has been set with value %s\n", args[0], args[1])
 }

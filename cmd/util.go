@@ -2,30 +2,12 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/gtsatsis/harvester"
-	"github.com/tkanos/gonfig"
 	"gitlab.com/george/shoya-go/config"
-	"os"
 	"time"
 )
-
-func initializeConfig() {
-	err := gonfig.GetConf("config.json", &config.RuntimeConfig)
-	if err != nil {
-		envJson := os.Getenv("SHOYA_CONFIG_JSON")
-		if envJson == "" {
-			panic("error reading config file or environment variable")
-		}
-
-		err = json.Unmarshal([]byte(envJson), &config.RuntimeConfig)
-		if err != nil {
-			panic("could not unmarshal config from environment")
-		}
-	}
-}
 
 // initializeRedis initializes the redis clients
 func initializeRedis() {
