@@ -53,7 +53,7 @@ services:
   minio:
     image: quay.io/minio/minio:RELEASE.2022-06-11T19-55-32Z
     restart: unless-stopped
-    command: server --console-address ":9001"
+    command: server --console-address ":9001" /data
     volumes:
       - minio_data:/data
     environment:
