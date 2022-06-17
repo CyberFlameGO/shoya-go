@@ -215,6 +215,13 @@ func initializeRedis() {
 			FieldName("$.players[0:]").As("players").Tag().
 			Build())
 	}
+
+	if !RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instancePingTimeIdx").Build()).RedisError().IsNil() {
+		RedisClient.Do(context.Background(), RedisClient.B().FtCreate().
+			Index("instancePingTimeIdx").OnJson().Schema().
+			FieldName("$.lastPing").As("lastPing").Numeric().
+			Build())
+	}
 }
 
 func instanceCleanup() {
@@ -222,7 +229,7 @@ func instanceCleanup() {
 	for {
 		currentTime = time.Now().UTC().Unix()
 
-		arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instancePingTimeIdx").Query(fmt.Sprintf("@lastPing:[(-inf %d]", currentTime-3600)).Build()).ToArray()
+		arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instancePingTimeIdx").Query(fmt.Sprintf("@lastPing:[-inf %d]", currentTime-3600)).Build()).ToArray()
 		if err != nil {
 			fmt.Println(err)
 		}
