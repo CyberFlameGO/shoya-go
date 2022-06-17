@@ -213,7 +213,8 @@ func initializeRedis() {
 
 	RedisClient = redisClient
 
-	if RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instanceWorldIdIdx").Build()).Error() != nil {
+	if err = RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instanceWorldIdIdx").Build()).Error(); err != nil {
+		log.Println("Creating index instanceWorldIdIdx")
 		RedisClient.Do(context.Background(), RedisClient.B().FtCreate().
 			Index("instanceWorldIdIdx").OnJson().Schema().
 			FieldName("$.worldId").As("worldId").Tag().
@@ -222,14 +223,16 @@ func initializeRedis() {
 			Build())
 	}
 
-	if RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instancePlayersIdx").Build()).Error() != nil {
+	if err = RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instancePlayersIdx").Build()).Error(); err != nil {
+		log.Println("Creating index instancePlayersIdx")
 		RedisClient.Do(context.Background(), RedisClient.B().FtCreate().
 			Index("instancePlayersIdx").OnJson().Schema().
 			FieldName("$.players[0:]").As("players").Tag().
 			Build())
 	}
 
-	if RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instancePingTimeIdx").Build()).Error() != nil {
+	if err = RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instancePingTimeIdx").Build()).Error(); err != nil {
+		log.Println("Creating index instancePingTimeIdx")
 		RedisClient.Do(context.Background(), RedisClient.B().FtCreate().
 			Index("instancePingTimeIdx").OnJson().Schema().
 			FieldName("$.lastPing").As("lastPing").Numeric().
@@ -244,14 +247,19 @@ func instanceCleanup() {
 
 		arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instancePingTimeIdx").Query(fmt.Sprintf("@lastPing:[-inf %d]", currentTime-3600)).Build()).ToArray()
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
+			time.Sleep(30 * time.Second)
+			continue
 		}
 
 		var n int64
 		var p []FtSearchResult
 		n, p, err = parseFtSearch(arr)
 
-		log.Printf("Cleanup found %d instances.\n", n)
+		if n >= 1 {
+			log.Printf("Cleanup Routine - Cleaned up %d instances.", n)
+		}
+
 		for _, val := range p {
 			err = RedisClient.Do(RedisCtx, RedisClient.B().Del().Key(val.Key).Build()).Error()
 			if err != nil {

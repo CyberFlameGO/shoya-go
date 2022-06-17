@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gofiber/fiber/v2"
 	"gitlab.com/george/shoya-go/config"
+	"gitlab.com/george/shoya-go/models"
 	"os"
 	"strings"
 	"time"
@@ -124,8 +125,27 @@ func getVisits(c *fiber.Ctx) error {
 	return c.JSON(0)
 }
 
-// TODO: This is a blocker due to requiring the presence service
+// TODO: This is blocked due to requiring the presence service
 func putVisits(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+	var r PutVisitsRequest
+	var err error
+
+	if err = c.BodyParser(&r); err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	if r.UserId != u.ID && !u.IsStaff() {
+		return c.Status(400).JSON(models.MakeErrorResponse("can't change someone else's presence", 400))
+	}
+
+	i := DiscoveryService.GetInstance(r.WorldId)
+	if i == nil {
+		return c.Status(400).JSON(models.MakeErrorResponse("can't change presence to an instance that doesn't exist", 400))
+	}
+
+	DiscoveryService.PingInstance(r.WorldId)
+
 	return c.JSON(fiber.Map{
 		"success": fiber.Map{
 			"message":     "User pinged room",
@@ -134,7 +154,7 @@ func putVisits(c *fiber.Ctx) error {
 	})
 }
 
-// TODO: This is a blocker due to requiring the presence service
+// TODO: This is blocked due to requiring the presence service
 func putJoins(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"success": fiber.Map{

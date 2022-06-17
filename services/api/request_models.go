@@ -562,3 +562,8 @@ func (r *CreateWorldRequest) GetImageID() (string, error) {
 	}
 	return val[1], nil
 }
+
+type PutVisitsRequest struct {
+	UserId  string `json:"userId"`
+	WorldId string `json:"worldId"`
+}
