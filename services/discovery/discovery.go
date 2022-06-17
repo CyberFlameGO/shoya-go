@@ -120,6 +120,19 @@ func Main() {
 		return c.JSON(i)
 	})
 
+	app.Post("/ping/:instanceId", func(c *fiber.Ctx) error {
+		i := c.Params("instanceId")
+		err := pingInstance(i)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"error":      err.Error(),
+				"instanceId": i,
+			})
+		}
+
+		return c.SendStatus(200)
+	})
+
 	app.Post("/unregister/:instanceId", func(c *fiber.Ctx) error {
 		i := c.Params("instanceId")
 		err := unregisterInstance(i)
