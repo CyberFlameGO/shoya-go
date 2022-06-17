@@ -199,6 +199,22 @@ func initializeRedis() {
 	}
 
 	RedisClient = redisClient
+
+	if !RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instanceWorldIdIdx").Build()).RedisError().IsNil() {
+		RedisClient.Do(context.Background(), RedisClient.B().FtCreate().
+			Index("instanceWorldIdIdx").OnJson().Schema().
+			FieldName("$.worldId").As("worldId").Tag().
+			FieldName("$.instanceType").As("instanceType").Tag().
+			FieldName("$.overCapacity").As("overCapacity").Tag().
+			Build())
+	}
+
+	if !RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instancePlayersIdx").Build()).RedisError().IsNil() {
+		RedisClient.Do(context.Background(), RedisClient.B().FtCreate().
+			Index("instancePlayersIdx").OnJson().Schema().
+			FieldName("$.players[0:]").As("players").Tag().
+			Build())
+	}
 }
 
 func instanceCleanup() {
