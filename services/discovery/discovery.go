@@ -213,7 +213,7 @@ func initializeRedis() {
 
 	RedisClient = redisClient
 
-	if !RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instanceWorldIdIdx").Build()).RedisError().IsNil() {
+	if RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instanceWorldIdIdx").Build()).Error() != nil {
 		RedisClient.Do(context.Background(), RedisClient.B().FtCreate().
 			Index("instanceWorldIdIdx").OnJson().Schema().
 			FieldName("$.worldId").As("worldId").Tag().
@@ -222,14 +222,14 @@ func initializeRedis() {
 			Build())
 	}
 
-	if !RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instancePlayersIdx").Build()).RedisError().IsNil() {
+	if RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instancePlayersIdx").Build()).Error() != nil {
 		RedisClient.Do(context.Background(), RedisClient.B().FtCreate().
 			Index("instancePlayersIdx").OnJson().Schema().
 			FieldName("$.players[0:]").As("players").Tag().
 			Build())
 	}
 
-	if !RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instancePingTimeIdx").Build()).RedisError().IsNil() {
+	if RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instancePingTimeIdx").Build()).Error() != nil {
 		RedisClient.Do(context.Background(), RedisClient.B().FtCreate().
 			Index("instancePingTimeIdx").OnJson().Schema().
 			FieldName("$.lastPing").As("lastPing").Numeric().
@@ -250,8 +250,15 @@ func instanceCleanup() {
 		var n int64
 		var p []FtSearchResult
 		n, p, err = parseFtSearch(arr)
-		fmt.Println(n)
-		fmt.Println(p)
+
+		log.Printf("Cleanup found %d instances.\n", n)
+		for _, val := range p {
+			err = RedisClient.Do(RedisCtx, RedisClient.B().Del().Key(val.Key).Build()).Error()
+			if err != nil {
+				log.Printf("error deleting instance: %s\n", err.Error())
+			}
+		}
+
 		time.Sleep(30 * time.Second)
 	}
 }
