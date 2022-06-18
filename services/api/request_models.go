@@ -98,7 +98,7 @@ func (r *UpdateUserRequest) PasswordChecks(u *models.User) (bool, error) {
 }
 
 func (r *UpdateUserRequest) BioLinksChecks(u *models.User) (bool, error) {
-	if r.BioLinks == nil {
+	if len(r.BioLinks) == 0 {
 		return false, nil
 	}
 
@@ -134,7 +134,7 @@ func (r *UpdateUserRequest) BioLinksChecks(u *models.User) (bool, error) {
 	}
 
 	for i, link := range r.BioLinks {
-		if len(link) < 500 && !contains(tempBioLinks, link) {
+		if len(link) < 500 && !sliceContains(tempBioLinks, link) {
 			// this behavior differs from the api.
 			// vrchat normally responds with HTTP 400 {"error":{"message":"\"Link too long\"","status_code":400}}
 			// but the website will actually render the bio link. *why*.
@@ -146,15 +146,6 @@ func (r *UpdateUserRequest) BioLinksChecks(u *models.User) (bool, error) {
 	u.BioLinks = tempBioLinks
 
 	return changed, nil
-}
-
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
 }
 
 func (r *UpdateUserRequest) StatusChecks(u *models.User) (bool, error) {

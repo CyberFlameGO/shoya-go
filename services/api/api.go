@@ -3,6 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
+	"time"
+
 	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -15,9 +19,6 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
-	"log"
-	"strings"
-	"time"
 )
 
 var DiscoveryService *discovery_client.Discovery
@@ -178,4 +179,13 @@ func initializeHealthChecks() {
 func boolConvert(s string) bool {
 	s = strings.ToLower(s)
 	return s == "true"
+}
+
+func sliceContains[T comparable](elems []T, v T) bool {
+	for _, s := range elems {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }
