@@ -102,12 +102,12 @@ func (r *UpdateUserRequest) BioLinksChecks(u *models.User) (bool, error) {
 		return false, nil
 	}
 
-	if len(r.BioLinks) != 3 {
+	if len(r.BioLinks) > 3 {
 		return false, models.ErrInvalidBioLinks
 	}
 
 	for _, link := range r.BioLinks {
-		if !strings.HasPrefix(link, "https://") {
+		if !strings.HasPrefix(link, "https://") && link != "" {
 			return false, models.ErrInvalidBioLinks
 		}
 	}
