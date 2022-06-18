@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -87,6 +88,7 @@ var (
 	ErrInvalidUserStatusInUserUpdate                 = errors.New("invalid user status")
 	ErrInvalidStatusDescriptionInUserUpdate          = errors.New("invalid status description")
 	ErrInvalidBioInUserUpdate                        = errors.New("invalid bio")
+	ErrInvalidBioLinks                               = errors.New("invalid bio links")
 	ErrTooManyLanguageTagsInUserUpdate               = errors.New("too many language tags")
 	ErrInvalidLanguageTagInUserUpdate                = errors.New("invalid language tag")
 	ErrSetUserIconWhenNotStaffInUserUpdate           = errors.New("tried to set user icon without being staff")

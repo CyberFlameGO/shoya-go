@@ -1,14 +1,15 @@
 package models
 
 import (
+	"strings"
+	"time"
+
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gitlab.com/george/shoya-go/config"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"strings"
-	"time"
 )
 
 // UserState represents the activity state of a user.
@@ -347,6 +348,24 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 		avatarImageUrl = ""
 		avatarImageThumbnailUrl = ""
 	}
+
+	//Slightly differs from the real api. For some reason, bio links will show empty strings at the same location they are set on first update
+	//so setting ["https://youtube.com", "", "https://twitter.com"] will show ["https://youtube.com", "", "https://twitter.com"]
+	//but when you refresh the page, it will show ["https://youtube.com", "https://twitter.com", ""]
+	//We will sort them immediately
+	tempBioLinks := make([]string, 0)
+	for _, link := range u.BioLinks {
+		if link != "" {
+			tempBioLinks = append(tempBioLinks, link)
+		}
+	}
+
+	//api seems to always return 3, even when empty is present
+	for len(tempBioLinks) != 3 {
+		tempBioLinks = append(tempBioLinks, "")
+	}
+
+	u.BioLinks = tempBioLinks
 
 	return &APICurrentUser{
 		BaseModel: BaseModel{

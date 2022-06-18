@@ -1,10 +1,11 @@
 package main
 
 import (
+	"strings"
+
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm"
-	"strings"
 )
 
 // RegisterRequest is the model for requests sent to /auth/register.
@@ -94,6 +95,66 @@ func (r *UpdateUserRequest) PasswordChecks(u *models.User) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (r *UpdateUserRequest) BioLinksChecks(u *models.User) (bool, error) {
+	if r.BioLinks == nil {
+		return false, nil
+	}
+
+	if len(r.BioLinks) != 3 {
+		return false, models.ErrInvalidBioLinks
+	}
+
+	for _, link := range r.BioLinks {
+		if !strings.HasPrefix(link, "https://") {
+			return false, models.ErrInvalidBioLinks
+		}
+	}
+
+	tempBioLinks := make([]string, 3)
+	copy(tempBioLinks, u.BioLinks)
+
+	changed := false
+
+	if len(r.BioLinks) != len(u.BioLinks) {
+		changed = true
+	}
+
+	for i, link := range r.BioLinks {
+		if link != tempBioLinks[i] {
+			changed = true
+			break
+		}
+		changed = false
+	}
+
+	if !changed {
+		return false, nil
+	}
+
+	for i, link := range r.BioLinks {
+		if len(link) < 500 && !contains(tempBioLinks, link) {
+			// this behavior differs from the api.
+			// vrchat normally responds with HTTP 400 {"error":{"message":"\"Link too long\"","status_code":400}}
+			// but the website will actually render the bio link. *why*.
+
+			tempBioLinks[i] = link
+		}
+	}
+
+	u.BioLinks = tempBioLinks
+
+	return changed, nil
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *UpdateUserRequest) StatusChecks(u *models.User) (bool, error) {
