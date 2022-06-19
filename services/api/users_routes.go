@@ -181,7 +181,9 @@ func putUser(c *fiber.Ctx) error {
 	var profilePicOverrideChanged bool
 	var tagsChanged bool
 	var homeWorldChanged bool
+	var bioLinksChanged bool
 	var err error
+
 	if c.Params("id") != cu.ID && !cu.IsStaff() {
 		return c.Status(403).JSON(models.MakeErrorResponse("You're not allowed to update another user's profile", 403))
 	}
@@ -261,6 +263,11 @@ func putUser(c *fiber.Ctx) error {
 		goto badRequest
 	}
 
+	bioLinksChanged, err = r.BioLinksChecks(&u)
+	if err != nil {
+		goto badRequest
+	}
+
 	if bioChanged {
 		changes["bio"] = u.Bio
 	}
@@ -296,6 +303,10 @@ func putUser(c *fiber.Ctx) error {
 
 	if homeWorldChanged {
 		changes["home_world_id"] = u.HomeWorldID
+	}
+
+	if bioLinksChanged {
+		changes["bio_links"] = u.BioLinks
 	}
 
 	config.DB.Omit(clause.Associations).Model(&u).Updates(changes)
