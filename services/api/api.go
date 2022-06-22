@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -194,18 +193,4 @@ func initializeFilesClient() {
 		log.Fatalf("did not connect: %v", err)
 	}
 	FilesService = pb.NewFileClient(conn)
-}
-
-func boolConvert(s string) bool {
-	s = strings.ToLower(s)
-	return s == "true"
-}
-
-func sliceContains[T comparable](elems []T, v T) bool {
-	for _, s := range elems {
-		if v == s {
-			return true
-		}
-	}
-	return false
 }

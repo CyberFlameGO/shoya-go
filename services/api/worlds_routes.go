@@ -321,7 +321,7 @@ func putWorld(c *fiber.Ctx) error {
 	}
 
 	if r.ReleaseStatus != "" {
-		switch models.ReleaseStatus(r.ReleaseStatus) {
+		switch r.ReleaseStatus {
 		case models.ReleaseStatusPrivate:
 			changes["release_status"] = models.ReleaseStatusPrivate
 		case models.ReleaseStatusPublic:
@@ -334,10 +334,15 @@ func putWorld(c *fiber.Ctx) error {
 	}
 
 	if r.Capacity != 0 {
-		if r.Capacity > 128 {
-			return c.Status(400).JSON(models.MakeErrorResponse("world cannot have a soft-cap of more than 128", 400))
+		if r.Capacity < 0 || r.Capacity > 128 {
+			return c.Status(400).JSON(models.MakeErrorResponse("world cannot have a soft-cap of less than 0 or more than 128", 400))
 		}
+
 		changes["capacity"] = r.Capacity
+	}
+
+	if len(r.Tags) != 0 {
+		changes["tags"] = pq.StringArray(dedupeTags(w.Tags, r.ParseTags()))
 	}
 
 	if err = config.DB.Omit(clause.Associations).Model(&w).Updates(changes).Error; err != nil {
@@ -392,13 +397,20 @@ func postWorlds(c *fiber.Ctx) error {
 		ReleaseStatus: models.ReleaseStatusPrivate,
 		Tags:          r.ParseTags(),
 		Version:       0,
-		Capacity:      r.Capacity,
+		Capacity:      0,
 	}
 	w.ID = r.ID
-	r.Tags = append(r.ParseTags(), "system_approved")
+	r.Tags = append(w.Tags, "system_approved")
+
+	if r.Capacity != 0 {
+		if r.Capacity < 0 || r.Capacity > 128 {
+			return c.Status(400).JSON(models.MakeErrorResponse("world cannot have a soft-cap of less than 0 or more than 128", 400))
+		}
+		w.Capacity = r.Capacity
+	}
 
 	if r.ReleaseStatus != "" {
-		switch models.ReleaseStatus(r.ReleaseStatus) {
+		switch r.ReleaseStatus {
 		case models.ReleaseStatusPrivate:
 			w.ReleaseStatus = models.ReleaseStatusPrivate
 		case models.ReleaseStatusPublic:

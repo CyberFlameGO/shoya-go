@@ -574,7 +574,7 @@ func (r *CreateWorldRequest) HasValidUrls() bool {
 func (r *CreateWorldRequest) ParseTags() []string {
 	var tags = []string{}
 	for _, tag := range r.Tags {
-		if strings.HasPrefix(tag, "author_tag_") {
+		if strings.HasPrefix(tag, "author_tag_") || tag == "debug_allowed" {
 			tags = append(tags, tag)
 		}
 	}
