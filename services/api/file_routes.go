@@ -179,6 +179,8 @@ func postFile(c *fiber.Ctx) error {
 	return c.JSON(f.GetAPIFile())
 }
 
+// deleteFile | DELETE /file/:id
+// Deletes a file record.
 func deleteFile(c *fiber.Ctx) error {
 	var f = c.Locals("file").(*models.File)
 	tx := config.DB.Unscoped().Preload(clause.Associations).
@@ -298,6 +300,7 @@ func getFileVersionDescriptor(c *fiber.Ctx) error {
 }
 
 // getFileVersionDescriptorStatus | GET /file/:id/:version/:descriptor/status
+// Gets the upload status for the descriptor of a file version.
 func getFileVersionDescriptorStatus(c *fiber.Ctx) error {
 	var f = c.Locals("file").(*models.File)
 	var v int
@@ -319,6 +322,8 @@ func getFileVersionDescriptorStatus(c *fiber.Ctx) error {
 	}
 }
 
+// putFileVersionDescriptorStart | PUT /file/:id/:version/:descriptor/start
+// Starts the upload of a file version's descriptor.
 func putFileVersionDescriptorStart(c *fiber.Ctx) error {
 	var f = c.Locals("file").(*models.File)
 	var v int
@@ -367,6 +372,8 @@ func putFileVersionDescriptorStart(c *fiber.Ctx) error {
 	})
 }
 
+// putFileVersionDescriptorFinish | PUT /file/:id/:version/:descriptor/finish
+// Marks the upload of a file version's descriptor as finished.
 func putFileVersionDescriptorFinish(c *fiber.Ctx) error {
 	var f = c.Locals("file").(*models.File)
 	var v int

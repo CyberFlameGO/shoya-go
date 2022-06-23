@@ -197,6 +197,8 @@ badRequest:
 	return c.Status(400).JSON(models.MakeErrorResponse("Bad request", 400))
 }
 
+// postAvatars | POST /avatars
+// Creates a new Avatar.
 func postAvatars(c *fiber.Ctx) error {
 	var r *CreateAvatarRequest
 	var u = c.Locals("user").(*models.User)
@@ -295,6 +297,60 @@ func postAvatars(c *fiber.Ctx) error {
 	return c.JSON(aa)
 }
 
+// getAvatarFavorites | GET /avatars/favorites
+// Returns a list of the user's favorited avatars.
+// TODO: Implement favorites.
+func getAvatarFavorites(c *fiber.Ctx) error {
+	return c.JSON([]struct{}{})
+}
+
+// getLicensedAvatars | GET /avatars/licensed
+// Returns a list of the user's favorited avatars.
+// Won't do: relates to commerce features.
+func getLicensedAvatars(c *fiber.Ctx) error {
+	return c.JSON([]struct{}{})
+}
+
+// getAvatar | GET /avatars/:id
+// Returns an avatar.
+func getAvatar(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+	var isGameRequest = c.Locals("isGameRequest").(bool)
+	var a *models.Avatar
+	var aa *models.APIAvatar
+	var aap *models.APIAvatarWithPackages
+	var err error
+
+	if a, err = models.GetAvatarById(c.Params("id")); err != nil {
+		if err == models.ErrAvatarNotFound {
+			return c.Status(404).JSON(models.ErrAvatarNotFoundResponse)
+		}
+
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	if a.ReleaseStatus == models.ReleaseStatusHidden && !u.IsStaff() {
+		return c.Status(404).JSON(models.ErrAvatarNotFoundResponse)
+	}
+
+	if isGameRequest {
+		aap, err = a.GetAPIAvatarWithPackages()
+	} else {
+		aa, err = a.GetAPIAvatar()
+	}
+	if err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse("internal server error while trying to get apiavatar", 500))
+	}
+
+	if isGameRequest {
+		return c.JSON(aap)
+	} else {
+		return c.JSON(aa)
+	}
+}
+
+// putAvatar | PUT /avatars/:id
+// Updates an existing avatar.
 func putAvatar(c *fiber.Ctx) error {
 	var r *CreateAvatarRequest
 	var u = c.Locals("user").(*models.User)
@@ -417,58 +473,6 @@ func putAvatar(c *fiber.Ctx) error {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 	return c.JSON(aa)
-}
-
-// getAvatarFavorites | GET /avatars/favorites
-// Returns a list of the user's favorited avatars.
-// TODO: Implement favorites.
-func getAvatarFavorites(c *fiber.Ctx) error {
-	return c.JSON([]struct{}{})
-}
-
-// getLicensedAvatars | GET /avatars/licensed
-// Returns a list of the user's favorited avatars.
-// Won't do: relates to commerce features.
-func getLicensedAvatars(c *fiber.Ctx) error {
-	return c.JSON([]struct{}{})
-}
-
-// getAvatar | GET /avatars/:id
-// Returns an avatar.
-func getAvatar(c *fiber.Ctx) error {
-	var u = c.Locals("user").(*models.User)
-	var isGameRequest = c.Locals("isGameRequest").(bool)
-	var a *models.Avatar
-	var aa *models.APIAvatar
-	var aap *models.APIAvatarWithPackages
-	var err error
-
-	if a, err = models.GetAvatarById(c.Params("id")); err != nil {
-		if err == models.ErrAvatarNotFound {
-			return c.Status(404).JSON(models.ErrAvatarNotFoundResponse)
-		}
-
-		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
-	}
-
-	if a.ReleaseStatus == models.ReleaseStatusHidden && !u.IsStaff() {
-		return c.Status(404).JSON(models.ErrAvatarNotFoundResponse)
-	}
-
-	if isGameRequest {
-		aap, err = a.GetAPIAvatarWithPackages()
-	} else {
-		aa, err = a.GetAPIAvatar()
-	}
-	if err != nil {
-		return c.Status(500).JSON(models.MakeErrorResponse("internal server error while trying to get apiavatar", 500))
-	}
-
-	if isGameRequest {
-		return c.JSON(aap)
-	} else {
-		return c.JSON(aa)
-	}
 }
 
 // selectAvatar | PUT /avatars/:id/select
