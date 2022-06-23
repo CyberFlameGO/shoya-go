@@ -20,6 +20,7 @@ func worldsRoutes(app *fiber.App) {
 	worlds.Get("/recent", getWorldsRecent)
 	worlds.Get("/:id", getWorld)
 	worlds.Put("/:id", putWorld)
+	worlds.Delete("/:id", deleteWorld)
 	worlds.Get("/:id/metadata", getWorldMeta)
 	worlds.Get("/:id/publish", getWorldPublish)
 	worlds.Put("/:id/publish", putWorldPublish)
@@ -540,6 +541,38 @@ func putWorld(c *fiber.Ctx) error {
 	}
 
 	if aw, err = w.GetAPIWorldWithPackages(); err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+	return c.JSON(aw)
+}
+
+// deleteWorld | DELETE /worlds/:id
+// Marks a world as "hidden".
+func deleteWorld(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+	var w *models.World
+	var aw *models.APIWorld
+	var err error
+
+	if w, err = models.GetWorldById(c.Params("id")); w == nil || err != nil {
+		if err == models.ErrWorldNotFound {
+			return c.Status(404).JSON(models.ErrWorldNotFoundResponse)
+		}
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	if u.ID != w.AuthorID && !u.IsStaff() {
+		return c.Status(403).JSON(models.MakeErrorResponse("cannot delete another user's world", 403))
+	}
+
+	changes := map[string]interface{}{
+		"release_status": models.ReleaseStatusHidden,
+	}
+	if err = config.DB.Omit(clause.Associations).Model(&w).Updates(changes).Error; err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	if aw, err = w.GetAPIWorld(); err != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 	return c.JSON(aw)
