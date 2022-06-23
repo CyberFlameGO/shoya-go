@@ -1,4 +1,4 @@
-package main
+package discovery
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/rueian/rueidis"
 	"gitlab.com/george/shoya-go/models"
+	"time"
 )
 
 var NotFoundErr = errors.New("instance not found")
@@ -94,6 +95,7 @@ func findInstancesPlayerIsIn(playerId string) ([]*models.WorldInstance, error) {
 func registerInstance(id, locationString, worldId, instanceType, ownerId string, capacity int) (*models.WorldInstance, error) {
 	i := &models.WorldInstance{
 		ID:              id,
+		LastPing:        time.Now().Unix(),
 		InstanceID:      locationString,
 		WorldID:         worldId,
 		InstanceType:    instanceType,
@@ -112,6 +114,11 @@ func registerInstance(id, locationString, worldId, instanceType, ownerId string,
 	return i, nil
 }
 
+func pingInstance(instanceId string) error {
+	err := RedisClient.Do(RedisCtx, RedisClient.B().JsonSet().Key("instances:"+instanceId).Path(".lastPing").Value(fmt.Sprintf("%d", time.Now().Unix())).Build()).Error()
+	return err
+}
+
 // unregisterInstance removes a WorldInstance from Redis
 func unregisterInstance(id string) error {
 	return RedisClient.Do(RedisCtx, RedisClient.B().JsonDel().Key("instances:"+id).Build()).Error()
@@ -127,6 +134,12 @@ func addPlayer(instanceId, playerId string) error {
 	}
 
 	err = RedisClient.Do(RedisCtx, RedisClient.B().JsonNumincrby().Key("instances:"+instanceId).Path(".playerCount.total").Value(1).Build()).Error()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	err = RedisClient.Do(RedisCtx, RedisClient.B().JsonSet().Key("instances:"+instanceId).Path(".lastPing").Value(fmt.Sprintf("%d", time.Now().Unix())).Build()).Error()
 
 	return err
 }
@@ -147,6 +160,12 @@ func removePlayer(instanceId, playerId string) error {
 	}
 
 	err = RedisClient.Do(RedisCtx, RedisClient.B().JsonNumincrby().Key("instances:"+instanceId).Path(".playerCount.total").Value(-1).Build()).Error()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	err = RedisClient.Do(RedisCtx, RedisClient.B().JsonSet().Key("instances:"+instanceId).Path(".lastPing").Value(fmt.Sprintf("%d", time.Now().Unix())).Build()).Error()
 
 	return err
 }

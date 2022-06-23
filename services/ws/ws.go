@@ -1,6 +1,7 @@
-package main
+package ws
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -9,10 +10,13 @@ import (
 	"github.com/tkanos/gonfig"
 	"gitlab.com/george/shoya-go/config"
 	"log"
+	"os"
 )
 
-func main() {
-	initializeConfig()
+func Main() {
+	if config.RuntimeConfig.Ws == nil {
+		log.Fatalf("error reading config: RuntimeConfig.Ws was nil")
+	}
 	app := fiber.New(fiber.Config{
 		ProxyHeader: config.RuntimeConfig.Ws.Fiber.ProxyHeader,
 		Prefork:     false,
@@ -56,6 +60,14 @@ func main() {
 func initializeConfig() {
 	err := gonfig.GetConf("config.json", &config.RuntimeConfig)
 	if err != nil {
-		panic("error reading config file")
+		envJson := os.Getenv("SHOYA_CONFIG_JSON")
+		if envJson == "" {
+			panic("error reading config file or environment variable")
+		}
+
+		err = json.Unmarshal([]byte(envJson), &config.RuntimeConfig)
+		if err != nil {
+			panic("could not unmarshal config from environment")
+		}
 	}
 }

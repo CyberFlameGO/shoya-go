@@ -1,17 +1,16 @@
-package main
+package api
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/tj/go-naturaldate"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"strconv"
+	"strings"
+	"time"
 )
 
 func usersRoutes(router *fiber.App) {
@@ -24,6 +23,7 @@ func usersRoutes(router *fiber.App) {
 	users := router.Group("/users", ApiKeyMiddleware, AuthMiddleware)
 	users.Get("/", getUsers)
 	users.Get("/:id", getUser)
+	users.Get("/:id/avatar", getUserAvatar)
 	users.Post("/:id/addTags", postUserAddTags)
 	users.Post("/:id/removeTags", postUserRemoveTags)
 
@@ -46,7 +46,11 @@ func getUsers(c *fiber.Ctx) error {
 	var numberOfUsersToSearch = 60
 
 	tx := config.DB.Model(models.User{}).
-		Preload("CurrentAvatar.Image")
+		Preload("CurrentAvatar.Image").
+		Preload("CurrentAvatar.Image.Versions").
+		Preload("CurrentAvatar.Image.Versions.FileDescriptor").
+		Preload("CurrentAvatar.Image.Versions.SignatureDescriptor").
+		Preload("CurrentAvatar.Image.Versions.DeltaDescriptor")
 
 	// Query parameter setup
 	if _n := c.Query("n"); _n != "" {
@@ -178,6 +182,7 @@ func putUser(c *fiber.Ctx) error {
 	var tagsChanged bool
 	var homeWorldChanged bool
 	var bioLinksChanged bool
+	var err error
 
 	if c.Params("id") != cu.ID && !cu.IsStaff() {
 		return c.Status(403).JSON(models.MakeErrorResponse("You're not allowed to update another user's profile", 403))
@@ -186,10 +191,14 @@ func putUser(c *fiber.Ctx) error {
 	if c.Params("id") == cu.ID {
 		u = *cu
 	} else {
-		config.DB.Where("id = ?", c.Params("id")).Find(&u)
+		var _u *models.User
+		if _u, err = models.GetUserById(c.Params("id")); err != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
+		u = *_u
 	}
 
-	err := c.BodyParser(&r)
+	err = c.BodyParser(&r)
 	if err != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
@@ -527,4 +536,29 @@ func postUserRemoveTags(c *fiber.Ctx) error {
 
 badRequest:
 	return c.Status(400).JSON(models.MakeErrorResponse("Bad request", 400))
+}
+
+func getUserAvatar(c *fiber.Ctx) error {
+	var uid = c.Params("id")
+	var cu = c.Locals("user").(*models.User)
+	var u *models.User
+	var a *models.APIAvatar
+	var err error
+
+	if uid != cu.ID && !cu.IsStaff() {
+		return c.Status(403).JSON(models.MakeErrorResponse("can't get another user's avatar", 403))
+	}
+
+	if uid != cu.ID {
+		if u, err = models.GetUserById(c.Params("id")); err != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
+	} else {
+		u = cu
+	}
+
+	if a, err = u.CurrentAvatar.GetAPIAvatar(); err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+	return c.JSON(a)
 }

@@ -1,11 +1,13 @@
-package main
+package api
 
 import (
-	"strings"
-
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm"
+	"net/url"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 // RegisterRequest is the model for requests sent to /auth/register.
@@ -365,4 +367,254 @@ func (r *RemoveTagsRequest) TagsChecks(u *models.User) (bool, error) {
 
 	u.Tags = tagsThatWillApply
 	return true, nil
+}
+
+type CreateFileRequest struct {
+	Name      string     `json:"name"`
+	Extension string     `json:"extension"`
+	MimeType  string     `json:"mimeType"`
+	Versions  []struct{} `json:"versions"`
+}
+
+type CreateFileVersionRequest struct {
+	FileMd5              string `json:"fileMd5"`
+	FileSizeInBytes      int    `json:"fileSizeInBytes"`
+	DeltaMd5             string `json:"deltaMd5"`
+	DeltaSizeInBytes     int    `json:"deltaSizeInBytes"`
+	SignatureMd5         string `json:"signatureMd5"`
+	SignatureSizeInBytes int    `json:"signatureSizeInBytes"`
+}
+
+type CreateAvatarRequest struct {
+	ID            string               `json:"id"`
+	AssetUrl      string               `json:"assetUrl"`
+	AssetVersion  string               `json:"assetVersion"`
+	AuthorId      string               `json:"authorId"`
+	AuthorName    string               `json:"authorName"`
+	CreatedAt     string               `json:"created_at"`
+	Description   string               `json:"description"`
+	ImageUrl      string               `json:"imageUrl"`
+	Name          string               `json:"name"`
+	Platform      models.Platform      `json:"platform"`
+	ReleaseStatus models.ReleaseStatus `json:"releaseStatus"`
+	Tags          []string             `json:"tags"`
+	TotalLikes    string               `json:"totalLikes"`
+	TotalVisits   string               `json:"totalVisits"`
+	UnityVersion  string               `json:"unityVersion"`
+	UpdatedAt     string               `json:"updated_at"`
+}
+
+func (r *CreateAvatarRequest) HasValidUrls() bool {
+	var apiUrl *url.URL
+	var assetUrl *url.URL
+	var imageUrl *url.URL
+	var err error
+
+	apiUrl, err = url.Parse(config.ApiConfiguration.ApiUrl.Get())
+	if err != nil {
+		return false
+	}
+
+	if r.AssetUrl != "" {
+		assetUrl, err = url.Parse(r.AssetUrl)
+		if err != nil {
+			return false
+		}
+	}
+
+	if r.ImageUrl != "" {
+		imageUrl, err = url.Parse(r.AssetUrl)
+		if err != nil {
+			return false
+		}
+	}
+
+	if r.AssetUrl != "" {
+		if apiUrl.Host != assetUrl.Host {
+			return false
+		}
+	}
+
+	if r.ImageUrl != "" {
+		if apiUrl.Host != imageUrl.Host {
+			return false
+		}
+	}
+
+	if r.AssetUrl != "" {
+		if !strings.HasPrefix(assetUrl.Path, "/api/1/file/") {
+			return false
+		}
+	}
+
+	if r.ImageUrl != "" {
+		if !strings.HasPrefix(imageUrl.Path, "/api/1/file/") {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (r *CreateAvatarRequest) ParseTags() []string {
+	var tags = []string{}
+	for _, tag := range r.Tags {
+		if strings.HasPrefix(tag, "author_tag_") {
+			tags = append(tags, tag)
+		}
+	}
+
+	return tags
+}
+
+func (r *CreateAvatarRequest) GetFileID() (string, error) {
+	re := regexp.MustCompile(`(?i)\/api\/1\/file\/(file_[\dA-F]{8}-[\dA-F]{4}-4[\dA-F]{3}-[89AB][\dA-F]{3}-[\dA-F]{12})`)
+	val := re.FindStringSubmatch(r.AssetUrl)
+	if val == nil {
+		return "", models.ErrUrlParseFailed
+	}
+	return val[1], nil
+}
+
+func (r *CreateAvatarRequest) GetFileVersion() (int, error) {
+	re := regexp.MustCompile(`(?i)\/api\/1\/file\/file_[\dA-F]{8}-[\dA-F]{4}-4[\dA-F]{3}-[89AB][\dA-F]{3}-[\dA-F]{12}/(\d*)/`)
+	val := re.FindStringSubmatch(r.AssetUrl)
+	if val == nil {
+		return 0, models.ErrUrlParseFailed
+	}
+
+	v, err := strconv.Atoi(val[1])
+	if err != nil {
+		return 0, err
+	}
+	return v, nil
+}
+
+func (r *CreateAvatarRequest) GetImageID() (string, error) {
+	re := regexp.MustCompile(`(?i)\/api\/1\/file\/(file_[\dA-F]{8}-[\dA-F]{4}-4[\dA-F]{3}-[89AB][\dA-F]{3}-[\dA-F]{12})`)
+	val := re.FindStringSubmatch(r.ImageUrl)
+	if val == nil {
+		return "", models.ErrUrlParseFailed
+	}
+	return val[1], nil
+}
+
+type CreateWorldRequest struct {
+	ID            string               `json:"id"`
+	AssetUrl      string               `json:"assetUrl"`
+	AssetVersion  int                  `json:"assetVersion"`
+	AuthorId      string               `json:"authorId"`
+	AuthorName    string               `json:"authorName"`
+	Capacity      int                  `json:"capacity"`
+	CreatedAt     string               `json:"created_at"`
+	Description   string               `json:"description"`
+	ImageUrl      string               `json:"imageUrl"`
+	Name          string               `json:"name"`
+	Platform      models.Platform      `json:"platform"`
+	ReleaseStatus models.ReleaseStatus `json:"releaseStatus"`
+	Tags          []string             `json:"tags"`
+	TotalLikes    string               `json:"totalLikes"`
+	TotalVisits   string               `json:"totalVisits"`
+	UnityVersion  string               `json:"unityVersion"`
+	UpdatedAt     string               `json:"updated_at"`
+}
+
+func (r *CreateWorldRequest) HasValidUrls() bool {
+	var apiUrl *url.URL
+	var assetUrl *url.URL
+	var imageUrl *url.URL
+	var err error
+
+	apiUrl, err = url.Parse(config.ApiConfiguration.ApiUrl.Get())
+	if err != nil {
+		return false
+	}
+
+	if r.AssetUrl != "" {
+		assetUrl, err = url.Parse(r.AssetUrl)
+		if err != nil {
+			return false
+		}
+	}
+
+	if r.ImageUrl != "" {
+		imageUrl, err = url.Parse(r.AssetUrl)
+		if err != nil {
+			return false
+		}
+	}
+
+	if r.AssetUrl != "" {
+		if apiUrl.Host != assetUrl.Host {
+			return false
+		}
+	}
+
+	if r.ImageUrl != "" {
+		if apiUrl.Host != imageUrl.Host {
+			return false
+		}
+	}
+
+	if r.AssetUrl != "" {
+		if !strings.HasPrefix(assetUrl.Path, "/api/1/file/") {
+			return false
+		}
+	}
+
+	if r.ImageUrl != "" {
+		if !strings.HasPrefix(imageUrl.Path, "/api/1/file/") {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (r *CreateWorldRequest) ParseTags() []string {
+	var tags = []string{}
+	for _, tag := range r.Tags {
+		if strings.HasPrefix(tag, "author_tag_") || tag == "debug_allowed" {
+			tags = append(tags, tag)
+		}
+	}
+
+	return tags
+}
+
+func (r *CreateWorldRequest) GetFileID() (string, error) {
+	re := regexp.MustCompile(`(?i)\/api\/1\/file\/(file_[\dA-F]{8}-[\dA-F]{4}-4[\dA-F]{3}-[89AB][\dA-F]{3}-[\dA-F]{12})`)
+	val := re.FindStringSubmatch(r.AssetUrl)
+	if val == nil {
+		return "", models.ErrUrlParseFailed
+	}
+	return val[1], nil
+}
+
+func (r *CreateWorldRequest) GetFileVersion() (int, error) {
+	re := regexp.MustCompile(`(?i)\/api\/1\/file\/file_[\dA-F]{8}-[\dA-F]{4}-4[\dA-F]{3}-[89AB][\dA-F]{3}-[\dA-F]{12}/(\d*)/`)
+	val := re.FindStringSubmatch(r.AssetUrl)
+	if val == nil {
+		return 0, models.ErrUrlParseFailed
+	}
+
+	v, err := strconv.Atoi(val[1])
+	if err != nil {
+		return 0, err
+	}
+	return v, nil
+}
+
+func (r *CreateWorldRequest) GetImageID() (string, error) {
+	re := regexp.MustCompile(`(?i)\/api\/1\/file\/(file_[\dA-F]{8}-[\dA-F]{4}-4[\dA-F]{3}-[89AB][\dA-F]{3}-[\dA-F]{12})`)
+	val := re.FindStringSubmatch(r.ImageUrl)
+	if val == nil {
+		return "", models.ErrUrlParseFailed
+	}
+	return val[1], nil
+}
+
+type PutVisitsRequest struct {
+	UserId  string `json:"userId"`
+	WorldId string `json:"worldId"`
 }

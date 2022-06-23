@@ -3,60 +3,74 @@ default:
 
 stages:
     - build
+    - docker-build
 
-build-api:
+build:
     stage: build
     cache:
         key: "$CI_COMMIT_REF_SLUG"
         paths:
             - vendor/
     script:
-        - mkdir -p ./bin/api
+        - mkdir -p ./bin
         - go mod download
         - go mod vendor
-        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/api/api_amd64 ./services/api
+        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/shoya_amd64 .
     artifacts:
-        name: api
+        name: shoya_amd64
         paths:
-            - bin/api
-        expose_as: api
+            - bin/shoya_amd64
+        expose_as: shoya_amd64
         untracked: false
         expire_in: 7 days
 
-build-ws:
-    stage: build
-    cache:
-        key: "$CI_COMMIT_REF_SLUG"
-        paths:
-            - vendor/
-    script:
-        - mkdir -p ./bin/ws
-        - go mod download
-        - go mod vendor
-        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/ws/ws_amd64 ./services/ws
-    artifacts:
-        name: ws
-        paths:
-            - bin/ws
-        expose_as: ws
-        untracked: false
-        expire_in: 7 days
+docker_api:
+    image: docker:latest
+    stage: docker-build
+    dependencies:
+        - build
+    services:
+        - docker:dind
+    before_script:
+        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
 
-build-discovery:
-    stage: build
-    cache:
-        key: "$CI_COMMIT_REF_SLUG"
-        paths:
-            - vendor/
     script:
-        - mkdir -p ./bin/discovery
-        - go mod download
-        - go mod vendor
-        - GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/discovery/discovery_amd64 ./services/discovery
-    artifacts:
-        name: discovery
-        paths:
-            - bin/discovery
-        expose_as: discovery
-        untracked: false
-        expire_in: 7 days
+        - mkdir ./.docker/api/bin -p
+        - cp ./bin/shoya_amd64 ./.docker/api/bin/shoya
+        - cd ./.docker/api/
+        - docker build -t registry.gitlab.com/george/shoya-go/api:latest .
+        - docker push registry.gitlab.com/george/shoya-go/api:latest
+
+docker_discovery:
+    image: docker:latest
+    stage: docker-build
+    dependencies:
+        - build
+    services:
+        - docker:dind
+    before_script:
+        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+    script:
+        - mkdir ./.docker/discovery/bin -p
+        - cp ./bin/shoya_amd64 ./.docker/discovery/bin/shoya
+        - cd ./.docker/discovery/
+        - docker build -t registry.gitlab.com/george/shoya-go/discovery:latest .
+        - docker push registry.gitlab.com/george/shoya-go/discovery:latest
+
+docker_files:
+    image: docker:latest
+    stage: docker-build
+    dependencies:
+        - build
+    services:
+        - docker:dind
+    before_script:
+        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+    script:
+        - mkdir ./.docker/files/bin -p
+        - cp ./bin/shoya_amd64 ./.docker/files/bin/shoya
+        - cd ./.docker/files/
+        - docker build -t registry.gitlab.com/george/shoya-go/files:latest .
+        - docker push registry.gitlab.com/george/shoya-go/files:latest

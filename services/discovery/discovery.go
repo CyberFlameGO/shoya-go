@@ -1,4 +1,4 @@
-package main
+package discovery
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/rueian/rueidis"
-	"github.com/tkanos/gonfig"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
 	"log"
@@ -17,8 +16,11 @@ import (
 var RedisClient rueidis.Client
 var RedisCtx = context.Background()
 
-func main() {
-	initializeConfig()
+func Main() {
+	if config.RuntimeConfig.Discovery == nil {
+		log.Fatalf("error reading config: RuntimeConfig.Discovery was nil")
+	}
+
 	initializeRedis()
 
 	go instanceCleanup()
@@ -118,6 +120,19 @@ func main() {
 		return c.JSON(i)
 	})
 
+	app.Post("/ping/:instanceId", func(c *fiber.Ctx) error {
+		i := c.Params("instanceId")
+		err := pingInstance(i)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"error":      err.Error(),
+				"instanceId": i,
+			})
+		}
+
+		return c.SendStatus(200)
+	})
+
 	app.Post("/unregister/:instanceId", func(c *fiber.Ctx) error {
 		i := c.Params("instanceId")
 		err := unregisterInstance(i)
@@ -185,14 +200,6 @@ func main() {
 	log.Fatal(app.Listen(config.RuntimeConfig.Discovery.Fiber.ListenAddress))
 }
 
-// initializeConfig reads the config.json file and initializes the runtime config
-func initializeConfig() {
-	err := gonfig.GetConf("config.json", &config.RuntimeConfig)
-	if err != nil {
-		panic("error reading config file")
-	}
-}
-
 func initializeRedis() {
 	redisClient, err := rueidis.NewClient(rueidis.ClientOption{
 		Username:    "default",
@@ -205,6 +212,32 @@ func initializeRedis() {
 	}
 
 	RedisClient = redisClient
+
+	if err = RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instanceWorldIdIdx").Build()).Error(); err != nil {
+		log.Println("Creating index instanceWorldIdIdx")
+		RedisClient.Do(context.Background(), RedisClient.B().FtCreate().
+			Index("instanceWorldIdIdx").OnJson().Schema().
+			FieldName("$.worldId").As("worldId").Tag().
+			FieldName("$.instanceType").As("instanceType").Tag().
+			FieldName("$.overCapacity").As("overCapacity").Tag().
+			Build())
+	}
+
+	if err = RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instancePlayersIdx").Build()).Error(); err != nil {
+		log.Println("Creating index instancePlayersIdx")
+		RedisClient.Do(context.Background(), RedisClient.B().FtCreate().
+			Index("instancePlayersIdx").OnJson().Schema().
+			FieldName("$.players[0:]").As("players").Tag().
+			Build())
+	}
+
+	if err = RedisClient.Do(context.Background(), RedisClient.B().FtInfo().Index("instancePingTimeIdx").Build()).Error(); err != nil {
+		log.Println("Creating index instancePingTimeIdx")
+		RedisClient.Do(context.Background(), RedisClient.B().FtCreate().
+			Index("instancePingTimeIdx").OnJson().Schema().
+			FieldName("$.lastPing").As("lastPing").Numeric().
+			Build())
+	}
 }
 
 func instanceCleanup() {
@@ -212,16 +245,28 @@ func instanceCleanup() {
 	for {
 		currentTime = time.Now().UTC().Unix()
 
-		arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instancePingTimeIdx").Query(fmt.Sprintf("@lastPing:[(%d -inf]", currentTime-3600)).Build()).ToArray()
+		arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instancePingTimeIdx").Query(fmt.Sprintf("@lastPing:[-inf %d]", currentTime-3600)).Build()).ToArray()
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
+			time.Sleep(30 * time.Second)
+			continue
 		}
 
 		var n int64
 		var p []FtSearchResult
 		n, p, err = parseFtSearch(arr)
-		fmt.Println(n)
-		fmt.Println(p)
+
+		if n >= 1 {
+			log.Printf("Cleanup Routine - Cleaned up %d instances.", n)
+		}
+
+		for _, val := range p {
+			err = RedisClient.Do(RedisCtx, RedisClient.B().Del().Key(val.Key).Build()).Error()
+			if err != nil {
+				log.Printf("error deleting instance: %s\n", err.Error())
+			}
+		}
+
 		time.Sleep(30 * time.Second)
 	}
 }

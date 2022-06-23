@@ -1,10 +1,9 @@
-package main
+package api
 
 import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -12,18 +11,21 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gtsatsis/harvester"
-	"github.com/tkanos/gonfig"
 	"gitlab.com/george/shoya-go/config"
+	pb "gitlab.com/george/shoya-go/gen/v1/proto"
 	"gitlab.com/george/shoya-go/models"
 	"gitlab.com/george/shoya-go/services/discovery/discovery_client"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
 )
 
 var DiscoveryService *discovery_client.Discovery
+var FilesService pb.FileClient
 
-func main() {
+func Main() {
 	shoyaInit()
 
 	app := fiber.New(fiber.Config{
@@ -41,7 +43,10 @@ func main() {
 }
 
 func shoyaInit() {
-	initializeConfig()
+	if config.RuntimeConfig.Api == nil {
+		log.Fatalf("error reading config: RuntimeConfig.Api was nil")
+	}
+
 	initializeDB()
 	initializeRedis()
 	initializeApiConfig()
@@ -49,6 +54,7 @@ func shoyaInit() {
 	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
 		DiscoveryService = discovery_client.NewDiscovery(config.ApiConfiguration.DiscoveryServiceUrl.Get(), config.ApiConfiguration.DiscoveryServiceApiKey.Get())
 	}
+	initializeFilesClient()
 
 	initializeHealthChecks()
 }
@@ -62,18 +68,7 @@ func initializeRoutes(app *fiber.App) {
 	instanceRoutes(app)
 	avatarsRoutes(app)
 	favoriteRoutes(app)
-}
-
-// initializeConfig reads the config.json file and initializes the runtime config
-func initializeConfig() {
-	err := gonfig.GetConf("config.json", &config.RuntimeConfig)
-	if err != nil {
-		panic("error reading config file")
-	}
-
-	if config.RuntimeConfig.Api == nil {
-		panic("error reading config file: RuntimeConfig.Api was nil")
-	}
+	fileRoutes(app)
 }
 
 // initializeDB initializes the database connection (and runs migrations)
@@ -132,6 +127,21 @@ func initializeDB() {
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	err = config.DB.AutoMigrate(&models.File{})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = config.DB.AutoMigrate(&models.FileVersion{})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = config.DB.AutoMigrate(&models.FileDescriptor{})
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 // initializeRedis initializes the redis clients
@@ -174,18 +184,13 @@ func initializeHealthChecks() {
 	go redisHealthCheck()
 	go harvestRedisHealthCheck()
 	go postgresHealthCheck()
+	go filesHealthCheck()
 }
 
-func boolConvert(s string) bool {
-	s = strings.ToLower(s)
-	return s == "true"
-}
-
-func sliceContains[T comparable](elems []T, v T) bool {
-	for _, s := range elems {
-		if v == s {
-			return true
-		}
+func initializeFilesClient() {
+	conn, err := grpc.Dial(config.ApiConfiguration.FilesEndpoint.Get(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
 	}
-	return false
+	FilesService = pb.NewFileClient(conn)
 }

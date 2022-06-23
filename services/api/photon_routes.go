@@ -1,10 +1,9 @@
-package main
+package api
 
 import (
 	"github.com/gofiber/fiber/v2"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
-	"gorm.io/gorm/clause"
 	"strconv"
 	"time"
 )
@@ -69,14 +68,8 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 		return c.JSON(models.PhotonValidateJoinJWTResponse{Valid: false})
 	}
 
-	var u models.User
-	tx := config.DB.Model(&models.User{}).Preload(clause.Associations).
-		Preload("CurrentAvatar.Image").
-		Preload("FallbackAvatar.Image").
-		Preload("CurrentAvatar.UnityPackages.File").
-		Preload("FallbackAvatar.UnityPackages.File").
-		Where("id = ?", claims.UserId).First(&u)
-	if tx.Error != nil {
+	var u *models.User
+	if u, err = models.GetUserById(claims.UserId); err != nil {
 		return c.JSON(models.PhotonValidateJoinJWTResponse{Valid: false})
 	}
 
@@ -85,8 +78,7 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 		Valid: true,
 		IP:    claims.IP,
 	}
-	err = r.FillFromUser(&u)
-	if err != nil {
+	if err = r.FillFromUser(u); err != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
@@ -99,6 +91,7 @@ func doJoinTokenValidation(c *fiber.Ctx) error {
 	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
 		DiscoveryService.AddPlayerToInstance(u.ID, l)
 	}
+
 	return c.JSON(r)
 }
 
@@ -129,14 +122,9 @@ func doGameClose(c *fiber.Ctx) error {
 // Allows the Naoka plugin to retrieve the newest information about a user.
 func doPropertyUpdate(c *fiber.Ctx) error {
 	var uid = c.Query("userId")
-	var u models.User
-	tx := config.DB.Model(&models.User{}).Preload(clause.Associations).
-		Preload("CurrentAvatar.Image").
-		Preload("FallbackAvatar.Image").
-		Preload("CurrentAvatar.UnityPackages.File").
-		Preload("FallbackAvatar.UnityPackages.File").
-		Where("id = ?", uid).First(&u)
-	if tx.Error != nil {
+	var u *models.User
+	var err error
+	if u, err = models.GetUserById(uid); err != nil {
 		return c.JSON(models.PhotonValidateJoinJWTResponse{Valid: false})
 	}
 
@@ -145,8 +133,7 @@ func doPropertyUpdate(c *fiber.Ctx) error {
 		Valid: true,
 		IP:    "notset",
 	}
-	err := r.FillFromUser(&u)
-	if err != nil {
+	if err = r.FillFromUser(u); err != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 	return c.JSON(r)

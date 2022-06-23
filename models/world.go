@@ -5,6 +5,7 @@ import (
 	"github.com/lib/pq"
 	"gitlab.com/george/shoya-go/config"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"time"
 )
 
@@ -27,6 +28,30 @@ func (w *World) BeforeCreate(*gorm.DB) (err error) {
 	return
 }
 
+func GetWorldById(id string) (*World, error) {
+	var w *World
+	tx := config.DB.Preload(clause.Associations).
+		Preload("Image").
+		Preload("Image.Versions").
+		Preload("Image.Versions.FileDescriptor").
+		Preload("Image.Versions.DeltaDescriptor").
+		Preload("Image.Versions.SignatureDescriptor").
+		Preload("UnityPackages.File").
+		Preload("UnityPackages.File.Versions").
+		Preload("UnityPackages.File.Versions.FileDescriptor").
+		Preload("UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("UnityPackages.File.Versions.SignatureDescriptor").
+		Where("id = ?", id).First(&w)
+	if tx.Error != nil {
+		if tx.Error == gorm.ErrRecordNotFound {
+			return nil, ErrWorldNotFound
+		}
+		return nil, tx.Error
+	}
+
+	return w, nil
+}
+
 // GetAuthor returns a pointer to the world author's User.
 func (w *World) GetAuthor() (*User, error) {
 	var u User
@@ -41,12 +66,12 @@ func (w *World) GetAuthor() (*User, error) {
 
 // GetImageUrl returns the Url present in the Image field.
 func (w *World) GetImageUrl() string {
-	return w.Image.Url
+	return w.Image.GetLatestVersion().GetFileUrl()
 }
 
 // GetThumbnailImageUrl returns the Url present in the Image field.
 func (w *World) GetThumbnailImageUrl() string {
-	return w.Image.Url
+	return w.Image.GetLatestVersion().GetFileUrl()
 }
 
 // GetLatestAssetUrl iterates through a World's UnityPackages and returns the Url present in the File
@@ -56,7 +81,7 @@ func (w *World) GetLatestAssetUrl() string {
 	maxVersion := 0
 	for _, pkg := range w.UnityPackages {
 		if pkg.Version >= maxVersion {
-			assetUrl = pkg.File.Url
+			assetUrl = pkg.File.GetLatestVersion().GetFileUrl()
 		}
 	}
 

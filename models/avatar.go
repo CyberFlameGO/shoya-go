@@ -5,6 +5,7 @@ import (
 	"github.com/lib/pq"
 	"gitlab.com/george/shoya-go/config"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"time"
 )
 
@@ -22,8 +23,34 @@ type Avatar struct {
 }
 
 func (a *Avatar) BeforeCreate(*gorm.DB) (err error) {
-	a.ID = "avtr_" + uuid.New().String()
+	if a.ID == "" {
+		a.ID = "avtr_" + uuid.New().String()
+	}
 	return
+}
+
+func GetAvatarById(id string) (*Avatar, error) {
+	var a *Avatar
+	tx := config.DB.Preload(clause.Associations).
+		Preload("Image").
+		Preload("Image.Versions").
+		Preload("Image.Versions.FileDescriptor").
+		Preload("Image.Versions.DeltaDescriptor").
+		Preload("Image.Versions.SignatureDescriptor").
+		Preload("UnityPackages.File").
+		Preload("UnityPackages.File.Versions").
+		Preload("UnityPackages.File.Versions.FileDescriptor").
+		Preload("UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("UnityPackages.File.Versions.SignatureDescriptor").
+		Where("id = ?", id).First(&a)
+	if tx.Error != nil {
+		if tx.Error == gorm.ErrRecordNotFound {
+			return nil, ErrAvatarNotFound
+		}
+		return nil, tx.Error
+	}
+
+	return a, nil
 }
 
 // GetAuthor returns the author of the avatar
@@ -43,7 +70,7 @@ func (a *Avatar) GetAssetUrl() string {
 	maxVersion := 0
 	for _, pkg := range a.UnityPackages {
 		if pkg.Version >= maxVersion {
-			assetUrl = pkg.File.Url
+			assetUrl = pkg.File.GetLatestVersion().GetFileUrl()
 		}
 	}
 
@@ -60,11 +87,11 @@ func (a *Avatar) GetUnityPackages() []APIUnityPackage {
 }
 
 func (a *Avatar) GetImageUrl() string {
-	return a.Image.Url
+	return a.Image.GetLatestVersion().GetFileUrl()
 }
 
 func (a *Avatar) GetThumbnailImageUrl() string {
-	return a.Image.Url
+	return a.Image.GetLatestVersion().GetFileUrl()
 }
 
 func (a *Avatar) GetAPIAvatar() (*APIAvatar, error) {

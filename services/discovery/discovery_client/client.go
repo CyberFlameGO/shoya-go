@@ -84,6 +84,11 @@ func (d *Discovery) RegisterInstance(instance string, capacity int) *models.Worl
 	return i
 }
 
+// PingInstance updates the lastPing in Redis.
+func (d *Discovery) PingInstance(instance string) {
+	d.c.Post(fmt.Sprintf("%s/ping/%s?apiKey=%s", d.Url, instance, d.ApiKey), "application/json", nil)
+}
+
 // UnregisterInstance removes an instance from Redis.
 func (d *Discovery) UnregisterInstance(instance string) {
 	d.c.Post(fmt.Sprintf("%s/unregister/%s?apiKey=%s", d.Url, instance, d.ApiKey), "application/json", nil)

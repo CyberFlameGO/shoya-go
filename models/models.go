@@ -50,6 +50,7 @@ type WorldUnityPackage struct {
 	BelongsToAssetID string
 	FileID           string
 	File             File     `json:"-"`
+	FileVersion      int      `json:"-"`
 	Version          int      `json:"assetVersion"`
 	Platform         Platform `json:"platform"`
 	UnityVersion     string   `json:"unityVersion"`
@@ -64,7 +65,7 @@ func (u *WorldUnityPackage) BeforeCreate(*gorm.DB) (err error) {
 func (u *WorldUnityPackage) GetAPIUnityPackage(withAssetUrl bool) *APIUnityPackage {
 	var assetUrl = ""
 	if withAssetUrl {
-		assetUrl = u.File.Url
+		assetUrl = u.File.GetLatestVersion().GetFileUrl()
 	}
 	return &APIUnityPackage{
 		ID:              u.ID,
@@ -83,6 +84,7 @@ type AvatarUnityPackage struct {
 	BelongsToAssetID string
 	FileID           string   `json:"-"`
 	File             File     `json:"-"`
+	FileVersion      int      `json:"-"`
 	Version          int      `json:"assetVersion"`
 	Platform         Platform `json:"platform"`
 	UnityVersion     string   `json:"unityVersion"`
@@ -98,7 +100,8 @@ func (u *AvatarUnityPackage) GetAPIUnityPackage() *APIUnityPackage {
 	return &APIUnityPackage{
 		ID:              u.ID,
 		CreatedAt:       time.Unix(u.CreatedAt, 0).UTC().Format(time.RFC3339Nano),
-		AssetUrl:        u.File.Url,
+		AssetUrl:        u.File.GetVersion(u.FileVersion).GetFileUrl(),
+		AssetVersion:    u.Version,
 		Platform:        u.Platform,
 		UnityVersion:    u.UnityVersion,
 		UnitySortNumber: u.UnitySortNumber,
