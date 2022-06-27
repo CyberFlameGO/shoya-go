@@ -17,6 +17,7 @@ func usersRoutes(router *fiber.App) {
 	// VRChat is inconsistent with how the do routing. Some are under /user, others /users.
 	user := router.Group("/user", ApiKeyMiddleware, AuthMiddleware)
 	user.Get("/:id/friendStatus", getUserFriendStatus)
+	user.Post("/:id/friendRequest", postFriendRequest)
 	user.Get("/:id/moderations", AdminMiddleware, getUserModerations)
 	user.Post("/:id/moderations", postUserModerations)
 
@@ -440,6 +441,10 @@ func getUserFriendStatus(c *fiber.Ctx) error {
 		"isFriend":        false,
 		"outgoingRequest": false,
 	})
+}
+
+func postFriendRequest(c *fiber.Ctx) error {
+	return nil
 }
 
 // postUserAddTags | POST /users/:id/addTags

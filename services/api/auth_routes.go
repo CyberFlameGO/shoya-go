@@ -7,6 +7,7 @@ import (
 	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -166,7 +167,59 @@ func getFriends(c *fiber.Ctx) error {
 // Returns the current user's notifications.
 // TODO: This requires the implementation of presence. (presence has to be built before notifications).
 func getNotifications(c *fiber.Ctx) error {
-	return c.Status(200).JSON([]struct{}{})
+	var u = c.Locals("user").(*models.User)
+	var notificationType = models.NotificationTypeAll
+	var notificationLimit = 60
+	var notificationOffset = 0
+	var showHiddenNotifications bool
+	var showSentNotifications bool
+	var err error
+
+	if c.Query("type") != "" {
+		notificationType = models.NotificationType(c.Query("type"))
+	}
+
+	if c.Query("sent") != "" {
+		showSentNotifications = strings.ToLower(c.Query("sent")) == "true"
+		if showSentNotifications {
+			return c.Status(400).JSON(models.MakeErrorResponse("the sent＝true option is no longer supported by the API", 400))
+		}
+	}
+
+	if c.Query("hidden") != "" {
+		showHiddenNotifications = strings.ToLower(c.Query("hidden")) == "true"
+		if showHiddenNotifications && notificationType != models.NotificationTypeFriendRequest {
+			return c.Status(400).JSON(models.MakeErrorResponse("the only type you can see hidden content on is friendRequest", 400))
+		}
+	}
+
+	if c.Query("n") != "" {
+		notificationLimit, err = strconv.Atoi(c.Query("n"))
+		if err != nil {
+			return c.Status(400).JSON(models.MakeErrorResponse("invalid notification limit", 400))
+		}
+
+		if notificationLimit < 1 || notificationLimit > 100 {
+			return c.Status(400).JSON(models.MakeErrorResponse("invalid notification limit", 400))
+		}
+	}
+
+	if c.Query("offset") != "" {
+		notificationOffset, err = strconv.Atoi(c.Query("offset"))
+		if err != nil {
+			return c.Status(400).JSON(models.MakeErrorResponse("invalid notification offset", 400))
+		}
+
+		if notificationOffset < 0 {
+			return c.Status(400).JSON(models.MakeErrorResponse("invalid notification offset", 400))
+		}
+	}
+
+	notifications, err := u.GetNotifications(notificationType, showHiddenNotifications, notificationLimit, notificationOffset, time.Unix(0, 0))
+	if err != nil {
+		return err
+	}
+	return c.Status(200).JSON(notifications)
 }
 
 // getModerations | GET /auth/user/moderations

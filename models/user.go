@@ -280,6 +280,49 @@ func (u *User) GetPresence() *UserPresence { // WIP -- skipcq
 	}
 }
 
+func (u *User) GetFriends() ([]string, error) {
+	var f []FriendRequest
+
+	if tx := config.DB.Where("from_id = ? OR to_id = ?", u.ID, u.ID).Where("state = ?", FriendRequestStateAccepted).Find(&f); tx.Error != nil {
+		return nil, tx.Error
+	}
+
+	fs := make([]string, len(f))
+	for idx, frq := range f {
+		if frq.FromID == u.ID {
+			fs[idx] = frq.ToID
+			continue
+		}
+
+		fs[idx] = frq.FromID
+	}
+
+	return fs, nil
+}
+
+func (u *User) GetNotifications(notificationType NotificationType, showHidden bool, limit, offset int, after time.Time) ([]Notification, error) {
+	var n []Notification
+
+	if notificationType == NotificationTypeAll || notificationType == NotificationTypeFriendRequest {
+		var frq []FriendRequest
+		tx := config.DB.Where("to_id = ?", u.ID).Where("state = ?", FriendRequestStateSent)
+
+		if showHidden {
+			tx = tx.Or("state = ?", FriendRequestStateIgnored)
+		}
+
+		tx.Find(&frq)
+		for _, fr := range frq {
+			n = append(n, Notification{
+				Type:    NotificationTypeFriendRequest,
+				Details: fr,
+			})
+		}
+	}
+
+	return n, nil
+}
+
 func (u *User) GetAPIUser(isFriend bool, shouldGetLocation bool) *APIUser {
 	var friendKey = ""
 	var worldId = "offline"

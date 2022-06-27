@@ -103,4 +103,5 @@ var (
 	ErrInvalidAuthCookie                             = errors.New("invalid auth cookie")
 	ErrFileNotFound                                  = errors.New("file version not found")
 	ErrUrlParseFailed                                = errors.New("url parse failed")
+	ErrNoFriendRequestFound                          = errors.New("no friend request found")
 )
