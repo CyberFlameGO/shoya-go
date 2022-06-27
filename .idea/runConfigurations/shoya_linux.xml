@@ -1,0 +1,18 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="shoya_linux" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="shoya-go" />
+    <working_directory value="./" />
+    <go_parameters value="-o ./bin/shoya_linux" />
+    <envs>
+      <env name="GOARCH" value="amd64" />
+      <env name="GOOS" value="linux" />
+    </envs>
+    <kind value="PACKAGE" />
+    <package value="gitlab.com/george/shoya-go" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <output_directory value="./bin/" />
+    <option name="run" value="false" />
+    <method v="2" />
+  </configuration>
+</component>
