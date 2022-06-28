@@ -18,8 +18,8 @@ const (
 
 type Moderation struct {
 	BaseModel
-	SourceID   string
-	TargetID   string
+	SourceID   string `gorm:"primaryKey"`
+	TargetID   string `gorm:"primaryKey"`
 	WorldID    string
 	InstanceID string
 	Type       ModerationType

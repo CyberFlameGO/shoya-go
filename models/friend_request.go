@@ -19,9 +19,9 @@ const (
 type FriendRequest struct {
 	BaseModel
 	FromID string             `json:"fromId"`
-	From   User               `json:"fromUser"`
+	From   User               `json:"fromUser" gorm:"foreignKey:ID;references:FromID"`
 	ToID   string             `json:"toId"`
-	To     User               `json:"toUser"`
+	To     User               `json:"toUser" gorm:"foreignKey:ID;references:ToID"`
 	State  FriendRequestState `json:"state"`
 }
 

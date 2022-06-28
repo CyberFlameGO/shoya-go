@@ -89,58 +89,60 @@ func initializeDB() {
 
 	err = config.DB.AutoMigrate(&models.User{})
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("failed to migrate User model: %s\n", err)
 	}
 	err = config.DB.AutoMigrate(&models.Avatar{})
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("failed to migrate Avatar model: %s\n", err)
 	}
-	err = config.DB.AutoMigrate(&models.File{})
-	if err != nil {
-		fmt.Println(err)
-	}
+
 	err = config.DB.AutoMigrate(&models.FavoriteGroup{})
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("failed to migrate FavoriteGroup model: %s\n", err)
 	}
 	err = config.DB.AutoMigrate(&models.FavoriteItem{})
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("failed to migrate FavoriteItem model: %s\n", err)
 	}
 	err = config.DB.AutoMigrate(&models.Moderation{})
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("failed to migrate Moderation model: %s\n", err)
 	}
 	err = config.DB.AutoMigrate(&models.Permission{})
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("failed to migrate Permission model: %s\n", err)
 	}
 	err = config.DB.AutoMigrate(models.WorldUnityPackage{})
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("failed to migrate WorldUnityPackage model: %s\n", err)
 	}
 	err = config.DB.AutoMigrate(&models.AvatarUnityPackage{})
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("failed to migrate AvatarUnityPackage model: %s\n", err)
 	}
 	err = config.DB.AutoMigrate(&models.PlayerModeration{})
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("failed to migrate PlayerModeration model: %s\n", err)
 	}
 
 	err = config.DB.AutoMigrate(&models.File{})
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("failed to migrate File model: %s\n", err)
 	}
 
 	err = config.DB.AutoMigrate(&models.FileVersion{})
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("failed to migrate FileVersion model: %s\n", err)
 	}
 
 	err = config.DB.AutoMigrate(&models.FileDescriptor{})
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("failed to migrate FileDescriptor model: %s\n", err)
+	}
+
+	err = config.DB.AutoMigrate(&models.FriendRequest{})
+	if err != nil {
+		fmt.Printf("failed to migrate FriendRequest model: %s\n", err)
 	}
 }
 

@@ -158,9 +158,15 @@ func getSelf(c *fiber.Ctx) error {
 
 // getFriends | GET /auth/user/friends
 // Returns a list of the user's friends.
-// TODO: This requires the implementation of friends.
 func getFriends(c *fiber.Ctx) error {
-	return c.JSON([]struct{}{})
+	var u = c.Locals("user").(*models.User)
+	var friends []string
+	var err error
+
+	if friends, err = u.GetFriends(); err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+	return c.JSON(friends)
 }
 
 // getNotifications | GET /auth/user/notifications

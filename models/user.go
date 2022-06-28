@@ -84,7 +84,7 @@ type User struct {
 	MfaSecret                     string          `json:"-"`
 	MfaRecoveryCodes              pq.StringArray  `json:"-" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
 	Permissions                   []Permission    `json:"-"`
-	Moderations                   []Moderation    `json:"-" gorm:"foreignKey:TargetID"`
+	Moderations                   []Moderation    `json:"-" gorm:"references:ID;foreignKey:TargetID"`
 	FriendKey                     string          `json:"-"`
 	ProfilePicOverride            string          `json:"profilePicOverride"`
 	Unsubscribe                   bool            `json:"unsubscribe"`
