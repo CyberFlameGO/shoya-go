@@ -1,5 +1,7 @@
 ## shoya-go | The API of the VRChat server emulator
-Shoya is the heart of the server emulator (private server) I've been writing for VRChat, a multiplayer social VR experience. 
+Shoya is the heart of the server emulator (private server) I've been writing for VRChat, a multiplayer social VR experience.
+
+![Discord](https://img.shields.io/discord/876431015478951936?color=DD00FF&logo=Discord&logoColor=FFFFFF&style=plastic) [![pipeline status](https://gitlab.com/george/shoya-go/badges/master/pipeline.svg)](https://gitlab.com/george/shoya-go/-/commits/master)
 
 ---
 
