@@ -1,4 +1,4 @@
-config.json
-vendor/**
-bin/**
-.docker/**/bin
+/config.json
+/vendor/**
+/bin/**
+/.docker/**/bin
