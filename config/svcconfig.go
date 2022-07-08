@@ -15,7 +15,7 @@ func LoadConfig(config ...string) error {
 	var configInEnv string
 	var err error
 
-	if len(config) == 0 {
+	if len(config) == 0 || config[0] == "config.json" {
 		var ok bool
 		if configInEnv, ok = os.LookupEnv("SHOYA_CONFIG_JSON"); !ok {
 			configPath = "./config.json"
