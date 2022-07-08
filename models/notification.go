@@ -39,6 +39,13 @@ func ParseNotificationType(s string) NotificationType {
 }
 
 type Notification struct {
-	Type    NotificationType
-	Details interface{}
+	CreatedAt      string           `json:"created_at"`
+	ID             string           `json:"id"`
+	Type           NotificationType `json:"type"`
+	Details        interface{}      `json:"details"` // Can be a string, a map[string]interface{}, or nil.
+	Message        *string          `json:"message"`
+	Seen           *bool            `json:"seen,omitempty"`           // This can be not included (e.g.: when sent over websocket).
+	SenderId       *string          `json:"senderUserId,omitempty"`   // This can be not included (e.g.: when sent over websocket).
+	SenderUsername *string          `json:"senderUsername,omitempty"` // This can be not included (e.g.: when sent over websocket).
+	ReceiverUserId *string          `json:"receiverUserId,omitempty"` // This can be not included (e.g.: when sent over websocket).
 }

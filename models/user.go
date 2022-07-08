@@ -305,19 +305,42 @@ func (u *User) GetNotifications(notificationType NotificationType, showHidden bo
 
 	if notificationType == NotificationTypeAll || notificationType == NotificationTypeFriendRequest {
 		var frq []FriendRequest
-		tx := config.DB.Where("to_id = ?", u.ID).Where("state = ?", FriendRequestStateSent)
+		tx := config.DB.Preload(clause.Associations).Where("to_id = ?", u.ID).Where("state = ?", FriendRequestStateSent)
 
 		if showHidden {
 			tx = tx.Or("state = ?", FriendRequestStateIgnored)
 		}
 
 		tx.Find(&frq)
+		var frDetail = "{}" // Mimic official behavior.
 		for _, fr := range frq {
 			n = append(n, Notification{
-				Type:    NotificationTypeFriendRequest,
-				Details: fr,
+				Type:           NotificationTypeFriendRequest,
+				Details:        frDetail,
+				CreatedAt:      time.Unix(fr.CreatedAt, 0).Format(time.RFC3339),
+				ID:             fr.ID,
+				SenderId:       &fr.From.ID,
+				SenderUsername: &fr.From.Username,
 			})
 		}
+	}
+
+	// TODO: The following notification types will be implemented at a later date; They will be ephemeral.
+	//       They will be stored in Redis for 15 minutes.
+	if notificationType == NotificationTypeAll || notificationType == NotificationTypeInvite {
+
+	}
+
+	if notificationType == NotificationTypeAll || notificationType == NotificationTypeInviteResponse {
+
+	}
+
+	if notificationType == NotificationTypeAll || notificationType == NotificationTypeRequestInvite {
+
+	}
+
+	if notificationType == NotificationTypeAll || notificationType == NotificationTypeRequestInviteResponse {
+
 	}
 
 	return n, nil
