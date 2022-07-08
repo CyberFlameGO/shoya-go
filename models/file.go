@@ -133,7 +133,7 @@ type FileVersion struct {
 	DeltaDescriptorID     string           `json:"-"`
 	DeltaDescriptor       FileDescriptor   `json:"delta" gorm:"foreignKey:ID;references:DeltaDescriptorID"`
 	SignatureDescriptorID string           `json:"-"`
-	SignatureDescriptor   FileDescriptor   `json:"signature" gorm:"foreignKey:ID;references:ignatureDescriptorID"`
+	SignatureDescriptor   FileDescriptor   `json:"signature" gorm:"foreignKey:ID;references:SignatureDescriptorID"`
 }
 
 func (f *FileVersion) GetFileUrl() string {
