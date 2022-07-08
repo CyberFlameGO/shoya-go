@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/tj/go-naturaldate"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
 	"gorm.io/gorm"
@@ -177,6 +178,7 @@ func getNotifications(c *fiber.Ctx) error {
 	var notificationType = models.NotificationTypeAll
 	var notificationLimit = 60
 	var notificationOffset = 0
+	var notificationsAfter = time.Unix(0, 0)
 	var showHiddenNotifications bool
 	var showSentNotifications bool
 	var err error
@@ -221,7 +223,15 @@ func getNotifications(c *fiber.Ctx) error {
 		}
 	}
 
-	notifications, err := u.GetNotifications(notificationType, showHiddenNotifications, notificationLimit, notificationOffset, time.Unix(0, 0))
+	if c.Query("after") != "" {
+		after, err := naturaldate.Parse(strings.ReplaceAll(c.Query("after"), "_", " "), time.Now().UTC(), naturaldate.WithDirection(naturaldate.Past))
+		if err != nil {
+			return c.Status(400).JSON(models.MakeErrorResponse("invalid notification after date", 400))
+		}
+		notificationsAfter = after
+	}
+
+	notifications, err := u.GetNotifications(notificationType, showHiddenNotifications, notificationLimit, notificationOffset, notificationsAfter)
 	if err != nil {
 		return err
 	}

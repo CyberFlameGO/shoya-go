@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/google/uuid"
 	"gitlab.com/george/shoya-go/config"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -19,19 +20,24 @@ const (
 type FriendRequest struct {
 	BaseModel
 	FromID string             `json:"fromId"`
-	From   User               `json:"fromUser" gorm:"foreignKey:ID;references:FromID"`
+	From   User               `json:"-" gorm:"foreignKey:ID;references:FromID"`
 	ToID   string             `json:"toId"`
-	To     User               `json:"toUser" gorm:"foreignKey:ID;references:ToID"`
+	To     User               `json:"-" gorm:"foreignKey:ID;references:ToID"`
 	State  FriendRequestState `json:"state"`
 }
 
 // NewFriendRequest creates a new friend request between two users.
 func NewFriendRequest(fromUser, toUser *User) *FriendRequest {
 	return &FriendRequest{
-		From:  *fromUser,
-		To:    *toUser,
-		State: FriendRequestStateSent,
+		FromID: fromUser.ID,
+		ToID:   toUser.ID,
+		State:  FriendRequestStateSent,
 	}
+}
+
+func (f *FriendRequest) BeforeCreate(*gorm.DB) (err error) {
+	f.ID = "frq_" + uuid.New().String() // TODO: Possibly do a database lookup to see whether the UUID already exists.
+	return
 }
 
 // Accept accepts a friend request.
@@ -80,7 +86,7 @@ func (f *FriendRequest) Delete() (bool, error) {
 // GetFriendRequestForUsers returns the friend request between two users.
 func GetFriendRequestForUsers(u1, u2 string) (*FriendRequest, error) {
 	var fr FriendRequest
-	if tx := config.DB.Where("from_id = ? AND to_id = ?", u1, u2).Or("from_id = ? AND to_id = ?", u2, u1).First(&fr); tx.Error != nil {
+	if tx := config.DB.Preload(clause.Associations).Where("from_id = ? AND to_id = ?", u1, u2).Or("from_id = ? AND to_id = ?", u2, u1).First(&fr); tx.Error != nil {
 		if tx.Error == gorm.ErrRecordNotFound {
 			return nil, ErrNoFriendRequestFound
 		}

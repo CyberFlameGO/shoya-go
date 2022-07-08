@@ -17,7 +17,7 @@ func usersRoutes(router *fiber.App) {
 	// VRChat is inconsistent with how the do routing. Some are under /user, others /users.
 	user := router.Group("/user", ApiKeyMiddleware, AuthMiddleware)
 	user.Get("/:id/friendStatus", getUserFriendStatus)
-	user.Post("/:id/friendRequest", postFriendRequest)
+	user.Post("/:id/friendRequest", postUserFriendRequest)
 	user.Get("/:id/moderations", AdminMiddleware, getUserModerations)
 	user.Post("/:id/moderations", postUserModerations)
 
@@ -161,7 +161,7 @@ func getUserByUsername(c *fiber.Ctx) error {
 // The following fields can be updated via this endpoint:
 //  - acceptedTOSVersion
 //  - bio
-//  - bioLinks [Not Implemented]
+//  - bioLinks
 //  - status
 //  - statusDescription
 //  - email
@@ -434,17 +434,86 @@ func postUserModerations(c *fiber.Ctx) error {
 
 // getUserFriendStatus | GET /user/:id/friendStatus
 // Gets the status of an incoming or outgoing friend request toward that user (or if they are already friends).
-// TODO: This depends on friendships being implemented.
 func getUserFriendStatus(c *fiber.Ctx) error {
+	var incoming, outgoing, isFriend bool
+	var cu = c.Locals("user").(*models.User)
+
+	fr, err := models.GetFriendRequestForUsers(cu.ID, c.Params("id"))
+	if err != nil {
+		if err == models.ErrNoFriendRequestFound {
+			incoming = false
+			outgoing = false
+			isFriend = false
+			goto finish
+		} else {
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
+	}
+
+	if fr.State == models.FriendRequestStateAccepted {
+		incoming = false
+		outgoing = false
+		isFriend = true
+		goto finish
+	} else {
+		incoming = fr.ToID == cu.ID
+		outgoing = fr.FromID == cu.ID
+		isFriend = false
+	}
+
+finish:
 	return c.JSON(fiber.Map{
-		"incomingRequest": false,
-		"isFriend":        false,
-		"outgoingRequest": false,
+		"incomingRequest": incoming,
+		"isFriend":        isFriend,
+		"outgoingRequest": outgoing,
 	})
 }
 
-func postFriendRequest(c *fiber.Ctx) error {
-	return nil
+// postUserFriendRequest | POST /user/:id/friendRequest
+// Sends a friend request to the user.
+func postUserFriendRequest(c *fiber.Ctx) error {
+	var cu = c.Locals("user").(*models.User)
+	var fr *models.FriendRequest
+	var toId = c.Params("id")
+
+	if cu.ID == toId {
+		return c.Status(400).JSON(models.MakeErrorResponse("cannot send friend request to self", 400))
+	}
+
+	fr, err := models.GetFriendRequestForUsers(cu.ID, toId)
+	if err != nil {
+		if err != models.ErrNoFriendRequestFound {
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
+	}
+
+	if fr != nil {
+		if fr.State == models.FriendRequestStateAccepted {
+			return c.Status(400).JSON(models.MakeErrorResponse("already friends", 400))
+		} else if fr.FromID == cu.ID {
+			return c.Status(400).JSON(models.MakeErrorResponse("already sent friend request", 400))
+		} else {
+			_, err = fr.Accept()
+			if err != nil {
+				return c.JSON(models.MakeErrorResponse(err.Error(), 500))
+			}
+
+			return c.JSON(fr)
+		}
+	}
+
+	tu, err := models.GetUserById(toId)
+	if err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	fr = models.NewFriendRequest(cu, tu)
+	err = config.DB.Create(&fr).Error
+	if err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	return c.JSON(fr)
 }
 
 // postUserAddTags | POST /users/:id/addTags

@@ -301,11 +301,19 @@ func (u *User) GetFriends() ([]string, error) {
 }
 
 func (u *User) GetNotifications(notificationType NotificationType, showHidden bool, limit, offset int, after time.Time) ([]Notification, error) {
-	var n []Notification
+	var n = make([]Notification, 0)
 
-	if notificationType == NotificationTypeAll || notificationType == NotificationTypeFriendRequest {
+	if after.IsZero() && notificationType == NotificationTypeAll || notificationType == NotificationTypeFriendRequest {
 		var frq []FriendRequest
 		tx := config.DB.Preload(clause.Associations).Where("to_id = ?", u.ID).Where("state = ?", FriendRequestStateSent)
+
+		if limit > 0 {
+			tx = tx.Limit(limit)
+		}
+
+		if offset > 0 {
+			tx = tx.Offset(offset)
+		}
 
 		if showHidden {
 			tx = tx.Or("state = ?", FriendRequestStateIgnored)
