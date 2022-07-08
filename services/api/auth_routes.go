@@ -27,6 +27,7 @@ func authRoutes(r *fiber.App) {
 
 	user.Get("/notifications", AuthMiddleware, getNotifications)
 	user.Put("/notifications/:id/see", AuthMiddleware, putNotificationSeen)
+	user.Put("/notifications/:id/accept", AuthMiddleware, putNotificationAccept)
 	user.Put("/notifications/:id/hide", AuthMiddleware, putNotificationHidden)
 
 	user.Get("/moderations", AuthMiddleware, getModerations)
@@ -274,8 +275,47 @@ func putNotificationSeen(c *fiber.Ctx) error { // TODO: Notification seen state.
 	})
 }
 
+func putNotificationAccept(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+	var id = c.Params("id")
+
+	var isFriendRequest bool
+	if strings.HasPrefix(id, "frq_") {
+		isFriendRequest = true
+	}
+
+	if isFriendRequest {
+		friendRequest, err := models.GetFriendRequestById(id)
+		if err != nil {
+			if err == models.ErrNoFriendRequestFound {
+				return c.Status(404).JSON(models.MakeErrorResponse("Friend request not found", 404))
+			} else {
+				return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+			}
+		}
+
+		if friendRequest.ToID != u.ID {
+			// Normally, we'd tell the user that they're not allowed to do this,
+			// but this is a special case for the API, where we don't want to let the user know a friendship between two users may or may not exist.
+			return c.Status(403).JSON(models.MakeErrorResponse("Friend request not found", 404))
+		}
+
+		_, err = friendRequest.Accept()
+		if err != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
+
+		return c.Status(200).JSON(fiber.Map{
+			"ok": true,
+		})
+	}
+
+	// TODO: See if other notification types can be accepted (e.g.: invites).
+	return c.Status(500).JSON(models.MakeErrorResponse("Not a friend request", 500))
+}
+
 // putNotificationHidden | PUT /auth/user/notifications/:id/hide
-// Marks a notification as hidden. This only works for friend requests.
+// Marks a notification as hidden. This only works for friend requests at the moment.
 func putNotificationHidden(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
 	var id = c.Params("id")
