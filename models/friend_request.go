@@ -40,6 +40,18 @@ func (f *FriendRequest) BeforeCreate(*gorm.DB) (err error) {
 	return
 }
 
+func GetFriendRequestById(id string) (*FriendRequest, error) {
+	var fr FriendRequest
+	if tx := config.DB.Preload(clause.Associations).Where("id = ?", id).First(&fr); tx.Error != nil {
+		if tx.Error == gorm.ErrRecordNotFound {
+			return nil, ErrNoFriendRequestFound
+		}
+		return nil, tx.Error
+	}
+
+	return &fr, nil
+}
+
 // Accept accepts a friend request.
 func (f *FriendRequest) Accept() (bool, error) {
 	if f.State == FriendRequestStateAccepted {
@@ -94,4 +106,13 @@ func GetFriendRequestForUsers(u1, u2 string) (*FriendRequest, error) {
 	}
 
 	return &fr, nil
+}
+
+func IsFriend(u1, u2 string) bool {
+	frq, err := GetFriendRequestForUsers(u1, u2)
+	if err != nil {
+		return false
+	}
+
+	return frq.State == FriendRequestStateAccepted
 }

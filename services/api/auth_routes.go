@@ -21,9 +21,15 @@ func authRoutes(r *fiber.App) {
 
 	user := auth.Group("/user")
 	user.Get("/", LoginMiddleware, AuthMiddleware, getSelf)
+
 	user.Get("/friends", AuthMiddleware, getFriends)
-	user.Get("/moderations", AuthMiddleware, getModerations)
+	user.Delete("/friends/:id", AuthMiddleware, deleteFriend)
+
 	user.Get("/notifications", AuthMiddleware, getNotifications)
+	user.Put("/notifications/:id/see", AuthMiddleware, putNotificationSeen)
+	user.Put("/notifications/:id/hide", AuthMiddleware, putNotificationHidden)
+
+	user.Get("/moderations", AuthMiddleware, getModerations)
 
 	user.Get("/playermoderations", AuthMiddleware, getPlayerModerations)
 	user.Post("/playermoderations", AuthMiddleware, postPlayerModerations)
@@ -170,9 +176,33 @@ func getFriends(c *fiber.Ctx) error {
 	return c.JSON(friends)
 }
 
+func deleteFriend(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+	var id = c.Params("id")
+	var fr *models.FriendRequest
+	var err error
+
+	fr, err = models.GetFriendRequestForUsers(u.ID, id)
+	if err != nil {
+		if err == models.ErrNoFriendRequestFound {
+			return c.Status(404).JSON(models.MakeErrorResponse("Friend request not found", 404))
+		}
+
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	_, err = fr.Delete()
+	if err != nil {
+		return err
+	}
+
+	return c.Status(200).JSON(fiber.Map{
+		"ok": true,
+	})
+}
+
 // getNotifications | GET /auth/user/notifications
 // Returns the current user's notifications.
-// TODO: This requires the implementation of presence. (presence has to be built before notifications).
 func getNotifications(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
 	var notificationType = models.NotificationTypeAll
@@ -236,6 +266,45 @@ func getNotifications(c *fiber.Ctx) error {
 		return err
 	}
 	return c.Status(200).JSON(notifications)
+}
+
+func putNotificationSeen(c *fiber.Ctx) error { // TODO: Notification seen state.
+	return c.Status(200).JSON(fiber.Map{
+		"ok": true,
+	})
+}
+
+// putNotificationHidden | PUT /auth/user/notifications/:id/hide
+// Marks a notification as hidden. This only works for friend requests.
+func putNotificationHidden(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+	var id = c.Params("id")
+
+	var fr *models.FriendRequest
+	var err error
+
+	fr, err = models.GetFriendRequestById(id)
+	if err != nil {
+		if err == models.ErrNoFriendRequestFound {
+			return c.Status(404).JSON(models.MakeErrorResponse("Friend request not found", 404))
+		}
+
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	if fr.ToID != u.ID {
+		// Normally, we'd tell the user that they're not allowed to do this,
+		// but this is a special case for the API, where we don't want to let the user know a friendship between two users may or may not exist.
+		return c.Status(403).JSON(models.MakeErrorResponse("Friend request not found", 404))
+	}
+
+	if _, err = fr.Deny(); err != nil {
+		return err
+	}
+
+	return c.Status(200).JSON(fiber.Map{
+		"ok": true,
+	})
 }
 
 // getModerations | GET /auth/user/moderations

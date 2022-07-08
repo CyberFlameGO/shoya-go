@@ -18,6 +18,7 @@ func usersRoutes(router *fiber.App) {
 	user := router.Group("/user", ApiKeyMiddleware, AuthMiddleware)
 	user.Get("/:id/friendStatus", getUserFriendStatus)
 	user.Post("/:id/friendRequest", postUserFriendRequest)
+	user.Delete("/:id/friendRequest", deleteUserFriendRequest)
 	user.Get("/:id/moderations", AdminMiddleware, getUserModerations)
 	user.Post("/:id/moderations", postUserModerations)
 
@@ -100,7 +101,8 @@ func getUsers(c *fiber.Ctx) error {
 	tx.Find(&users)
 
 	for _, user := range users {
-		lu := user.GetAPILimitedUser(false, false) // TODO: Friendship check.
+		isFriend := models.IsFriend(c.Locals("user").(*models.User).ID, user.ID)
+		lu := user.GetAPILimitedUser(isFriend, false)
 		rUsers = append(rUsers, lu)
 	}
 	return c.Status(fiber.StatusOK).JSON(rUsers)
@@ -129,7 +131,8 @@ func getUser(c *fiber.Ctx) error {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
-	return c.Status(fiber.StatusOK).JSON(ru.GetAPIUser(false, false)) // TODO: Implement friendship system. Check friendship.
+	isFriend := models.IsFriend(cu.ID, ru.ID)
+	return c.Status(fiber.StatusOK).JSON(ru.GetAPIUser(isFriend, isFriend))
 }
 
 // getUserByUsername | GET /users/:username/name
@@ -152,7 +155,8 @@ func getUserByUsername(c *fiber.Ctx) error {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 
-	return c.Status(fiber.StatusOK).JSON(ru.GetAPIUser(false, false)) // TODO: Implement friendship system. Check friendship.
+	isFriend := models.IsFriend(cu.ID, ru.ID)
+	return c.Status(fiber.StatusOK).JSON(ru.GetAPIUser(isFriend, isFriend))
 }
 
 // putUser | PUT /users/:id
@@ -514,6 +518,36 @@ func postUserFriendRequest(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fr)
+}
+
+func deleteUserFriendRequest(c *fiber.Ctx) error {
+	var cu = c.Locals("user").(*models.User)
+	var fr *models.FriendRequest
+	var toId = c.Params("id")
+
+	fr, err := models.GetFriendRequestForUsers(cu.ID, toId)
+	if err != nil {
+		if err != models.ErrNoFriendRequestFound {
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
+	}
+
+	if fr != nil {
+		if fr.State == models.FriendRequestStateAccepted {
+			return c.Status(400).JSON(models.MakeErrorResponse("already friends", 400))
+		} else {
+			_, err = fr.Delete()
+			if err != nil {
+				return c.JSON(models.MakeErrorResponse(err.Error(), 500))
+			}
+
+			return c.JSON(fiber.Map{
+				"ok": true,
+			})
+		}
+	}
+
+	return c.Status(400).JSON(models.MakeErrorResponse("no friend request found", 400))
 }
 
 // postUserAddTags | POST /users/:id/addTags

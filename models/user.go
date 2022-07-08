@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -276,6 +277,7 @@ func (u *User) GetPastDisplayNames() []DisplayNameChangeRecord { // WIP -- skipc
 
 func (u *User) GetPresence() *UserPresence { // WIP -- skipcq
 	return &UserPresence{
+		IsOnline:       false,
 		ShouldDisclose: false,
 	}
 }
@@ -305,7 +307,7 @@ func (u *User) GetNotifications(notificationType NotificationType, showHidden bo
 
 	if after.IsZero() && notificationType == NotificationTypeAll || notificationType == NotificationTypeFriendRequest {
 		var frq []FriendRequest
-		tx := config.DB.Preload(clause.Associations).Where("to_id = ?", u.ID).Where("state = ?", FriendRequestStateSent)
+		tx := config.DB.Preload(clause.Associations).Where("to_id = ?", u.ID)
 
 		if limit > 0 {
 			tx = tx.Limit(limit)
@@ -316,7 +318,9 @@ func (u *User) GetNotifications(notificationType NotificationType, showHidden bo
 		}
 
 		if showHidden {
-			tx = tx.Or("state = ?", FriendRequestStateIgnored)
+			tx = tx.Where("state = ?", FriendRequestStateIgnored)
+		} else {
+			tx = tx.Where("state = ?", FriendRequestStateSent)
 		}
 
 		tx.Find(&frq)
@@ -370,7 +374,7 @@ func (u *User) GetAPIUser(isFriend bool, shouldGetLocation bool) *APIUser {
 			worldId = userPresence.WorldId
 			location = userPresence.Location
 			instanceId = userPresence.Location
-		} else {
+		} else if userPresence.IsOnline {
 			worldId = "private"
 			location = "private"
 			instanceId = "private"
@@ -430,7 +434,7 @@ func (u *User) GetAPILimitedUser(isFriend bool, shouldGetLocation bool) *APILimi
 		userPresence := u.GetPresence()
 		if userPresence.ShouldDisclose {
 			location = userPresence.Location
-		} else {
+		} else if userPresence.IsOnline {
 			location = "private"
 		}
 	}
@@ -496,6 +500,11 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 
 	u.BioLinks = tempBioLinks
 
+	friends, err := u.GetFriends()
+	if err != nil {
+		fmt.Println(fmt.Errorf("error getting friends for user %v: %v", u.ID, err))
+	}
+
 	return &APICurrentUser{
 		BaseModel: BaseModel{
 			ID:        u.ID,
@@ -519,8 +528,8 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 		EmailVerified:                  u.EmailVerified,
 		FallbackAvatarID:               u.FallbackAvatarID,
 		FriendKey:                      u.FriendKey,
-		Friends:                        []string{}, // TODO: Implement friends.
-		HasBirthday:                    true,       // Hardcoded to true. This data won't be collected.
+		Friends:                        friends,
+		HasBirthday:                    true, // Hardcoded to true. This data won't be collected.
 		HasEmail:                       u.Email != "" && u.EmailVerified,
 		HasLoggedInFromClient:          true, // Hardcoded to true. Likely unnecessary.
 		HomeLocationID:                 u.HomeWorldID,
@@ -656,6 +665,7 @@ type DisplayNameChangeRecord struct {
 }
 
 type UserPresence struct {
+	IsOnline       bool
 	ShouldDisclose bool
 	WorldId        string
 	Location       string
