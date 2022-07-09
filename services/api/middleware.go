@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
+	"gorm.io/gorm/clause"
 	"math/rand"
 	"net/url"
 	"strings"
@@ -79,6 +80,9 @@ func LoginMiddleware(c *fiber.Ctx) error {
 		if t, err = models.CreateAuthCookie(u, c.IP(), isGameReq); err != nil {
 			return c.Status(500).JSON(models.MakeErrorResponse("failed to create auth cookie", 500))
 		}
+
+		u.LastLogin = time.Now().Unix()
+		config.DB.Omit(clause.Associations).Save(&u)
 
 		c.Locals("user", u)
 		c.Locals("authCookie", t)

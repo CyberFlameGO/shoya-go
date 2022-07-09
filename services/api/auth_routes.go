@@ -168,10 +168,10 @@ func getSelf(c *fiber.Ctx) error {
 // Returns a list of the user's friends.
 func getFriends(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
-	var friends []string
+	var friends []*models.APIUser
 	var err error
 
-	if friends, err = u.GetFriends(); err != nil {
+	if friends, err = u.GetFriendsAPIUser(); err != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
 	return c.JSON(friends)

@@ -111,7 +111,7 @@ func postFile(c *fiber.Ctx) error {
 	var err error
 
 	if err = c.BodyParser(&r); err != nil {
-		return c.Status(500).JSON(models.MakeErrorResponse("failed to parse request body", 500))
+		return c.Status(500).JSON(models.MakeErrorResponse("failed to parse request body: "+err.Error(), 500))
 	}
 
 	if r.FileMd5 != "" {

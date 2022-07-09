@@ -79,7 +79,7 @@ type User struct {
 	UserFavorites                 []FavoriteGroup `json:"-"`
 	WorldFavorites                []FavoriteGroup `json:"-"`
 	AvatarFavorites               []FavoriteGroup `json:"-"`
-	LastLogin                     int64           `json:"lastLogin"`
+	LastLogin                     int64           `json:"last_login"`
 	LastPlatform                  string          `json:"last_platform"`
 	MfaEnabled                    bool            `json:"mfaEnabled"`
 	MfaSecret                     string          `json:"-"`
@@ -118,6 +118,41 @@ func GetUserById(id string) (*User, error) {
 		Preload("FallbackAvatar.UnityPackages.File.Versions.DeltaDescriptor").
 		Preload("FallbackAvatar.UnityPackages.File.Versions.SignatureDescriptor").
 		Where("id = ?", id).First(&u).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return u, nil
+}
+
+func GetUsersById(ids []string) ([]*User, error) {
+	var u []*User
+	var err error
+
+	if err = config.DB.Preload(clause.Associations).
+		Preload("CurrentAvatar.Image").
+		Preload("CurrentAvatar.Image.Versions").
+		Preload("CurrentAvatar.Image.Versions.FileDescriptor").
+		Preload("CurrentAvatar.Image.Versions.DeltaDescriptor").
+		Preload("CurrentAvatar.Image.Versions.SignatureDescriptor").
+		Preload("CurrentAvatar.UnityPackages.File").
+		Preload("CurrentAvatar.UnityPackages.File.Versions").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.FileDescriptor").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("CurrentAvatar.UnityPackages.File.Versions.SignatureDescriptor").
+		Preload("FallbackAvatar.Image").
+		Preload("FallbackAvatar.Image.Versions").
+		Preload("FallbackAvatar.Image.Versions.FileDescriptor").
+		Preload("FallbackAvatar.Image.Versions.DeltaDescriptor").
+		Preload("FallbackAvatar.Image.Versions.SignatureDescriptor").
+		Preload("FallbackAvatar.UnityPackages.File").
+		Preload("FallbackAvatar.UnityPackages.File.Versions").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.FileDescriptor").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.DeltaDescriptor").
+		Preload("FallbackAvatar.UnityPackages.File.Versions.SignatureDescriptor").
+		Where("id IN ?", ids).Find(&u).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, ErrUserNotFound
 		}
@@ -300,6 +335,35 @@ func (u *User) GetFriends() ([]string, error) {
 	}
 
 	return fs, nil
+}
+
+func (u *User) GetFriendsAPIUser() ([]*APIUser, error) {
+	var f []FriendRequest
+
+	if tx := config.DB.Where("from_id = ? OR to_id = ?", u.ID, u.ID).Where("state = ?", FriendRequestStateAccepted).Find(&f); tx.Error != nil {
+		return nil, tx.Error
+	}
+
+	fs := make([]string, len(f))
+	for idx, frq := range f {
+		if frq.FromID == u.ID {
+			fs[idx] = frq.ToID
+			continue
+		}
+
+		fs[idx] = frq.FromID
+	}
+
+	fu, err := GetUsersById(fs)
+	if err != nil {
+		return nil, err
+	}
+
+	fa := make([]*APIUser, len(fu))
+	for idx, f := range fu {
+		fa[idx] = f.GetAPIUser(true, true)
+	}
+	return fa, nil
 }
 
 func (u *User) GetNotifications(notificationType NotificationType, showHidden bool, limit, offset int, after time.Time) ([]Notification, error) {
@@ -534,11 +598,11 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 		HasLoggedInFromClient:          true, // Hardcoded to true. Likely unnecessary.
 		HomeLocationID:                 u.HomeWorldID,
 		IsFriend:                       false, // TODO: Implement friends.
-		LastLogin:                      u.LastLogin,
+		LastLogin:                      time.Unix(u.LastLogin, 0).Format("02-01-2006"),
 		LastPlatform:                   u.LastPlatform,
-		ObfuscatedEmail:                ObfuscateEmail(u.Email),
-		ObfuscatedPendingEmail:         ObfuscateEmail(u.PendingEmail),
-		OfflineFriends:                 []string{}, // TODO: Implement friends.
+		ObfuscatedEmail:                obfuscateEmail(u.Email),
+		ObfuscatedPendingEmail:         obfuscateEmail(u.PendingEmail),
+		OfflineFriends:                 friends,    // TODO: Implement friends.
 		OnlineFriends:                  []string{}, // TODO: Implement friends.
 		PastDisplayNames:               u.GetPastDisplayNames(),
 		ProfilePicOverride:             profilePicOverride,
@@ -635,7 +699,7 @@ type APICurrentUser struct {
 	HasLoggedInFromClient          bool                      `json:"hasLoggedInFromClient"`
 	HomeLocationID                 string                    `json:"homeLocation"`
 	IsFriend                       bool                      `json:"isFriend"`
-	LastLogin                      int64                     `json:"lastLogin"`
+	LastLogin                      string                    `json:"last_login"`
 	LastPlatform                   string                    `json:"last_platform"`
 	ObfuscatedEmail                string                    `json:"obfuscatedEmail"`
 	ObfuscatedPendingEmail         string                    `json:"obfuscatedPendingEmail"`
@@ -667,11 +731,14 @@ type DisplayNameChangeRecord struct {
 type UserPresence struct {
 	IsOnline       bool
 	ShouldDisclose bool
+	Status         UserStatus
+	State          UserState
+	LastSeen       time.Time
 	WorldId        string
 	Location       string
 }
 
-func ObfuscateEmail(email string) string {
+func obfuscateEmail(email string) string {
 	if len(email) == 0 {
 		return ""
 	}
