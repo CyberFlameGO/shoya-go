@@ -538,7 +538,7 @@ func (r *CreateWorldRequest) HasValidUrls() bool {
 	}
 
 	if r.ImageUrl != "" {
-		imageUrl, err = url.Parse(r.AssetUrl)
+		imageUrl, err = url.Parse(r.ImageUrl)
 		if err != nil {
 			return false
 		}
@@ -583,7 +583,7 @@ func (r *CreateWorldRequest) ParseTags() []string {
 }
 
 func (r *CreateWorldRequest) GetFileID() (string, error) {
-	re := regexp.MustCompile(`(?i)\/api\/1\/file\/(file_[\dA-F]{8}-[\dA-F]{4}-4[\dA-F]{3}-[89AB][\dA-F]{3}-[\dA-F]{12})`)
+	re := regexp.MustCompile(`(?i)\/api\/1\/file\/(file_[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})`)
 	val := re.FindStringSubmatch(r.AssetUrl)
 	if val == nil {
 		return "", models.ErrUrlParseFailed
@@ -592,7 +592,7 @@ func (r *CreateWorldRequest) GetFileID() (string, error) {
 }
 
 func (r *CreateWorldRequest) GetFileVersion() (int, error) {
-	re := regexp.MustCompile(`(?i)\/api\/1\/file\/file_[\dA-F]{8}-[\dA-F]{4}-4[\dA-F]{3}-[89AB][\dA-F]{3}-[\dA-F]{12}/(\d*)/`)
+	re := regexp.MustCompile(`(?i)\/api\/1\/file\/file_[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}/(\d*)/`)
 	val := re.FindStringSubmatch(r.AssetUrl)
 	if val == nil {
 		return 0, models.ErrUrlParseFailed
@@ -606,7 +606,7 @@ func (r *CreateWorldRequest) GetFileVersion() (int, error) {
 }
 
 func (r *CreateWorldRequest) GetImageID() (string, error) {
-	re := regexp.MustCompile(`(?i)\/api\/1\/file\/(file_[\dA-F]{8}-[\dA-F]{4}-4[\dA-F]{3}-[89AB][\dA-F]{3}-[\dA-F]{12})`)
+	re := regexp.MustCompile(`(?i)\/api\/1\/file\/(file_[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})`)
 	val := re.FindStringSubmatch(r.ImageUrl)
 	if val == nil {
 		return "", models.ErrUrlParseFailed

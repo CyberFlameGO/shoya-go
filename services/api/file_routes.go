@@ -75,13 +75,17 @@ func postFile(c *fiber.Ctx) error {
 		Version: f.GetLatestVersion().Version + 1,
 		Status:  models.FileUploadStatusWaiting,
 	}
+
+	f.Name = strings.ReplaceAll(f.Name, " ", "-")
+	f.Name = f.Name[:getLenOrMaxString(f.Name, 32)]
+
 	var fileDescriptor = &models.FileDescriptor{
 		FileID:      f.ID,
 		Type:        models.FileDescriptorTypeFile,
 		Status:      models.FileUploadStatusNone,
 		Category:    models.FileUploadCategoryQueued,
 		SizeInBytes: 0,
-		FileName:    fmt.Sprintf("%s.%s.%d%s", strings.ReplaceAll(f.Name, " ", "-")[:32], f.ID, fileVersion.Version, f.Extension),
+		FileName:    fmt.Sprintf("%s.%s.%d%s", f.Name, f.ID, fileVersion.Version, f.Extension),
 		Url:         "",
 		Md5:         "",
 		UploadId:    "",
@@ -92,7 +96,7 @@ func postFile(c *fiber.Ctx) error {
 		Status:      models.FileUploadStatusNone,
 		Category:    models.FileUploadCategoryQueued,
 		SizeInBytes: 0,
-		FileName:    fmt.Sprintf("%s.%s.%d%s.delta", strings.ReplaceAll(f.Name, " ", "-")[:32], f.ID, fileVersion.Version, f.Extension),
+		FileName:    fmt.Sprintf("%s.%s.%d%s.delta", f.Name, f.ID, fileVersion.Version, f.Extension),
 		Url:         "",
 		Md5:         "",
 		UploadId:    "",
@@ -103,7 +107,7 @@ func postFile(c *fiber.Ctx) error {
 		Status:      models.FileUploadStatusNone,
 		Category:    models.FileUploadCategorySimple,
 		SizeInBytes: 0,
-		FileName:    fmt.Sprintf("%s.%s.%d%s.signature", strings.ReplaceAll(f.Name, " ", "-")[:32], f.ID, fileVersion.Version, f.Extension),
+		FileName:    fmt.Sprintf("%s.%s.%d%s.signature", f.Name, f.ID, fileVersion.Version, f.Extension),
 		Url:         "",
 		Md5:         "",
 		UploadId:    "",
@@ -111,6 +115,7 @@ func postFile(c *fiber.Ctx) error {
 	var err error
 
 	if err = c.BodyParser(&r); err != nil {
+		fmt.Println(err)
 		return c.Status(500).JSON(models.MakeErrorResponse("failed to parse request body: "+err.Error(), 500))
 	}
 
@@ -466,4 +471,13 @@ func filesServiceHealthMiddleware(c *fiber.Ctx) error {
 	}
 
 	return c.Next()
+}
+
+func getLenOrMaxString(s string, m int) int {
+	l := len(s)
+	if l > m {
+		return m
+	}
+
+	return l
 }
