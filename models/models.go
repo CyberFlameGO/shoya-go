@@ -13,7 +13,7 @@ import (
 
 // BaseModel is the model used by all Gorm models.
 type BaseModel struct {
-	ID        string         `gorm:"primarykey" json:"id"`
+	ID        string         `gorm:"primarykey;unique" json:"id"`
 	CreatedAt int64          `json:"-"`
 	UpdatedAt int64          `json:"-"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
