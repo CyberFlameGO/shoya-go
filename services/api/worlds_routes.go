@@ -236,7 +236,7 @@ func postWorlds(c *fiber.Ctx) error {
 	var fv int
 	var err error
 
-	if !u.CanUploadWorlds() {
+	if !u.CanUploadWorlds() && !config.ApiConfiguration.DisableAvatarGating.Get() {
 		return c.Status(403).JSON(models.MakeErrorResponse("cannot upload worlds at this time", 403))
 	}
 
@@ -427,7 +427,7 @@ func putWorld(c *fiber.Ctx) error {
 	var fv int
 	var err error
 
-	if !u.CanUploadWorlds() {
+	if !u.CanUploadWorlds() && !config.ApiConfiguration.DisableAvatarGating.Get() {
 		return c.Status(403).JSON(models.MakeErrorResponse("cannot upload worlds at this time", 403))
 	}
 

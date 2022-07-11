@@ -210,7 +210,7 @@ func postAvatars(c *fiber.Ctx) error {
 	var fv int
 	var err error
 
-	if !u.CanUploadAvatars() {
+	if !u.CanUploadAvatars() && !config.ApiConfiguration.DisableAvatarGating.Get() {
 		return c.Status(403).JSON(models.MakeErrorResponse("cannot upload avatars at this time", 403))
 	}
 
@@ -365,7 +365,7 @@ func putAvatar(c *fiber.Ctx) error {
 	var fv int
 	var err error
 
-	if !u.CanUploadAvatars() {
+	if !u.CanUploadAvatars() && !config.ApiConfiguration.DisableAvatarGating.Get() {
 		return c.Status(403).JSON(models.MakeErrorResponse("cannot upload avatars at this time", 403))
 	}
 
