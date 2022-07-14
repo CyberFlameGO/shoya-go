@@ -66,10 +66,41 @@ func NewFile(fileName, ownerId, mimeType, extension string) *File {
 	}
 	config.DB.Create(&f)
 
+	fdf := FileDescriptor{
+		FileID:   f.ID,
+		FileName: "",
+		Type:     FileDescriptorTypeFile,
+		Status:   FileUploadStatusComplete,
+		Category: FileUploadCategorySimple,
+	}
+
+	fdd := FileDescriptor{
+		FileID:   f.ID,
+		FileName: "",
+		Type:     FileDescriptorTypeDelta,
+		Status:   FileUploadStatusComplete,
+		Category: FileUploadCategorySimple,
+	}
+
+	fds := FileDescriptor{
+		FileID:   f.ID,
+		FileName: "",
+		Type:     FileDescriptorTypeSignature,
+		Status:   FileUploadStatusComplete,
+		Category: FileUploadCategorySimple,
+	}
+
+	config.DB.Create(&fdf)
+	config.DB.Create(&fdd)
+	config.DB.Create(&fds)
+
 	fv := FileVersion{
-		FileID:  f.ID,
-		Version: 0,
-		Status:  FileUploadStatusComplete,
+		FileID:                f.ID,
+		Version:               0,
+		Status:                FileUploadStatusComplete,
+		FileDescriptorID:      fdf.ID,
+		DeltaDescriptorID:     fdd.ID,
+		SignatureDescriptorID: fds.ID,
 	}
 	config.DB.Create(&fv)
 
