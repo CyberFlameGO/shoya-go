@@ -26,6 +26,9 @@ type ApiConfig struct {
 	DiscoveryServiceEnabled hsync.Bool        `json:"-" seed:"false" redis:"{config}:discoveryServiceEnabled"`
 	DiscoveryServiceUrl     hsync.String      `json:"-" seed:"http://discovery:9213" redis:"{config}:discoveryServiceUrl"`
 	DiscoveryServiceApiKey  hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:discoveryServiceApiKey"`
+	PresenceServiceEnabled  hsync.Bool        `json:"-" seed:"false" redis:"{config}:presenceServiceEnabled"`
+	PresenceServiceUrl      hsync.String      `json:"-" seed:"http://presence:9213" redis:"{config}:presenceServiceUrl"`
+	PresenceServiceApiKey   hsync.Secret      `json:"-" seed:"INSECURE_CHANGEME" redis:"{config}:presenceServiceApiKey"`
 	// Files service
 	FilesEndpoint    hsync.String `json:"-" seed:"" redis:"{config}:filesEndpoint"`
 	FilesS3Endpoint  hsync.String `json:"-" seed:"" redis:"{config}:filesS3Endpoint"`

@@ -68,6 +68,7 @@ type SvcConfig struct {
 	Api       *ApiSvcConfig       `json:"api,omitempty"`
 	Ws        *WsSvcConfig        `json:"ws,omitempty"`
 	Discovery *DiscoverySvcConfig `json:"discovery,omitempty"`
+	Presence  *PresenceSvcConfig  `json:"presence,omitempty"`
 	Files     *FilesSvcConfig     `json:"files,omitempty"`
 }
 
@@ -86,6 +87,10 @@ type WsSvcConfig struct {
 type DiscoverySvcConfig struct {
 	WebSvcConfig
 	DiscoveryApiKey string `json:"discoveryApiKey"` // The API key that is authorized to contact the Discovery service.
+}
+
+type PresenceSvcConfig struct {
+	WebSvcConfig
 }
 
 type FilesSvcConfig struct {
