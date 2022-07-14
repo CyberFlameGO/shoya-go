@@ -62,7 +62,7 @@ func findInstancesForWorldId(worldId, privacy string, includeOverCapacity bool) 
 }
 
 func findInstancesPlayerIsIn(playerId string) ([]*models.WorldInstance, error) {
-	arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instancePlayersIdx").Query(fmt.Sprintf("@players:{%s}", playerId)).Build()).ToArray()
+	arr, err := RedisClient.Do(RedisCtx, RedisClient.B().FtSearch().Index("instancePlayersIdx").Query(fmt.Sprintf("@players:{%s}", escapeId(playerId))).Build()).ToArray()
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
