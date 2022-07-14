@@ -125,6 +125,7 @@ func (d *Discovery) doRequest(method, url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer do.Body.Close()
 
 	if do.StatusCode != 200 {
 		if do.StatusCode == 404 {
