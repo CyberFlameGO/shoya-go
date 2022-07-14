@@ -134,6 +134,14 @@ var (
 	InstanceFlagTypeStrict       InstanceFlagType = "strict"
 )
 
+type InstanceType string
+
+var (
+	InstanceTypePublic  InstanceType = ""
+	InstanceTypeHidden  InstanceType = "hidden"
+	InstanceTypePrivate InstanceType = "private"
+)
+
 var AllowedInstanceTypes = []string{"hidden", "friends", "private"}
 var AllowedInstanceRegions = []string{"us", "usw", "use", "eu", "jp"}
 
