@@ -109,10 +109,10 @@ func GetFriendRequestForUsers(u1, u2 string) (*FriendRequest, error) {
 }
 
 func IsFriend(u1, u2 string) bool {
-	frq, err := GetFriendRequestForUsers(u1, u2)
-	if err != nil {
+	var fr FriendRequest
+	if tx := config.DB.Omit(clause.Associations).Where("from_id = ? AND to_id = ?", u1, u2).Or("from_id = ? AND to_id = ?", u2, u1).First(&fr); tx.Error != nil {
 		return false
 	}
 
-	return frq.State == FriendRequestStateAccepted
+	return fr.State == FriendRequestStateAccepted
 }
