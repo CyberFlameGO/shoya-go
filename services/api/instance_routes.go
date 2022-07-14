@@ -10,6 +10,7 @@ import (
 func instanceRoutes(router *fiber.App) {
 	instances := router.Group("/instances", ApiKeyMiddleware, AuthMiddleware)
 	instances.Get("/:instanceId", getInstance)
+	instances.Get("/:instanceId/shortName", getInstanceShortname)
 	instances.Get("/:instanceId/join", joinInstance)
 }
 
@@ -70,6 +71,13 @@ func getInstance(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(instanceResp)
+}
+
+func getInstanceShortname(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{
+		"shortName":  nil,
+		"secureName": nil,
+	})
 }
 
 // joinInstance | GET /instances/:instanceId/join
