@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"gitlab.com/george/shoya-go/services/discovery"
+	"gitlab.com/george/shoya-go/services/ws"
 )
 
 func init() {
@@ -21,6 +21,6 @@ var wsServe = &cobra.Command{
 	Aliases: []string{"server", "start"},
 	Short:   "start the websocket server",
 	Run: func(cmd *cobra.Command, args []string) {
-		discovery.Main()
+		ws.Main()
 	},
 }
