@@ -4,6 +4,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
+	"gitlab.com/george/shoya-go/models/service_types"
+	"gitlab.com/george/shoya-go/services/presence/presence_client"
 	"os"
 	"strings"
 	"time"
@@ -125,7 +127,6 @@ func getVisits(c *fiber.Ctx) error {
 	return c.JSON(0)
 }
 
-// TODO: This is blocked due to requiring the presence service
 func putVisits(c *fiber.Ctx) error {
 	var u = c.Locals("user").(*models.User)
 	var r PutVisitsRequest
@@ -139,12 +140,25 @@ func putVisits(c *fiber.Ctx) error {
 		return c.Status(400).JSON(models.MakeErrorResponse("can't change someone else's presence", 400))
 	}
 
-	i := DiscoveryService.GetInstance(r.WorldId)
-	if i == nil {
-		return c.Status(400).JSON(models.MakeErrorResponse("can't change presence to an instance that doesn't exist", 400))
+	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
+		i := DiscoveryService.GetInstance(r.WorldId)
+		if i == nil {
+			return c.Status(400).JSON(models.MakeErrorResponse("can't change presence to an instance that doesn't exist", 400))
+		}
+
+		DiscoveryService.PingInstance(r.WorldId)
 	}
 
-	DiscoveryService.PingInstance(r.WorldId)
+	if config.ApiConfiguration.PresenceServiceEnabled.Get() {
+		err = presence_client.PresenceService.UpdateStateForUser(u.ID, service_types.UserStateOnline)
+		if err != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
+		err = presence_client.PresenceService.UpdateLastSeenForUser(u.ID, time.Now())
+		if err != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
+	}
 
 	return c.JSON(fiber.Map{
 		"success": fiber.Map{
@@ -154,8 +168,35 @@ func putVisits(c *fiber.Ctx) error {
 	})
 }
 
-// TODO: This is blocked due to requiring the presence service
 func putJoins(c *fiber.Ctx) error {
+	var u = c.Locals("user").(*models.User)
+	var r PutJoinsRequest
+	var err error
+
+	if err = c.BodyParser(&r); err != nil {
+		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+	}
+
+	if r.UserId != u.ID && !u.IsStaff() {
+		return c.Status(400).JSON(models.MakeErrorResponse("can't change someone else's presence", 400))
+	}
+
+	if config.ApiConfiguration.PresenceServiceEnabled.Get() {
+		err = presence_client.PresenceService.UpdateStateForUser(u.ID, service_types.UserStateOnline)
+		if err != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
+		err = presence_client.PresenceService.UpdateInstanceForUser(u.ID, r.WorldId)
+		if err != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
+
+		err = presence_client.PresenceService.UpdateLastSeenForUser(u.ID, time.Now())
+		if err != nil {
+			return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
+		}
+	}
+
 	return c.JSON(fiber.Map{
 		"success": fiber.Map{
 			"message":     "User joined room",

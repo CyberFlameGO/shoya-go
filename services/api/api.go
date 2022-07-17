@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"gitlab.com/george/shoya-go/services/presence/presence_client"
 	"log"
 	"time"
 
@@ -54,6 +55,11 @@ func shoyaInit() {
 	if config.ApiConfiguration.DiscoveryServiceEnabled.Get() {
 		DiscoveryService = discovery_client.NewDiscovery(config.ApiConfiguration.DiscoveryServiceUrl.Get(), config.ApiConfiguration.DiscoveryServiceApiKey.Get())
 	}
+
+	if config.ApiConfiguration.PresenceServiceEnabled.Get() {
+		presence_client.PresenceService = presence_client.NewClient(config.ApiConfiguration.PresenceServiceUrl.Get(), config.ApiConfiguration.PresenceServiceApiKey.Get())
+	}
+
 	initializeFilesClient()
 
 	initializeHealthChecks()
@@ -69,6 +75,7 @@ func initializeRoutes(app *fiber.App) {
 	avatarsRoutes(app)
 	favoriteRoutes(app)
 	fileRoutes(app)
+	messageRoutes(app)
 }
 
 // initializeDB initializes the database connection (and runs migrations)

@@ -29,6 +29,13 @@ func fileRoutes(router *fiber.App) {
 	file.Get("/:id/:version/:descriptor/status", ApiKeyMiddleware, AuthMiddleware, IsFileOwnerMiddleware, getFileVersionDescriptorStatus)
 	file.Put("/:id/:version/:descriptor/start", ApiKeyMiddleware, AuthMiddleware, IsFileOwnerMiddleware, putFileVersionDescriptorStart)
 	file.Put("/:id/:version/:descriptor/finish", ApiKeyMiddleware, AuthMiddleware, IsFileOwnerMiddleware, putFileVersionDescriptorFinish)
+
+	files := router.Group("/files", filesServiceHealthMiddleware)
+	files.Get("/", ApiKeyMiddleware, AuthMiddleware, getFiles)
+}
+
+func getFiles(c *fiber.Ctx) error {
+	return c.JSON([]fiber.Map{})
 }
 
 // createFile | POST /file

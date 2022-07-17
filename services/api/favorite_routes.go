@@ -3,9 +3,11 @@ package api
 import "github.com/gofiber/fiber/v2"
 
 func favoriteRoutes(router *fiber.App) {
-	favorites := router.Group("/favorite")
+	favorite := router.Group("/favorite")
+	favorite.Get("/", getGroups)
+	favorite.Get("/groups", getGroups)
+	favorites := router.Group("/favorites")
 	favorites.Get("/", getGroups)
-	favorites.Get("/groups", getGroups)
 }
 
 func getGroups(c *fiber.Ctx) error {

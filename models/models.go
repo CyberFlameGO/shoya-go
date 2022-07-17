@@ -137,7 +137,7 @@ var (
 type InstanceType string
 
 var (
-	InstanceTypePublic  InstanceType = ""
+	InstanceTypePublic  InstanceType = "public"
 	InstanceTypeHidden  InstanceType = "hidden"
 	InstanceTypePrivate InstanceType = "private"
 )

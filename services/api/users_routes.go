@@ -6,6 +6,7 @@ import (
 	"github.com/tj/go-naturaldate"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
+	"gitlab.com/george/shoya-go/services/presence/presence_client"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strconv"
@@ -316,6 +317,14 @@ func putUser(c *fiber.Ctx) error {
 
 	config.DB.Omit(clause.Associations).Model(&u).Updates(changes)
 
+	if statusChanged {
+		if config.ApiConfiguration.PresenceServiceEnabled.Get() {
+			err = presence_client.PresenceService.UpdateStatusForUser(u.ID, u.Status)
+			if err != nil {
+				fmt.Println("Error updating user status in presence service:", err)
+			}
+		}
+	}
 	return c.Status(fiber.StatusOK).JSON(u.GetAPICurrentUser())
 
 wrongPassword:

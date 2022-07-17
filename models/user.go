@@ -6,90 +6,51 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gitlab.com/george/shoya-go/config"
+	"gitlab.com/george/shoya-go/models/service_types"
+	"gitlab.com/george/shoya-go/services/presence/presence_client"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strings"
 	"time"
 )
 
-// UserState represents the activity state of a user.
-type UserState string
-
-const (
-	UserStateOffline UserState = "offline"
-	UserStateActive  UserState = "active"
-	UserStateOnline  UserState = "online"
-)
-
-// UserStatus is the status of a user. It can be offline, active, join me, ask me, or busy.
-type UserStatus string
-
-const (
-	UserStatusOffline UserStatus = "offline"
-	UserStatusActive  UserStatus = "active"
-	UserStatusJoinMe  UserStatus = "join me"
-	UserStatusAskMe   UserStatus = "ask me"
-	UserStatusBusy    UserStatus = "busy"
-)
-
-func NewUserStatus(s string) UserStatus {
-	switch s {
-	case "offline":
-		return UserStatusOffline
-	case "active":
-		return UserStatusActive
-	case "join me":
-		return UserStatusJoinMe
-	case "ask me":
-		return UserStatusAskMe
-	case "busy":
-		return UserStatusBusy
-	default:
-		return UserStatusActive
-	}
-}
-
-func (s UserStatus) String() string {
-	return string(s)
-}
-
 // User is a user of the application.
 type User struct {
 	BaseModel
-	AcceptedTermsOfServiceVersion int             `json:"acceptedTOSVersion"`
-	AllowAvatarCopying            bool            `json:"allowAvatarCopying"`
-	Bio                           string          `json:"bio"`
-	BioLinks                      pq.StringArray  `json:"bioLinks" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
-	Username                      string          `json:"username"`
-	DisplayName                   string          `json:"displayName"`
-	DeveloperType                 string          `json:"developerType" gorm:"default: 'none'"`
-	Email                         string          `json:"-"`
-	PendingEmail                  string          `json:"pendingEmail"`
-	EmailVerified                 bool            `json:"emailVerified"`
-	Password                      string          `json:"-"`
-	CurrentAvatarID               string          `json:"currentAvatarId"`
-	CurrentAvatar                 Avatar          `json:"-"`
-	FallbackAvatarID              string          `json:"fallbackAvatarId"`
-	FallbackAvatar                Avatar          `json:"-"`
-	HomeWorldID                   string          `json:"homeLocation"`
-	HomeWorld                     World           `json:"-"`
-	Status                        UserStatus      `json:"status"`
-	StatusDescription             string          `json:"statusDescription"`
-	Tags                          pq.StringArray  `json:"tags" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
-	UserFavorites                 []FavoriteGroup `json:"-"`
-	WorldFavorites                []FavoriteGroup `json:"-"`
-	AvatarFavorites               []FavoriteGroup `json:"-"`
-	LastLogin                     int64           `json:"last_login"`
-	LastPlatform                  string          `json:"last_platform"`
-	MfaEnabled                    bool            `json:"mfaEnabled"`
-	MfaSecret                     string          `json:"-"`
-	MfaRecoveryCodes              pq.StringArray  `json:"-" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
-	Permissions                   []Permission    `json:"-"`
-	Moderations                   []Moderation    `json:"-" gorm:"references:ID;foreignKey:TargetID"`
-	FriendKey                     string          `json:"-"`
-	ProfilePicOverride            string          `json:"profilePicOverride"`
-	Unsubscribe                   bool            `json:"unsubscribe"`
-	UserIcon                      string          `json:"userIcon"`
+	AcceptedTermsOfServiceVersion int                      `json:"acceptedTOSVersion"`
+	AllowAvatarCopying            bool                     `json:"allowAvatarCopying"`
+	Bio                           string                   `json:"bio"`
+	BioLinks                      pq.StringArray           `json:"bioLinks" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
+	Username                      string                   `json:"username"`
+	DisplayName                   string                   `json:"displayName"`
+	DeveloperType                 string                   `json:"developerType" gorm:"default: 'none'"`
+	Email                         string                   `json:"-"`
+	PendingEmail                  string                   `json:"pendingEmail"`
+	EmailVerified                 bool                     `json:"emailVerified"`
+	Password                      string                   `json:"-"`
+	CurrentAvatarID               string                   `json:"currentAvatarId"`
+	CurrentAvatar                 Avatar                   `json:"-"`
+	FallbackAvatarID              string                   `json:"fallbackAvatarId"`
+	FallbackAvatar                Avatar                   `json:"-"`
+	HomeWorldID                   string                   `json:"homeLocation"`
+	HomeWorld                     World                    `json:"-"`
+	Status                        service_types.UserStatus `json:"status"`
+	StatusDescription             string                   `json:"statusDescription"`
+	Tags                          pq.StringArray           `json:"tags" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
+	UserFavorites                 []FavoriteGroup          `json:"-"`
+	WorldFavorites                []FavoriteGroup          `json:"-"`
+	AvatarFavorites               []FavoriteGroup          `json:"-"`
+	LastLogin                     int64                    `json:"last_login"`
+	LastPlatform                  string                   `json:"last_platform"`
+	MfaEnabled                    bool                     `json:"mfaEnabled"`
+	MfaSecret                     string                   `json:"-"`
+	MfaRecoveryCodes              pq.StringArray           `json:"-" gorm:"type:text[] NOT NULL;default: '{}'::text[]"`
+	Permissions                   []Permission             `json:"-"`
+	Moderations                   []Moderation             `json:"-" gorm:"references:ID;foreignKey:TargetID"`
+	FriendKey                     string                   `json:"-"`
+	ProfilePicOverride            string                   `json:"profilePicOverride"`
+	Unsubscribe                   bool                     `json:"unsubscribe"`
+	UserIcon                      string                   `json:"userIcon"`
 }
 
 func GetUserById(id string) (*User, error) {
@@ -230,7 +191,7 @@ func NewUser(username, displayName, email, password string) *User {
 		CurrentAvatarID:               config.ApiConfiguration.DefaultAvatar.Get(),
 		FallbackAvatarID:              config.ApiConfiguration.DefaultAvatar.Get(),
 		HomeWorldID:                   config.ApiConfiguration.HomeWorldId.Get(),
-		Status:                        UserStatusActive,
+		Status:                        service_types.UserStatusActive,
 	}
 }
 
@@ -301,20 +262,29 @@ func (u *User) CanUploadWorlds() bool {
 	return false
 }
 
-// GetState returns the state of the user from the presence service.
-func (u *User) GetState() UserState { // WIP -- skipcq
-	return UserStateActive // TODO: Implement presence service.
-}
-
 func (u *User) GetPastDisplayNames() []DisplayNameChangeRecord { // WIP -- skipcq
 	return []DisplayNameChangeRecord{} // TODO: Implement display name history.
 }
 
-func (u *User) GetPresence() *UserPresence { // WIP -- skipcq
-	return &UserPresence{
+func (u *User) GetPresence() *service_types.UserPresence { // WIP -- skipcq
+	var fallbackPresence = &service_types.UserPresence{
 		IsOnline:       false,
 		ShouldDisclose: false,
+		State:          service_types.UserStateActive,
+		Status:         u.Status,
+		LastSeen:       u.LastLogin,
 	}
+	if !config.ApiConfiguration.PresenceServiceEnabled.Get() {
+		return fallbackPresence
+	}
+
+	p, err := presence_client.PresenceService.GetPresenceForUser(u.ID)
+	if err != nil {
+		fmt.Printf("Presence service failed with error: %s; Falling back to static.", err.Error())
+		return fallbackPresence
+	}
+
+	return p
 }
 
 func (u *User) GetFriends() ([]string, error) {
@@ -362,6 +332,15 @@ func (u *User) GetFriendsAPIUser() ([]*APIUser, error) {
 	fa := make([]*APIUser, len(fu))
 	for idx, f := range fu {
 		fa[idx] = f.GetAPIUser(true, true)
+		if fa[idx].State == service_types.UserStateOffline {
+			// So, for anyone wondering what this is;
+			// Official doesn't actually have a semblance of what a "user model" or "response model" is,
+			// and therefore returns random fields on different endpoints. This endpoint doesn't actually
+			// return the State endpoint on Official, but rather the Status field forced to "offline"
+			// in the case of a user that is offline.
+			fa[idx].Status = service_types.UserStatusOffline
+		}
+		fa[idx].FriendRequestStatus = string(FriendRequestStateAccepted)
 	}
 	return fa, nil
 }
@@ -423,25 +402,41 @@ func (u *User) GetNotifications(notificationType NotificationType, showHidden bo
 }
 
 func (u *User) GetAPIUser(isFriend bool, shouldGetLocation bool) *APIUser {
-	var friendKey = ""
-	var worldId = "offline"
-	var location = "offline"
-	var instanceId = "offline"
+	var friendKey string
+	var worldId string
+	var location string
+	var instanceId string
+	var travelingToLocation string
+	var travelingToWorld string
+	var travelingToInstance string
+	var userPresence = u.GetPresence()
 
 	if isFriend {
 		friendKey = u.FriendKey
 	}
 
 	if shouldGetLocation {
-		userPresence := u.GetPresence()
 		if userPresence.ShouldDisclose {
 			worldId = userPresence.WorldId
 			location = userPresence.Location
 			instanceId = userPresence.Location
+			travelingToLocation = ""
+			travelingToWorld = ""
+			travelingToInstance = ""
 		} else if userPresence.IsOnline {
 			worldId = "private"
 			location = "private"
 			instanceId = "private"
+			travelingToLocation = "private"
+			travelingToWorld = "private"
+			travelingToInstance = "private"
+		} else {
+			worldId = "offline"
+			location = "offline"
+			instanceId = "offline"
+			travelingToLocation = "offline"
+			travelingToWorld = "offline"
+			travelingToInstance = "offline"
 		}
 	}
 
@@ -476,13 +471,16 @@ func (u *User) GetAPIUser(isFriend bool, shouldGetLocation bool) *APIUser {
 		LastPlatform:                   Platform(u.LastPlatform),
 		Location:                       location,
 		ProfilePictureOverride:         profilePicOverride,
-		State:                          u.GetState(),
+		State:                          userPresence.State,
 		Status:                         u.Status,
 		StatusDescription:              u.StatusDescription,
 		Tags:                           u.Tags,
 		UserIcon:                       u.UserIcon,
 		Username:                       u.Username,
 		WorldId:                        worldId,
+		TravelingToLocation:            travelingToLocation,
+		TravelingToWorld:               travelingToWorld,
+		TravelingToInstance:            travelingToInstance,
 	}
 }
 
@@ -494,8 +492,8 @@ func (u *User) GetAPILimitedUser(isFriend bool, shouldGetLocation bool) *APILimi
 		friendKey = u.FriendKey
 	}
 
+	userPresence := u.GetPresence()
 	if shouldGetLocation {
-		userPresence := u.GetPresence()
 		if userPresence.ShouldDisclose {
 			location = userPresence.Location
 		} else if userPresence.IsOnline {
@@ -537,6 +535,7 @@ func (u *User) GetAPILimitedUser(isFriend bool, shouldGetLocation bool) *APILimi
 }
 
 func (u *User) GetAPICurrentUser() *APICurrentUser {
+	userPresence := u.GetPresence()
 	avatarImageUrl := u.CurrentAvatar.GetImageUrl()
 	avatarImageThumbnailUrl := u.CurrentAvatar.GetThumbnailImageUrl()
 	profilePicOverride := u.ProfilePicOverride
@@ -598,7 +597,7 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 		HasLoggedInFromClient:          true, // Hardcoded to true. Likely unnecessary.
 		HomeLocationID:                 u.HomeWorldID,
 		IsFriend:                       false, // TODO: Implement friends.
-		LastLogin:                      time.Unix(u.LastLogin, 0).Format("02-01-2006"),
+		LastLogin:                      time.Unix(u.LastLogin, 0).Format(time.RFC3339),
 		LastPlatform:                   u.LastPlatform,
 		ObfuscatedEmail:                obfuscateEmail(u.Email),
 		ObfuscatedPendingEmail:         obfuscateEmail(u.PendingEmail),
@@ -606,11 +605,12 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 		OnlineFriends:                  []string{}, // TODO: Implement friends.
 		PastDisplayNames:               u.GetPastDisplayNames(),
 		ProfilePicOverride:             profilePicOverride,
-		State:                          u.GetState(),
+		State:                          userPresence.State,
 		Status:                         u.Status,
 		StatusDescription:              u.StatusDescription,
 		StatusFirstTime:                false, // Hardcoded to false. This data won't be collected.
 		StatusHistory:                  []string{u.StatusDescription},
+		SteamDetails:                   struct{}{},
 		Tags:                           u.Tags,
 		TwoFactorAuthEnabled:           u.MfaEnabled,
 		Unsubscribe:                    u.Unsubscribe,
@@ -623,30 +623,30 @@ func (u *User) GetAPICurrentUser() *APICurrentUser {
 // APIUser is a data structure used for API responses as well as fetching relevant data from the database.
 type APIUser struct {
 	BaseModel
-	AllowAvatarCopying             bool       `json:"allowAvatarCopying"`
-	Bio                            string     `json:"bio"`
-	BioLinks                       []string   `json:"bioLinks"`
-	CurrentAvatarImageUrl          string     `json:"currentAvatarImageUrl"`
-	CurrentAvatarThumbnailImageUrl string     `json:"currentAvatarThumbnailImageUrl"`
-	DateJoined                     string     `json:"date_joined"`
-	DeveloperType                  string     `json:"developerType"`
-	DisplayName                    string     `json:"displayName"`
-	FriendKey                      string     `json:"friendKey,omitempty"`
-	InstanceId                     string     `json:"instanceId"`
-	IsFriend                       bool       `json:"isFriend"`
-	LastLogin                      string     `json:"last_login"`
-	LastActivity                   string     `json:"last_activity"`
-	LastPlatform                   Platform   `json:"last_platform"`
-	Location                       string     `json:"location"`
-	ProfilePictureOverride         string     `json:"profilePicOverride"`
-	State                          UserState  `json:"state"`
-	Status                         UserStatus `json:"status"`
-	StatusDescription              string     `json:"statusDescription"`
-	Tags                           []string   `json:"tags"`
-	UserIcon                       string     `json:"userIcon"`
-	Username                       string     `json:"username"`
-	WorldId                        string     `json:"worldId"`
-	FriendRequestStatus            string     `json:"friendRequestStatus"` // Requires implementation of friendship
+	AllowAvatarCopying             bool                     `json:"allowAvatarCopying"`
+	Bio                            string                   `json:"bio"`
+	BioLinks                       []string                 `json:"bioLinks"`
+	CurrentAvatarImageUrl          string                   `json:"currentAvatarImageUrl"`
+	CurrentAvatarThumbnailImageUrl string                   `json:"currentAvatarThumbnailImageUrl"`
+	DateJoined                     string                   `json:"date_joined"`
+	DeveloperType                  string                   `json:"developerType"`
+	DisplayName                    string                   `json:"displayName"`
+	FriendKey                      string                   `json:"friendKey,omitempty"`
+	InstanceId                     string                   `json:"instanceId"`
+	IsFriend                       bool                     `json:"isFriend"`
+	LastLogin                      string                   `json:"last_login"`
+	LastActivity                   string                   `json:"last_activity"`
+	LastPlatform                   Platform                 `json:"last_platform"`
+	Location                       string                   `json:"location"`
+	ProfilePictureOverride         string                   `json:"profilePicOverride"`
+	State                          service_types.UserState  `json:"state"`
+	Status                         service_types.UserStatus `json:"status"`
+	StatusDescription              string                   `json:"statusDescription"`
+	Tags                           []string                 `json:"tags"`
+	UserIcon                       string                   `json:"userIcon"`
+	Username                       string                   `json:"username"`
+	WorldId                        string                   `json:"worldId"`
+	FriendRequestStatus            string                   `json:"friendRequestStatus"` // Requires implementation of friendship
 
 	// The following have not been implemented so far, and they seem to have undocumented behavior on official.
 	// They have been seen as an empty string (""), "private", or "offline", but not once as what they describe.
@@ -657,22 +657,22 @@ type APIUser struct {
 }
 type APILimitedUser struct {
 	BaseModel
-	Bio                            string     `json:"bio"`
-	CurrentAvatarImageUrl          string     `json:"currentAvatarImageUrl"`
-	CurrentAvatarThumbnailImageUrl string     `json:"currentAvatarThumbnailImageUrl"`
-	DeveloperType                  string     `json:"developerType"`
-	DisplayName                    string     `json:"displayName"`
-	FallbackAvatarId               string     `json:"fallbackAvatar"`
-	IsFriend                       bool       `json:"isFriend"`
-	LastPlatform                   Platform   `json:"last_platform"`
-	ProfilePictureOverride         string     `json:"profilePicOverride"`
-	Status                         UserStatus `json:"status"`
-	StatusDescription              string     `json:"statusDescription"`
-	Tags                           []string   `json:"tags"`
-	UserIcon                       string     `json:"userIcon"`
-	Username                       string     `json:"username"`
-	Location                       *string    `json:"location,omitempty"`
-	FriendKey                      *string    `json:"friendKey,omitempty"`
+	Bio                            string                   `json:"bio"`
+	CurrentAvatarImageUrl          string                   `json:"currentAvatarImageUrl"`
+	CurrentAvatarThumbnailImageUrl string                   `json:"currentAvatarThumbnailImageUrl"`
+	DeveloperType                  string                   `json:"developerType"`
+	DisplayName                    string                   `json:"displayName"`
+	FallbackAvatarId               string                   `json:"fallbackAvatar"`
+	IsFriend                       bool                     `json:"isFriend"`
+	LastPlatform                   Platform                 `json:"last_platform"`
+	ProfilePictureOverride         string                   `json:"profilePicOverride"`
+	Status                         service_types.UserStatus `json:"status"`
+	StatusDescription              string                   `json:"statusDescription"`
+	Tags                           []string                 `json:"tags"`
+	UserIcon                       string                   `json:"userIcon"`
+	Username                       string                   `json:"username"`
+	Location                       *string                  `json:"location,omitempty"`
+	FriendKey                      *string                  `json:"friendKey,omitempty"`
 }
 type APICurrentUser struct {
 	BaseModel
@@ -692,15 +692,19 @@ type APICurrentUser struct {
 	EmailVerified                  bool                      `json:"emailVerified"`
 	FallbackAvatarID               string                    `json:"fallbackAvatar"`
 	FriendGroupNames               []string                  `json:"friendGroupNames"`
+	FriendRequestStatus            string                    `json:"friendRequestStatus"`
 	FriendKey                      string                    `json:"friendKey"`
 	Friends                        []string                  `json:"friends"`
 	HasBirthday                    bool                      `json:"hasBirthday"`
 	HasEmail                       bool                      `json:"hasEmail"`
+	HasPendingEmail                bool                      `json:"hasPendingEmail"`
 	HasLoggedInFromClient          bool                      `json:"hasLoggedInFromClient"`
 	HomeLocationID                 string                    `json:"homeLocation"`
 	IsFriend                       bool                      `json:"isFriend"`
 	LastLogin                      string                    `json:"last_login"`
+	LastActivity                   string                    `json:"last_activity"`
 	LastPlatform                   string                    `json:"last_platform"`
+	Location                       string                    `json:"location"`
 	ObfuscatedEmail                string                    `json:"obfuscatedEmail"`
 	ObfuscatedPendingEmail         string                    `json:"obfuscatedPendingEmail"`
 	OculusID                       string                    `json:"oculusId"`
@@ -708,34 +712,26 @@ type APICurrentUser struct {
 	OnlineFriends                  []string                  `json:"onlineFriends"`
 	PastDisplayNames               []DisplayNameChangeRecord `json:"pastDisplayNames"`
 	ProfilePicOverride             string                    `json:"profilePicOverride"`
-	State                          UserState                 `json:"state"`
-	Status                         UserStatus                `json:"status"`
+	State                          service_types.UserState   `json:"state"`
+	Status                         service_types.UserStatus  `json:"status"`
 	StatusDescription              string                    `json:"statusDescription"`
 	StatusFirstTime                bool                      `json:"statusFirstTime"`
 	StatusHistory                  []string                  `json:"statusHistory"`
-	SteamDetails                   interface{}               `json:"steamDetails,omitempty"`
-	SteamID                        string                    `json:"steamId,omitempty"`
+	SteamDetails                   interface{}               `json:"steamDetails"`
+	SteamID                        string                    `json:"steamId"`
 	Tags                           []string                  `json:"tags"`
 	TwoFactorAuthEnabled           bool                      `json:"twoFactorAuthEnabled"`
+	TwoFactorAuthEnabledAt         *time.Time                `json:"twoFactorAuthEnabledDate"`
 	Unsubscribe                    bool                      `json:"unsubscribe"`
 	UserIcon                       string                    `json:"userIcon"`
 	Username                       string                    `json:"username"`
+	WorldId                        string                    `json:"worldId"`
 }
 
 type DisplayNameChangeRecord struct {
 	DisplayName string `json:"displayName"`
 	Timestamp   int64  `json:"updated_at"`
 	Reverted    bool   `json:"reverted,omitempty"`
-}
-
-type UserPresence struct {
-	IsOnline       bool
-	ShouldDisclose bool
-	Status         UserStatus
-	State          UserState
-	LastSeen       time.Time
-	WorldId        string
-	Location       string
 }
 
 func obfuscateEmail(email string) string {

@@ -228,7 +228,7 @@ func shouldDoInDepthClientChecks(path string) bool {
 		path == "/auth/user" ||
 		path == "/config" ||
 		path == "/time" ||
-		path == "/auth/user/notifications" {
+		strings.HasPrefix(path, "/auth/user/notifications") {
 		return false
 	}
 	return true

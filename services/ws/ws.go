@@ -11,6 +11,7 @@ import (
 	"gitlab.com/george/shoya-go/config"
 	"log"
 	"os"
+	"time"
 )
 
 func Main() {
@@ -18,8 +19,9 @@ func Main() {
 		log.Fatalf("error reading config: RuntimeConfig.Ws was nil")
 	}
 	app := fiber.New(fiber.Config{
-		ProxyHeader: config.RuntimeConfig.Ws.Fiber.ProxyHeader,
-		Prefork:     false,
+		ProxyHeader:      config.RuntimeConfig.Ws.Fiber.ProxyHeader,
+		Prefork:          false,
+		DisableKeepalive: false,
 	})
 
 	app.Use(recover.New())
@@ -39,7 +41,7 @@ func Main() {
 			err error
 		)
 		for {
-			fmt.Println("We got a ws conn")
+			fmt.Printf("[%s] IP: %s connected.\n", time.Now(), c.RemoteAddr())
 			if mt, msg, err = c.ReadMessage(); err != nil {
 				log.Println("read:", err)
 				break

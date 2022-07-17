@@ -3,6 +3,7 @@ package api
 import (
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
+	"gitlab.com/george/shoya-go/models/service_types"
 	"gorm.io/gorm"
 	"net/url"
 	"regexp"
@@ -151,25 +152,25 @@ func (r *UpdateUserRequest) BioLinksChecks(u *models.User) (bool, error) {
 }
 
 func (r *UpdateUserRequest) StatusChecks(u *models.User) (bool, error) {
-	var status models.UserStatus
+	var status service_types.UserStatus
 	if r.Status == "" {
 		return false, nil
 	}
 
 	switch strings.ToLower(r.Status) {
 	case "join me":
-		status = models.UserStatus(strings.ToLower(r.Status))
+		status = service_types.UserStatus(strings.ToLower(r.Status))
 	case "active":
-		status = models.UserStatus(strings.ToLower(r.Status))
+		status = service_types.UserStatus(strings.ToLower(r.Status))
 	case "ask me":
-		status = models.UserStatus(strings.ToLower(r.Status))
+		status = service_types.UserStatus(strings.ToLower(r.Status))
 	case "busy":
-		status = models.UserStatus(strings.ToLower(r.Status))
+		status = service_types.UserStatus(strings.ToLower(r.Status))
 	case "offline":
 		if !u.IsStaff() {
 			return false, models.ErrInvalidStatusDescriptionInUserUpdate
 		}
-		status = models.UserStatus(strings.ToLower(r.Status))
+		status = service_types.UserStatus(strings.ToLower(r.Status))
 	default:
 		return false, models.ErrInvalidUserStatusInUserUpdate
 	}
@@ -615,6 +616,11 @@ func (r *CreateWorldRequest) GetImageID() (string, error) {
 }
 
 type PutVisitsRequest struct {
+	UserId  string `json:"userId"`
+	WorldId string `json:"worldId"`
+}
+
+type PutJoinsRequest struct {
 	UserId  string `json:"userId"`
 	WorldId string `json:"worldId"`
 }

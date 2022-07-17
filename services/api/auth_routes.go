@@ -6,6 +6,7 @@ import (
 	"github.com/tj/go-naturaldate"
 	"gitlab.com/george/shoya-go/config"
 	"gitlab.com/george/shoya-go/models"
+	"gitlab.com/george/shoya-go/models/service_types"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strconv"
@@ -174,7 +175,25 @@ func getFriends(c *fiber.Ctx) error {
 	if friends, err = u.GetFriendsAPIUser(); err != nil {
 		return c.Status(500).JSON(models.MakeErrorResponse(err.Error(), 500))
 	}
-	return c.JSON(friends)
+
+	var resp = make([]*models.APIUser, 0)
+	fmt.Println(strings.ToLower(c.Query("offline")))
+	fmt.Println(strings.ToLower(c.Query("offline")) == "true")
+	if strings.ToLower(c.Query("offline")) == "true" {
+		for _, friend := range friends {
+			if friend.State == service_types.UserStateOffline {
+				resp = append(resp, friend)
+			}
+		}
+	} else {
+		for _, friend := range friends {
+			if friend.State != service_types.UserStateOffline {
+				resp = append(resp, friend)
+			}
+		}
+	}
+
+	return c.JSON(resp)
 }
 
 func deleteFriend(c *fiber.Ctx) error {
@@ -271,7 +290,10 @@ func getNotifications(c *fiber.Ctx) error {
 
 func putNotificationSeen(c *fiber.Ctx) error { // TODO: Notification seen state.
 	return c.Status(200).JSON(fiber.Map{
-		"ok": true,
+		"success": fiber.Map{
+			"message":     "Ok",
+			"status_code": 200,
+		},
 	})
 }
 
@@ -306,7 +328,10 @@ func putNotificationAccept(c *fiber.Ctx) error {
 		}
 
 		return c.Status(200).JSON(fiber.Map{
-			"ok": true,
+			"success": fiber.Map{
+				"message":     "Ok",
+				"status_code": 200,
+			},
 		})
 	}
 
@@ -343,7 +368,10 @@ func putNotificationHidden(c *fiber.Ctx) error {
 	}
 
 	return c.Status(200).JSON(fiber.Map{
-		"ok": true,
+		"success": fiber.Map{
+			"message":     "Ok",
+			"status_code": 200,
+		},
 	})
 }
 
