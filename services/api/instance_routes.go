@@ -12,6 +12,11 @@ func instanceRoutes(router *fiber.App) {
 	instances.Get("/:instanceId", getInstance)
 	instances.Get("/:instanceId/shortName", getInstanceShortname)
 	instances.Get("/:instanceId/join", joinInstance)
+
+	travel := router.Group("/travel", ApiKeyMiddleware, AuthMiddleware) // <- ?
+
+	travel.Post("/:instanceId/request", travelStub)
+	travel.Get("/:instanceId/token", joinInstance)
 }
 
 // getInstance | GET /instances/:instanceId
@@ -113,5 +118,14 @@ func joinInstance(c *fiber.Ctx) error {
 		"canModerateInstance": false, // So, err… the official API also returns this as false at all times, because it's not implemented on their end.
 		"token":               t,
 		"version":             1,
+	})
+}
+
+func travelStub(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{
+		"success": fiber.Map{
+			"message":     "",
+			"status_code": 200,
+		},
 	})
 }
